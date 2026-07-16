@@ -157,7 +157,6 @@ it('does not leak admin-only fields in list items', function (): void {
     $row = $res->json('data.0');
     expect(array_keys($row))->not->toContain('content_json');
     expect(array_keys($row))->not->toContain('is_featured');
-    expect(array_keys($row))->not->toContain('is_breaking');
     expect(array_keys($row))->not->toContain('is_header');
     expect(array_keys($row))->not->toContain('updated_at');
 });

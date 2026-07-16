@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
@@ -30,10 +30,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { DataTable, type Column } from '@/components/data/DataTable';
 import { Pagination } from '@/components/data/Pagination';
+import { SearchInput } from '@/components/data/SearchInput';
 import { cn } from '@/lib/utils';
 import { paths } from '@/router/paths';
 import { useAuth } from '@/hooks/useAuth';
@@ -158,17 +158,24 @@ export default function VideosPage() {
   const canManagePlaylists = hasPermission('video-playlists.manage');
   const canSeeTrash = canRestore || canForceDelete;
 
-  const [params, setParams] = useState<VideosListParams>({
-    page: 1,
-    per_page: PER_PAGE,
-    search: '',
-    status: '',
-    visibility: '',
-    source_type: '',
-    locale: '',
-    sort: '-created_at',
-    trashed: '',
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const params = useMemo<VideosListParams>(() => {
+    const catRaw = searchParams.get('video_category_id');
+    return {
+      page: Number(searchParams.get('page')) || 1,
+      per_page: PER_PAGE,
+      search: searchParams.get('search') || '',
+      status: (searchParams.get('status') as VideosListParams['status']) || '',
+      visibility: (searchParams.get('visibility') as VideosListParams['visibility']) || '',
+      source_type: (searchParams.get('source_type') as VideosListParams['source_type']) || '',
+      locale: (searchParams.get('locale') as VideosListParams['locale']) || '',
+      video_category_id: catRaw ? Number(catRaw) : '',
+      sort: (searchParams.get('sort') as VideosListParams['sort']) || '-created_at',
+      trashed: (searchParams.get('trashed') as VideosListParams['trashed']) || '',
+    };
+  }, [searchParams]);
+
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [scheduling, setScheduling] = useState<VideoData | null>(null);
   const [scheduleAt, setScheduleAt] = useState('');
@@ -192,7 +199,18 @@ export default function VideosPage() {
   const rows = q.data?.data ?? [];
 
   const patch = (p: Partial<VideosListParams>) => {
-    setParams((prev) => ({ ...prev, ...p, page: p.page ?? 1 }));
+    const next = new URLSearchParams(searchParams);
+    Object.entries(p).forEach(([k, v]) => {
+      if (v === '' || v == null) {
+        next.delete(k);
+      } else {
+        next.set(k, String(v));
+      }
+    });
+    if (p.page === undefined) {
+      next.set('page', '1');
+    }
+    setSearchParams(next);
     setSelected(new Set());
   };
 
@@ -539,7 +557,13 @@ export default function VideosPage() {
   ];
 
   const hasFilters = Boolean(
-    params.search || params.status || params.visibility || params.source_type || params.locale || params.trashed,
+    params.search ||
+      params.status ||
+      params.visibility ||
+      params.source_type ||
+      params.locale ||
+      params.video_category_id ||
+      params.trashed,
   );
   const categoryOptions = flattenCategories(catQ.data ?? []);
   const playlistOptions = plQ.data?.data ?? [];
@@ -567,11 +591,10 @@ export default function VideosPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 border border-border bg-background p-3">
-        <Input
+        <SearchInput
           value={params.search}
-          onChange={(e) => patch({ search: e.target.value })}
+          onDebouncedChange={(v) => patch({ search: v })}
           placeholder={t('videos.filter.search')}
-          className="min-w-[200px] flex-1"
         />
         <select className={selectCls} value={params.status} onChange={(e) => patch({ status: e.target.value as VideosListParams['status'] })}>
           <option value="">{t('videos.filter.statusAll')}</option>
@@ -598,6 +621,14 @@ export default function VideosPage() {
           <option value="ar">{t('locale.ar')}</option>
           <option value="en">{t('locale.en')}</option>
         </select>
+        <select className={selectCls} value={params.video_category_id} onChange={(e) => patch({ video_category_id: e.target.value === '' ? '' : Number(e.target.value) })}>
+          <option value="">{t('videos.filter.categoryAll') || 'كل التصنيفات'}</option>
+          {categoryOptions.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.label}
+            </option>
+          ))}
+        </select>
         <select className={selectCls} value={params.sort} onChange={(e) => patch({ sort: e.target.value as VideosListParams['sort'] })}>
           <option value="-created_at">{t('videos.filter.sortNewest')}</option>
           <option value="-published_at">{t('videos.filter.sortPublished')}</option>
@@ -616,7 +647,7 @@ export default function VideosPage() {
             variant="outline"
             size="sm"
             onClick={() =>
-              patch({ search: '', status: '', visibility: '', source_type: '', locale: '', sort: '-created_at', trashed: '' })
+              patch({ search: '', status: '', visibility: '', source_type: '', locale: '', video_category_id: '', sort: '-created_at', trashed: '' })
             }
           >
             <X className="h-4 w-4" />
@@ -680,7 +711,7 @@ export default function VideosPage() {
           </Button>
         </div>
       ) : (
-        <>
+        <div className={cn('transition-opacity duration-200', q.isFetching && 'opacity-70')}>
           <DataTable
             columns={columns}
             rows={rows}
@@ -690,7 +721,7 @@ export default function VideosPage() {
             emptyDescription={inTrash ? t('videos.empty.trashDescription') : t('videos.empty.description')}
           />
           {q.data ? <Pagination meta={q.data.pagination} onPage={(page) => patch({ page })} /> : null}
-        </>
+        </div>
       )}
 
       {/* Schedule modal */}

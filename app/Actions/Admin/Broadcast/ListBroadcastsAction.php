@@ -23,6 +23,25 @@ class ListBroadcastsAction
         $perPage = max(1, min((int) request()->integer('per_page', $default), $max));
 
         $query = QueryBuilder::for(Broadcast::class)
+            ->select([
+                'id',
+                'uuid',
+                'status',
+                'kind',
+                'source_type',
+                'category_id',
+                'is_featured',
+                'is_public',
+                'title',
+                'slug',
+                'cover_media_id',
+                'created_by',
+                'scheduled_at',
+                'started_at',
+                'created_at',
+                'deleted_at',
+                'sort_order',
+            ])
             ->with(['category:id,name,slug', 'creator:id,name'])
             ->allowedFilters(
                 AllowedFilter::exact('status'),

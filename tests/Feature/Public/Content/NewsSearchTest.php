@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
@@ -13,6 +14,7 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     seedRoles();
     Cache::flush();
+    Artisan::call('scout:sync-index-settings');
 });
 
 function searchArticle(string $locale, string $title, string $bodyHtml): Article

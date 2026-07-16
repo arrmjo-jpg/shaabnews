@@ -49,7 +49,7 @@ final class VideoSeoBuilder
             : ($progressive ?? $hls);
         $embedUrl = $isExternal ? $media?->embed_url : $absoluteUrl;
 
-        $siteName = (string) config('app.name', 'AlphaCMS');
+        $siteName = PublicSeoBuilder::getSiteName($video->locale);
         $twitterHandle = (string) config('seo.twitter.@username', '') ?: null;
 
         return [
@@ -151,7 +151,7 @@ final class VideoSeoBuilder
         ?string $embedUrl,
         string $siteName,
     ): array {
-        $logo = (string) config('seo.publisher.logo', '');
+        $logo = PublicSeoBuilder::getPublisherLogo();
 
         return array_filter([
             '@context' => 'https://schema.org',
@@ -171,7 +171,7 @@ final class VideoSeoBuilder
             ] : null,
             'publisher' => array_filter([
                 '@type' => 'Organization',
-                'name' => (string) (config('seo.publisher.name') ?: $siteName),
+                'name' => PublicSeoBuilder::getPublisherName(),
                 'logo' => $logo !== '' ? ['@type' => 'ImageObject', 'url' => $logo] : null,
             ], fn ($v): bool => $v !== null),
         ], fn ($v): bool => $v !== null);

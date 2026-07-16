@@ -31,7 +31,7 @@ final class WpMediaResolver
         if ($pos !== false) {
             $rel = rawurldecode(ltrim(substr((string) $path, $pos + strlen(self::UPLOADS_MARKER)), '/'));
 
-            return $this->resolveLocal($rel);
+            return $this->resolveLocal($rel, $src);
         }
 
         // ليس مسار uploads → خارجي إن كان http(s) مطلقاً، وإلا متعذّر.
@@ -43,7 +43,7 @@ final class WpMediaResolver
         return MediaResolution::unresolved('media_unresolved');
     }
 
-    private function resolveLocal(string $rel): MediaResolution
+    private function resolveLocal(string $rel, string $originalSrc): MediaResolution
     {
         $original = $this->stripSizeSuffix($rel);
 
@@ -60,6 +60,17 @@ final class WpMediaResolver
         // 3) المشتقّ المُشار إليه نفسه (الأصغر) كملاذ أخير.
         if ($rel !== $original && ($p = $this->safePath($rel)) !== null) {
             return MediaResolution::local($p);
+        }
+
+        // بديل صريح الاشتراك (config('wp-migration.allow_remote_media_fallback'),
+        // افتراضياً false): لا ملف محلي مطلقاً بعد المحاولات الثلاث أعلاه — بدل ترك
+        // المرجع معلّقاً، أعِد الرابط الأصلي كـ external ليجلبه WpMediaImporter عبر
+        // مساره الآمن من SSRF الموجود أصلاً (SafeUrl + حدود حجم/مهلة/mime/تحويلات).
+        if (config('wp-migration.allow_remote_media_fallback', false)) {
+            $scheme = strtolower((string) parse_url($originalSrc, PHP_URL_SCHEME));
+            if (in_array($scheme, ['http', 'https'], true)) {
+                return MediaResolution::external($originalSrc);
+            }
         }
 
         return MediaResolution::unresolved('media_unresolved');

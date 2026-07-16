@@ -47,7 +47,7 @@ class PublicPlaylistResource extends JsonResource
             : $this->description;
         $cover = $this->relationLoaded('cover') ? ($this->cover?->posterUrl() ?? $this->cover?->url()) : null;
 
-        $siteName = (string) config('app.name', 'AlphaCMS');
+        $siteName = PublicSeoBuilder::getSiteName();
         $twitterHandle = (string) config('seo.twitter.@username', '') ?: null;
 
         return [

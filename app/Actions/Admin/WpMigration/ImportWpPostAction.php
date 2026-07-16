@@ -59,7 +59,7 @@ class ImportWpPostAction
 
         return new self(
             WpPostReader::for($run),
-            new WpMediaImporter(new WpMediaResolver((string) $run->uploads_path), MigrationAuthor::resolve()),
+            new WpMediaImporter(new WpMediaResolver((string) $run->uploads_path), MigrationAuthor::resolve(), $run),
             MigrationAuthor::id(), // فحص صارم #8 (يرمي إن غاب الكاتب)
             $policy,
             WpCategoryMap::build($run),
@@ -117,7 +117,7 @@ class ImportWpPostAction
             $ogImageId = null;
             $featuredFailed = false;
             if ($record->featuredUrl !== null) {
-                $featured = $this->media->import($record->featuredUrl);
+                $featured = $this->media->import($record->featuredUrl, $record->featuredWpAttachmentId);
                 if ($featured['asset'] !== null) {
                     $ogImageId = $featured['asset']->id;
                 } else {

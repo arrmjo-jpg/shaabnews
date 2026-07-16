@@ -1,24 +1,29 @@
-// Static placeholder content for the Phase-1 shell — header nav, breaking bar, and footer
-// category/media columns (placeholders pending the Categories/Media APIs).
-// Footer STATIC PAGES come from the CMS (site-footer.tsx + lib/static-pages.ts), not from here.
+// Header nav fallback + footer media links. Header primary nav is normally CMS-driven
+// (getNavCategories — categories flagged `show_in_header`, see main-nav.tsx); MAIN_NAV/MORE_NAV
+// below are the degraded-mode fallback for when the CMS has zero header categories configured.
+// There's no reliable category slug to link to in that state, so category-shaped fallback entries
+// route to site search instead of a dead `#` link. Footer STATIC PAGES come from the CMS
+// (site-footer.tsx + lib/static-pages.ts), not from here.
 
 export type NavLink = { label: string; href: string };
 
+const searchHref = (label: string): string => `/search?q=${encodeURIComponent(label)}`;
+
 export const MAIN_NAV: NavLink[] = [
-  { label: 'أخبار', href: '#' },
-  { label: 'سياسة', href: '#' },
-  { label: 'اقتصاد', href: '#' },
-  { label: 'رياضة', href: '#' },
-  { label: 'فيديو', href: '#' },
-  { label: 'ريلز', href: '#' },
-  { label: 'رأي', href: '#' },
+  { label: 'أخبار', href: searchHref('أخبار') },
+  { label: 'سياسة', href: searchHref('سياسة') },
+  { label: 'اقتصاد', href: searchHref('اقتصاد') },
+  { label: 'رياضة', href: '/sport' },
+  { label: 'فيديو', href: '/videos' },
+  { label: 'ريلز', href: '/reels' },
+  { label: 'رأي', href: searchHref('رأي') },
 ];
 
 export const MORE_NAV: NavLink[] = [
-  { label: 'ثقافة وفنون', href: '#' },
-  { label: 'تكنولوجيا', href: '#' },
-  { label: 'صحة', href: '#' },
-  { label: 'منوعات', href: '#' },
+  { label: 'ثقافة وفنون', href: searchHref('ثقافة وفنون') },
+  { label: 'تكنولوجيا', href: searchHref('تكنولوجيا') },
+  { label: 'صحة', href: searchHref('صحة') },
+  { label: 'منوعات', href: searchHref('منوعات') },
   { label: 'الجريدة الرقمية', href: '/epaper' },
 ];
 
@@ -39,22 +44,20 @@ export const MOBILE_SECTION_NAV: NavLink[] = [
   ...MORE_NAV.filter((l) => l.label !== 'الجريدة الرقمية'),
 ];
 
-export const BREAKING: string[] = [
-  'عنوان خبر عاجل تجريبيّ يوضّح شكل شريط الأخبار العاجلة في المنصّة',
-  'خبر عاجل ثانٍ — محتوى تجريبيّ (Placeholder) لا يأتي من الباك إند',
-  'خبر عاجل ثالث لعرض سلوك التمرير الأفقيّ داخل الشريط',
+// Footer "الوسائط" column — real internal site sections (not CMS data, just navigation).
+// "الأقسام" (categories) column is CMS-driven — built in site-footer.tsx from getNavCategories(),
+// not listed here. "بودكاست" (podcast) was dropped: no such feature exists anywhere in the app.
+export const MEDIA_FOOTER_LINKS: NavLink[] = [
+  { label: 'فيديو', href: '/videos' },
+  { label: 'ريلز', href: '/reels' },
+  { label: 'الجريدة الرقمية', href: '/epaper' },
+  { label: 'بثّ مباشر', href: '/live' },
 ];
 
-// Footer category/media columns — placeholders until wired to the Categories/Media APIs.
-export const FOOTER_SECTIONS: { title: string; links: string[] }[] = [
-  { title: 'الأقسام', links: ['أخبار', 'سياسة', 'اقتصاد', 'رياضة', 'رأي', 'ثقافة وفنون'] },
-  { title: 'الوسائط', links: ['فيديو', 'ريلز', 'الجريدة الرقمية', 'بودكاست', 'بثّ مباشر'] },
-];
-
-// Platform links not (yet) modeled as CMS pages — placeholders pending Authors/Careers wiring.
+// Platform links not modeled as CMS pages. "الكتّاب" (writers directory) and "فرص العمل"
+// (careers) were dropped: the writers directory page/components were removed in the site
+// refactor and careers has no backend feature at all — neither had a real destination to link to.
 export const PLATFORM_LINKS: NavLink[] = [
-  { label: 'الكتّاب', href: '#' },
-  { label: 'فرص العمل', href: '#' },
   { label: 'اتصل بنا', href: '/contact' },
   { label: 'أعلن معنا', href: '/advertise' },
 ];

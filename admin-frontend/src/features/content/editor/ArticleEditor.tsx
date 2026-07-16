@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -101,20 +101,21 @@ export function ArticleEditor({ value, onChange, articleId, locale, disabled }: 
   });
 
   // Re-sync external value changes (e.g. when article hydrates after fetch).
-  // Compare by JSON to avoid loops with the local onChange.
-  const [lastSerialized, setLastSerialized] = useState<string>(() =>
-    JSON.stringify(value ?? null),
-  );
+  // Compare by JSON to avoid resetting content if the change originated from the editor itself.
   useEffect(() => {
     if (!editor) return;
-    const next = JSON.stringify(value ?? null);
-    if (next === lastSerialized) return;
-    setLastSerialized(next);
+    
+    // Convert the incoming value and the editor's current content to JSON strings for a deep equality check.
+    const currentJson = JSON.stringify(editor.getJSON());
+    const nextJson = JSON.stringify((value as object | null) ?? { type: 'doc', content: [{ type: 'paragraph' }] });
+    
+    if (currentJson === nextJson) return;
+
     editor.commands.setContent(
       (value as object | null) ?? { type: 'doc', content: [{ type: 'paragraph' }] },
       { emitUpdate: false },
     );
-  }, [value, editor, lastSerialized]);
+  }, [value, editor]);
 
   useEffect(() => {
     if (!editor) return;

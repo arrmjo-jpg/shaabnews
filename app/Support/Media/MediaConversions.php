@@ -125,9 +125,20 @@ final class MediaConversions
         }
     }
 
+    /**
+     * مسار ملفّ مؤقّت محلّيّ داخل storage/app/tmp (مملوك للتطبيق، موجود وقابل للكتابة).
+     * لا نستعمل tempnam(): على Windows/PHP 8.4 يفشل (يُعيد false) ويُطلق E_NOTICE حين تحتوي
+     * البادئة على «_» (يحوّله معالج الأخطاء إلى ErrorException)، وكان يخلّف ملفّاً يتيماً لأنّ
+     * اللاحقة تُضاف لمسار مختلف عمّا أنشأه. اسم فريد عبر random_bytes (آمن من التصادم)، عبر-منصّات.
+     */
     private static function tempPath(string $prefix, string $ext = ''): string
     {
-        return tempnam(sys_get_temp_dir(), $prefix).$ext;
+        $dir = storage_path('app/tmp');
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        return $dir.DIRECTORY_SEPARATOR.$prefix.bin2hex(random_bytes(8)).$ext;
     }
 
     private static function resolveWatermarkPath(string $path): ?string

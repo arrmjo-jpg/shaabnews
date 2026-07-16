@@ -24,6 +24,7 @@ class MigrationMedia extends Model
         'media_asset_id',
         'checksum',
         'status',
+        'attempts',
         'imported_at',
         'last_error',
     ];

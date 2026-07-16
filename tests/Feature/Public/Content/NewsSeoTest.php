@@ -99,12 +99,13 @@ it('emits a BreadcrumbList: home → category → article', function (): void {
 
 // ─── Canonical + hreflang ───────────────────────────────────────────────────
 
-it('canonical uses the stable id-slug path', function (): void {
+it('canonical uses the stable id path', function (): void {
     $a = seoNewsArticle();
 
     $res = $this->getJson("/api/v1/ar/articles/{$a->slug}")->assertOk();
 
-    expect($res->json('data.seo.canonical_url'))->toEndWith("/ar/articles/{$a->id}-{$a->slug}");
+    // id-only, no slug (ADR A3.6): the id never changes, unlike the slug.
+    expect($res->json('data.seo.canonical_url'))->toEndWith("/ar/articles/{$a->id}");
 });
 
 it('includes an x-default hreflang entry', function (): void {
@@ -125,6 +126,9 @@ it('news sitemap includes recent articles and excludes stale ones', function ():
 
     $xml = $this->get('/sitemap-news-ar.xml')->assertOk()->getContent();
 
-    expect($xml)->toContain($recent->slug);
-    expect($xml)->not->toContain($old->slug);
+    // <loc> is id-only (no slug, ADR A3.6) — assert on <news:title> instead, and on the id-based URL.
+    expect($xml)->toContain("/ar/articles/{$recent->id}");
+    expect($xml)->toContain($recent->title);
+    expect($xml)->not->toContain("/ar/articles/{$old->id}");
+    expect($xml)->not->toContain($old->title);
 });

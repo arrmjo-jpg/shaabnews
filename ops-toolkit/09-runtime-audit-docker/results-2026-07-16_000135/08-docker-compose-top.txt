@@ -1,0 +1,39 @@
+﻿SERVICE       #   UID       PID    PPID   C   STIME  TTY  TIME      CMD
+admin         1   root      51043  50954  0   19:14  ?    00:00:00  nginx: master process nginx -g daemon off;
+admin         1   statd     51214  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51215  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51216  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51217  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51218  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51219  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51220  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51221  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51222  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51223  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51224  51043  0   19:14  ?    00:00:00  nginx: worker process
+admin         1   statd     51225  51043  0   19:14  ?    00:00:00  nginx: worker process
+backend       1   root      76259  76153  0   20:36  ?    00:00:00  /usr/bin/python3 /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+backend       1   root      76520  76259  0   20:36  ?    00:00:00  php-fpm: master process (/usr/local/etc/php-fpm.conf)
+backend       1   root      76521  76259  0   20:36  ?    00:00:00  nginx: master process nginx -g daemon off;
+backend       1   www-data  76522  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76523  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76524  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76525  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76526  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76527  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76528  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76529  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76530  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76531  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76532  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  76533  76521  0   20:36  ?    00:00:00  nginx: worker process
+backend       1   www-data  80569  76520  0   20:58  ?    00:00:01  php-fpm: pool www
+backend       1   www-data  80588  76520  0   20:58  ?    00:00:00  php-fpm: pool www
+backend       1   www-data  80589  76520  0   20:58  ?    00:00:00  php-fpm: pool www
+frontend      1   1001      76438  76413  0   20:36  ?    00:00:12  next-server (v
+meilisearch   1   root      76257  76154  0   20:36  ?    00:00:00  tini -- /bin/sh -c /bin/meilisearch
+meilisearch   1   root      76363  76257  0   20:36  ?    00:00:03  /bin/meilisearch
+scheduler     1   www-data  76280  76212  0   20:36  ?    00:00:02  php artisan schedule:work
+worker        1   www-data  76256  76108  0   20:36  ?    00:00:06  php artisan queue:work redis --queue=default,notifications,mail,search,sitemap,ai,analytics --tries=3 --backoff=10 --sleep=1 --max-time=3600
+worker-media  1   www-data  76260  76160  0   20:36  ?    00:00:01  php artisan queue:work redis-media --queue=media --tries=2 --timeout=2520 --sleep=2 --max-time=3600
+

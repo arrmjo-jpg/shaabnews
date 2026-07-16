@@ -26,7 +26,7 @@ final class ApiResponse
             'message' => $message,
             'data' => $data,
             'meta' => $meta,
-        ], $status);
+        ], $status, [], JSON_UNESCAPED_UNICODE);
     }
 
     public static function error(
@@ -38,6 +38,6 @@ final class ApiResponse
             'success' => false,
             'message' => $message,
             'errors' => $errors,
-        ], $status);
+        ], $status, [], JSON_UNESCAPED_UNICODE);
     }
 }

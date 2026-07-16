@@ -75,6 +75,7 @@ class CreateArticleAction
                 'is_pinned' => $validated['is_pinned'] ?? false,
                 'is_header' => $validated['is_header'] ?? false,
                 'is_editor_pick' => $validated['is_editor_pick'] ?? false,
+                'is_squares' => $validated['is_squares'] ?? false,
                 // قرار مقفول: التعليقات معطّلة افتراضياً — تفعيل صريح فقط
                 'comments_enabled' => $validated['comments_enabled'] ?? false,
                 // عدّاد المشاهدات يُضبط يدوياً تحريرياً فقط؛ غيره يبدأ من صفر.
@@ -103,6 +104,9 @@ class CreateArticleAction
             }
 
             ArticleRevisionRecorder::snapshot($article, $actor->id);
+
+            // تحديث الفهرس فوراً بعد إسناد العلاقات (categories/tags/media) للوقاية من تأخر مزامنة Pivot
+            $article->searchable();
 
             return $article;
         });

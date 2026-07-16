@@ -1,0 +1,95 @@
+# =====================================================================
+# طبقة مراقبة إضافية — ملف منفصل عمداً، لا تعديل مباشر على docker-compose.yml
+# الأصلي (تقليل مخاطر كسر النشر الحالي).
+#
+# التشغيل (يدمج مع الملف الأصلي دون تعديله):
+#   docker compose -f docker-compose.yml -f ops-toolkit/05-monitoring/docker-compose.monitoring.yml up -d
+#
+# يضيف: Prometheus (تجميع المقاييس) + Grafana (لوحات العرض) + 3 exporters
+# تُترجم حالة MySQL/Redis/النظام إلى مقاييس Prometheus قابلة للرسم البياني
+# عبر الزمن — يحل فجوة "تقييم الجاهزية التشغيلية 45/100" المذكورة في
+# المراجعة النقدية مباشرة.
+# =====================================================================
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - ./ops-toolkit/05-monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    expose:
+      - "9090"
+    # اربطها بمنفذ محلي فقط أثناء التشخيص، لا تعرّضها للإنترنت العام دائماً:
+    # ports:
+    #   - "127.0.0.1:9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-changeme}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    expose:
+      - "3000"
+    depends_on:
+      - prometheus
+    labels:
+      # مثال لربطها بـ Traefik الموجود أصلاً في المشروع (اختياري):
+      - traefik.enable=true
+      - "traefik.http.routers.grafana.rule=Host(`grafana.alpha-cms.shop`)"
+      - traefik.http.routers.grafana.entrypoints=https
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.routers.grafana.tls.certresolver=letsencrypt
+      - traefik.http.services.grafana.loadbalancer.server.port=3000
+
+  mysqld-exporter:
+    image: prom/mysqld-exporter:latest
+    restart: unless-stopped
+    environment:
+      # مستخدم DB منفصل بصلاحيات PROCESS/REPLICATION CLIENT/SELECT فقط —
+      # لا تستخدم بيانات اعتماد التطبيق الرئيسية هنا:
+      DATA_SOURCE_NAME: "${MYSQL_EXPORTER_DSN}"
+    expose:
+      - "9104"
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: "redis://${REDIS_HOST:-127.0.0.1}:${REDIS_PORT:-6379}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
+    expose:
+      - "9121"
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    expose:
+      - "9100"
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+# =====================================================================
+# ملاحظات إلزامية قبل التشغيل على الإنتاج:
+#  1. أنشئ متغيرات .env جديدة: GRAFANA_ADMIN_PASSWORD، MYSQL_EXPORTER_DSN
+#     (بصيغة user:pass@(host:port)/)، REDIS_HOST/PORT/PASSWORD (موجودة أصلاً).
+#  2. أنشئ مستخدم MySQL مخصّص للمراقبة فقط:
+#     CREATE USER 'exporter'@'%' IDENTIFIED BY '...' WITH MAX_USER_CONNECTIONS 3;
+#     GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'exporter'@'%';
+#  3. لا تعرّض منافذ 9090/9100/9104/9121 للإنترنت العام — كلها بيانات
+#     تشخيصية حساسة (بنية الجداول، الاستعلامات، إلخ).
+# =====================================================================

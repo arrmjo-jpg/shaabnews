@@ -7,6 +7,7 @@ namespace App\Modules\Notifications\Contracts;
 use App\Modules\Notifications\Enums\AudienceType;
 use App\Modules\Notifications\Support\AudienceResult;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * مُحلِّل جمهور — يصف الجمهور **محايداً للقناة** (AudienceResult: سبيك نقيّ قابل للتسلسل). لا يعرف
@@ -29,7 +30,7 @@ interface AudienceResolver
      * استعلام المستخدمين الحيّ من السبيك (per-recipient: email/whatsapp/push-لأجهزتهم).
      * null = جمهور topic-only أو غير قائم على مستخدمين. يُبنى وقت التنفيذ، لا يُسلسَل.
      *
-     * @return Builder<\Illuminate\Database\Eloquent\Model>|null
+     * @return Builder<Model>|null
      */
     public function userQuery(AudienceResult $audience): ?Builder;
 
@@ -37,7 +38,7 @@ interface AudienceResolver
      * استعلام الأجهزة الحيّ من السبيك (cohorts الأجهزة: android/ios/guests ⇒ push tokens).
      * null = غير قائم على أجهزة. يُبنى وقت التنفيذ، لا يُسلسَل.
      *
-     * @return Builder<\Illuminate\Database\Eloquent\Model>|null
+     * @return Builder<Model>|null
      */
     public function deviceQuery(AudienceResult $audience): ?Builder;
 }

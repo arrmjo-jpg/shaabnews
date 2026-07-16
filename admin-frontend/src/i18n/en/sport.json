@@ -1,0 +1,55 @@
+{
+  "competitions": {
+    "title": "Competitions",
+    "subtitle": "Sync coverage (what the system keeps fresh) and Match Bar flags (what visitors see) — fully independent.",
+    "new": "New competition",
+    "error": "Failed to load competitions.",
+    "retry": "Retry",
+    "empty": { "title": "No competitions yet", "description": "Add a competition using its provider ID to get started." },
+    "col": {
+      "name": "Competition",
+      "provider": "Provider",
+      "coverage": "Coverage",
+      "lastSynced": "Last synced",
+      "featured": "Featured competition",
+      "featuredUntil": "Featured until",
+      "inMatchBar": "In Match Bar",
+      "sortOrder": "Order"
+    },
+    "coverage": { "tracked": "Tracked", "untracked": "Not tracked", "never": "Never synced" },
+    "form": {
+      "createTitle": "New competition",
+      "provider": "Provider",
+      "providerId": "Provider competition ID",
+      "providerIdHint": "The competition's numeric ID at the provider (e.g. 365Scores).",
+      "name": "Name",
+      "logoUrl": "Logo URL",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel"
+    },
+    "confirm": {
+      "deleteTitle": "Delete competition?",
+      "deleteText": "This will delete “{{name}}” and its synced fixtures. This cannot be undone.",
+      "yes": "Delete"
+    },
+    "noPermission": "You don't have permission to manage competitions."
+  },
+  "matchBarSettings": {
+    "title": "Match Bar",
+    "desc": "A single, exclusive mode controls what the homepage Match Bar shows. Switching modes replaces the previous one immediately — no merge state.",
+    "sourceLabel": "Source",
+    "source": {
+      "disabled": "Disabled",
+      "disabledDesc": "Hide the Match Bar entirely.",
+      "featured_competitions": "Featured Competitions",
+      "featured_competitions_desc": "Show fixtures only from competitions flagged “Featured” (e.g. Club World Cup today, a different tournament later).",
+      "regular_leagues": "Regular Leagues",
+      "regular_leagues_desc": "Show fixtures only from competitions flagged “Show in Match Bar”."
+    },
+    "emptyWarning": "Heads up: this mode is enabled but no competitions currently qualify for it — the bar won't appear to visitors until at least one competition is flagged accordingly on the Competitions page.",
+    "eligibleCount": "Currently eligible competitions: {{count}}",
+    "noPermission": "You don't have permission to edit settings.",
+    "saved": "Match Bar settings saved."
+  }
+}

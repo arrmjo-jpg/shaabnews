@@ -5,12 +5,14 @@ import { MOBILE_SECTION_NAV, SECTIONS_NAV } from '@/components/layout/nav-data';
 import { SectionsBar } from '@/components/layout/sections-bar';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
+import { LeagueMatchesTicker } from '@/components/sport/league-matches-ticker';
+import { getMatchBar } from '@/lib/match-bar';
 import { getSiteSettings } from '@/lib/site-settings';
 
 // Public news-site chrome. شريط أسفل الهيدر متجاوب: الموبايل = أقسام الموقع التحريريّة، سطح المكتب = روابط الوسائط.
 // (الوسائط على الموبايل في القائمة الجانبيّة + الشريط السفليّ.) لوحة /account خارج هذه المجموعة بقالب خاصّ.
 export default async function SiteLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const settings = await getSiteSettings();
+  const [settings, matchBarMatches] = await Promise.all([getSiteSettings(), getMatchBar()]);
   const mediaSections = settings?.newspaper_enabled
     ? [...SECTIONS_NAV, { label: 'الجريدة الرقمية', href: '/epaper' }]
     : SECTIONS_NAV;
@@ -25,6 +27,10 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
       <SectionsBar items={MOBILE_SECTION_NAV} className="lg:hidden" />
       {/* سطح المكتب: روابط الوسائط (كما كان) */}
       <SectionsBar items={mediaSections} className="hidden lg:block" />
+      {/* شريط المباريات — من Laravel حصريًّا (GET /api/v1/match-bar)، تحت شريط الريلز/الفيديو،
+          آخر عنصر في كتلة الهيدر (طلب المستخدم). القرار (معطَّل/بطولات مميَّزة/دوريّات) بالكامل
+          تحريريّ عبر لوحة الإدارة — لا معرّف بطولة مُثبَّت هنا. */}
+      <LeagueMatchesTicker matches={matchBarMatches} />
       {/* إعلانان أسفل الهيدر مباشرة — صفّ واحد على الشاشات العادية (نصف/نصف بفاصل صغير)،
           متراكبان عموديًّا على الجوّال. AdZone القائم 100%؛ بلا إعلان ⇒ null (الغلاف بلا
           حشوة/هوامش ⇒ ارتفاعه صفر حين تفرغ المساحتان — لا فراغ ولا placeholder). RTL:

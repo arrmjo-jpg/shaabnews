@@ -30,20 +30,28 @@ use App\Support\Seo\SearchEngineNotify;
  */
 final class ArticleCdnPurge
 {
-    public static function purge(Article $article, ?string $oldPath = null): void
-    {
-        // المرحلة 7 (عزل الفشل): أيّ استثناء في سلسلة الإبطال/الإخطار (إعدادات/Cloudflare/شبكة)
-        // يُسجَّل عبر report() ولا يكسر استجابة حفظ المحتوى أبداً.
-        rescue(static fn () => self::doPurge($article, $oldPath));
+    public static function purge(
+        Article $article,
+        ?string $oldPath = null,
+        array $oldCategorySlugs = [],
+        array $oldTags = [],
+        ?int $oldAuthorId = null,
+    ): void {
+        rescue(static fn () => self::doPurge($article, $oldPath, $oldCategorySlugs, $oldTags, $oldAuthorId));
     }
 
-    private static function doPurge(Article $article, ?string $oldPath = null): void
-    {
+    private static function doPurge(
+        Article $article,
+        ?string $oldPath = null,
+        array $oldCategorySlugs = [],
+        array $oldTags = [],
+        ?int $oldAuthorId = null,
+    ): void {
         // إخطار واجهة Next بإبطال الوسوم — مستقلّ عن إعداد الـ CDN أدناه (بوابته الخاصّة:
         // FRONTEND_REVALIDATE_URL/secret) ومُجدوَل ومعزول الفشل. يسبق بوابة الـ CDN عمداً.
         // السلَغ القديم يُشتقّ من oldPath (canonical = /{locale}/articles/{id}-{slug}) ليُبطَل وسمه أيضاً.
         $oldSlug = $oldPath !== null ? preg_replace('/^\d+-/', '', basename($oldPath)) : null;
-        FrontendRevalidate::tags(FrontendCacheTags::article($article, $oldSlug));
+        FrontendRevalidate::tags(FrontendCacheTags::article($article, $oldSlug, $oldCategorySlugs, $oldTags, $oldAuthorId));
 
         // إخطار محركات البحث بتحديث الخريطة عند تغيّر مقال منشور (بوابته SEARCH_PING_ENABLED).
         if ($article->status->value === 'published') {

@@ -35,6 +35,42 @@ return [
         // (الحالة الافتراضية الآمنة). لا تُفعِّله إلا بعد ضبط TRUSTED_PROXIES وقفل الأصل
         // على الـ CDN، وإلا انهارت كلّ القراءات إلى عناوين الحافة فخُنِق الملء الشرعيّ.
         'per_ip_rate_limit' => (int) env('ADS_SERVE_PER_IP_RATE_LIMIT', 0),
+
+        // سقف عدد المساحات في دفعة واحدة (GET /ads?page=) — حارس حجم الحمولة/الطلب.
+        'max_zones_per_batch' => (int) env('ADS_MAX_ZONES_PER_BATCH', 40),
+    ],
+
+    // ─── خرائط الصفحات → المساحات (الدفعة الواحدة) ───────────────────
+    // المصدر الخلفيّ الوحيد لعلاقة صفحة↔مساحات: تطلب الواجهة دفعةً واحدة بـ page= فقط (بلا معرفة
+    // أسماء المساحات — فصل تامّ عن معماريّة المواضع). 'chrome' مساحات مشترَكة (هيدر/سلايدر) تُدمَج
+    // مع كلّ صفحة. عند غياب page في الخريطة تُعاد chrome وحدها. (تُغلَّب بمعامل zones= الصريح للحالات
+    // النادرة — صفحة بمساحة/اثنتين، req 10.)
+    'pages' => [
+        'chrome' => [
+            'aalan_fwq_alhydr_fy_bdaya_almwqa',
+            'aalan_fwq_alhydr',
+            'aalan_kbyr_asfl_alhydr_mbashra',
+            'aalan_fy_qsm_slaydr_kbyr_1410',
+            'aalan_asfl_alhydr_mbashra_ymyn',
+            'aalan_asfl_alhydr_mbashra_shmal',
+        ],
+        'homepage' => [
+            'aalan_kbyr_asfl_alhyrw_1410',
+            'aalan_asfl_alslaydr_mbarshraymyn',
+            'aalan_asfl_alslaydr_mbarshra_shmal',
+            'aalan_fwq_akhr_almstjdat_ymyn',
+            'aalan_fwq_akhr_almstjdat_shmal',
+            'aalan_fwq_qsm_alrylz_ymyn',
+            'aalan_fwq_qsm_alrylz_shmal',
+            'aalan_kbyr_fwq_qsm_alakthr_shywha',
+        ],
+        'article' => [
+            'aalan_asfl_alkhbr_rym_1',
+            'aalan_asfl_alkhbr_rym_2',
+        ],
+        'inner' => [
+            'aalan_fy_alsfhat_aldakhlya_llmntjat',
+        ],
     ],
 
     // ─── التتبّع (impressions/clicks) ────────────────────────────────

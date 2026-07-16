@@ -22,6 +22,8 @@ class UploadBrandingMediaAction
     private const FIELD_DIR = [
         'logo_light' => 'branding/logos',
         'logo_dark' => 'branding/logos',
+        'logo_light_en' => 'branding/logos',
+        'logo_dark_en' => 'branding/logos',
         'favicon' => 'branding/favicon',
         'watermark_image' => 'branding/watermarks',
     ];

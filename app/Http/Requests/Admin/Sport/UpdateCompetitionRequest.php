@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Admin\Sport;
+
+use App\Http\Requests\BaseFormRequest;
+
+/**
+ * تحديث بطولة — يجمع بين حقلَي التغطية (is_tracked) وأعلام شريط المباريات التحريريّة عمدًا
+ * في نموذج واحد للتبسيط الإداريّ (شاشة واحدة)، لكنّهما يبقيان **مستقلَّين منطقيًّا تمامًا**:
+ * BuildMatchBarAction لا يقرأ is_tracked إطلاقًا، وSyncTrackedCompetitionFixturesAction لا
+ * يقرأ أعلام الشريط إطلاقًا — الفصل بنيويّ في الإجراءات، لا مجرّد اصطلاح هنا.
+ */
+class UpdateCompetitionRequest extends BaseFormRequest
+{
+    public function authorize(): bool
+    {
+        return true; // الصلاحية مفروضة عبر middleware المسار (competitions.manage)
+    }
+
+    /** @return array<string,mixed> */
+    public function rules(): array
+    {
+        return [
+            'name' => ['sometimes', 'string', 'max:150'],
+            'logo_url' => ['sometimes', 'nullable', 'url', 'max:2048'],
+            'is_active' => ['sometimes', 'boolean'],
+
+            'is_tracked' => ['sometimes', 'boolean'],
+
+            'is_featured_tournament' => ['sometimes', 'boolean'],
+            'featured_until' => ['sometimes', 'nullable', 'date'],
+            'show_in_match_bar' => ['sometimes', 'boolean'],
+            'match_bar_sort_order' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:65535'],
+        ];
+    }
+}

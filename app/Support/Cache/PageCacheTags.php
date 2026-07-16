@@ -26,13 +26,18 @@ final class PageCacheTags
     /** وسم قائمة/تنقّل لغة. */
     public static function feed(string $locale): string
     {
-        return 'pages:feed:'.$locale;
+        return self::scheme()->feed($locale);
     }
 
     /** وسم تفاصيل صفحة واحدة (بالـ locale+slug — مطابق لمفتاح الكاش). */
     public static function detail(string $locale, string $slug): string
     {
-        return 'pages:detail:'.$locale.':'.$slug;
+        return self::scheme()->detail($locale, $slug);
+    }
+
+    private static function scheme(): CacheTagScheme
+    {
+        return new CacheTagScheme(self::ALL);
     }
 
     /**
@@ -42,7 +47,7 @@ final class PageCacheTags
      */
     public static function feedTags(string $locale): array
     {
-        return [self::ALL, self::feed($locale)];
+        return self::scheme()->feedTags($locale);
     }
 
     /**
@@ -52,7 +57,7 @@ final class PageCacheTags
      */
     public static function detailTags(string $locale, string $slug): array
     {
-        return [self::ALL, self::detail($locale, $slug)];
+        return self::scheme()->detailTags($locale, $slug);
     }
 
     /**
@@ -63,18 +68,11 @@ final class PageCacheTags
      */
     public static function invalidationTags(Page $page, ?string $oldLocale = null, ?string $oldSlug = null): array
     {
-        $tags = [self::feed($page->locale), self::detail($page->locale, (string) $page->slug)];
-
-        $oldLocale ??= $page->locale;
-        $oldSlug ??= (string) $page->slug;
-
-        if ($oldLocale !== $page->locale) {
-            $tags[] = self::feed($oldLocale);
-        }
-        if ($oldLocale !== $page->locale || $oldSlug !== (string) $page->slug) {
-            $tags[] = self::detail($oldLocale, $oldSlug);
-        }
-
-        return array_values(array_unique($tags));
+        return self::scheme()->invalidationTags(
+            dimension: $page->locale,
+            slug: (string) $page->slug,
+            oldDimension: $oldLocale,
+            oldSlug: $oldSlug,
+        );
     }
 }

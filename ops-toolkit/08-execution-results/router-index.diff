@@ -1,0 +1,236 @@
+--- /sessions/clever-pensive-sagan/mnt/shaabjo/admin-frontend/src/router/index.tsx	2026-07-14 19:30:40.976441500 +0300
++++ /tmp/bench/admin-frontend/src/router/index.tsx	2026-07-15 18:46:31.427858100 +0300
+@@ -1,111 +1,112 @@
++import { lazy, Suspense } from 'react';
+ import { createBrowserRouter, Navigate } from 'react-router-dom';
+ import { AuthLayout } from '@/layouts/AuthLayout';
+ import { AdminLayout } from '@/layouts/AdminLayout';
+ import { ProtectedRoute } from './ProtectedRoute';
+ import { NewspaperEnabledRoute } from './NewspaperEnabledRoute';
+-import DashboardPage from '@/features/dashboard/pages/DashboardPage';
+-import LoginPage from '@/features/auth/pages/LoginPage';
+-import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
+-import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
+-import VerifyEmailPage from '@/features/auth/pages/VerifyEmailPage';
+-import SettingsLayoutPage from '@/features/settings/pages/SettingsLayoutPage';
+-import GeneralSettingsPage from '@/features/settings/pages/GeneralSettingsPage';
+-import BrandingSettingsPage from '@/features/settings/pages/BrandingSettingsPage';
+-import EmailSettingsPage from '@/features/settings/pages/EmailSettingsPage';
+-import SocialSettingsPage from '@/features/settings/pages/SocialSettingsPage';
+-import AnalyticsSettingsPage from '@/features/settings/pages/AnalyticsSettingsPage';
+-import MediaStorageSettingsPage from '@/features/settings/pages/MediaStorageSettingsPage';
+-import NewspaperSettingsPage from '@/features/settings/pages/NewspaperSettingsPage';
+-import MatchBarSettingsPage from '@/features/sport/pages/MatchBarSettingsPage';
+-import CompetitionsPage from '@/features/sport/pages/CompetitionsPage';
+-import ThirdPartyLayoutPage from '@/features/third-party/pages/ThirdPartyLayoutPage';
+-import SocialLoginPage from '@/features/third-party/pages/SocialLoginPage';
+-import RecaptchaPage from '@/features/third-party/pages/RecaptchaPage';
+-import FirebasePage from '@/features/third-party/pages/FirebasePage';
+-import GoogleMapsPage from '@/features/third-party/pages/GoogleMapsPage';
+-import AiProvidersPage from '@/features/third-party/pages/AiProvidersPage';
+-import WhatsappPage from '@/features/third-party/pages/WhatsappPage';
+-import AppLinksPage from '@/features/third-party/pages/AppLinksPage';
+-import IntegrationsPage from '@/features/third-party/pages/IntegrationsPage';
+-import CdnPage from '@/features/cdn/pages/CdnPage';
+-import SchedulerPage from '@/features/system/pages/SchedulerPage';
+-import OpsOverviewPage from '@/features/system/pages/OpsOverviewPage';
+-import FailedJobsPage from '@/features/system/pages/FailedJobsPage';
+-import DiagnosticsPage from '@/features/system/pages/DiagnosticsPage';
+-import AiUsagePage from '@/features/ai/pages/AiUsagePage';
+-import UsersPage from '@/features/user-management/pages/UsersPage';
+-import TeamMembersPage from '@/features/team/pages/TeamMembersPage';
+-import TeamMemberFormPage from '@/features/team/pages/TeamMemberFormPage';
+-import UserFormPage from '@/features/user-management/pages/UserFormPage';
+-import RolesPage from '@/features/user-management/pages/RolesPage';
+-import PermissionsPage from '@/features/user-management/pages/PermissionsPage';
+-import PermissionGroupsPage from '@/features/user-management/pages/PermissionGroupsPage';
+-import WriterRequestsPage from '@/features/user-management/pages/WriterRequestsPage';
+-import ProfilePage from '@/features/profile/pages/ProfilePage';
+-import ChatPage from '@/features/chat/pages/ChatPage';
+-import ContactUsPage from '@/features/contact/pages/ContactUsPage';
+-import ActivityLogPage from '@/features/user-management/pages/ActivityLogPage';
+-import ArticlesPage from '@/features/content/pages/ArticlesPage';
+-import ArticleFormPage from '@/features/content/pages/ArticleFormPage';
+-import ArticleAnalyticsPage from '@/features/content/pages/ArticleAnalyticsPage';
+-import ArticleAnalyticsOverviewPage from '@/features/content/pages/ArticleAnalyticsOverviewPage';
+-import ReviewQueuePage from '@/features/content/pages/ReviewQueuePage';
+-import CategoriesPage from '@/features/content/pages/CategoriesPage';
+-import TagsPage from '@/features/content/pages/TagsPage';
+-import CommentsModerationPage from '@/features/content/pages/CommentsModerationPage';
+-import ReelsPage from '@/features/content/pages/ReelsPage';
+-import ReelFormPage from '@/features/content/pages/ReelFormPage';
+-import ReelAnalyticsPage from '@/features/content/pages/ReelAnalyticsPage';
+-import ReelAnalyticsOverviewPage from '@/features/content/pages/ReelAnalyticsOverviewPage';
+-import PagesPage from '@/features/content/pages/PagesPage';
+-import PageFormPage from '@/features/content/pages/PageFormPage';
+-import LiveCoverageConsole from '@/features/content/pages/LiveCoverageConsole';
+-import MediaLibraryPage from '@/features/content/pages/MediaLibraryPage';
+-import VideoDashboardPage from '@/features/video-library/pages/VideoDashboardPage';
+-import VideosPage from '@/features/video-library/pages/VideosPage';
+-import VideoFormPage from '@/features/video-library/pages/VideoFormPage';
+-import VideoCategoriesPage from '@/features/video-library/pages/VideoCategoriesPage';
+-import PlaylistsPage from '@/features/video-library/pages/PlaylistsPage';
+-import PlaylistFormPage from '@/features/video-library/pages/PlaylistFormPage';
+-import AnalyticsPage from '@/features/video-library/pages/AnalyticsPage';
+-import VideoAnalyticsPage from '@/features/video-library/pages/VideoAnalyticsPage';
+-import OperationsPage from '@/features/video-library/pages/OperationsPage';
+-import CommandCenterPage from '@/features/broadcast/pages/CommandCenterPage';
+-import BroadcastsPage from '@/features/broadcast/pages/BroadcastsPage';
+-import BroadcastFormPage from '@/features/broadcast/pages/BroadcastFormPage';
+-import BroadcastCategoriesPage from '@/features/broadcast/pages/BroadcastCategoriesPage';
+-import BroadcastAnalyticsPage from '@/features/broadcast/pages/BroadcastAnalyticsPage';
+-import MigrationConsolePage from '@/features/wp-migration/pages/MigrationConsolePage';
+-import VertixMigrationPage from '@/features/vertix/pages/VertixMigrationPage';
+-import EpapersPage from '@/features/epaper/pages/EpapersPage';
+-import EpaperFormPage from '@/features/epaper/pages/EpaperFormPage';
+-import EpaperAnalyticsDashboardPage from '@/features/epaper/pages/EpaperAnalyticsDashboardPage';
+-import WhatsappGroupsPage from '@/features/whatsapp/pages/WhatsappGroupsPage';
+-import WhatsappContactsPage from '@/features/whatsapp/pages/WhatsappContactsPage';
+-import WhatsappCampaignsPage from '@/features/whatsapp/pages/WhatsappCampaignsPage';
+-import WhatsappCampaignFormPage from '@/features/whatsapp/pages/WhatsappCampaignFormPage';
+-import WhatsappCampaignDetailPage from '@/features/whatsapp/pages/WhatsappCampaignDetailPage';
+-import CampaignsPage from '@/features/advertising/pages/CampaignsPage';
+-import CampaignFormPage from '@/features/advertising/pages/CampaignFormPage';
+-import AdZonesPage from '@/features/advertising/pages/AdZonesPage';
+-import AdZoneFormPage from '@/features/advertising/pages/AdZoneFormPage';
+-import CreativesPage from '@/features/advertising/pages/CreativesPage';
+-import CreativeFormPage from '@/features/advertising/pages/CreativeFormPage';
+-import AdPlacementsPage from '@/features/advertising/pages/PlacementsPage';
+-import AdsAnalyticsPage from '@/features/advertising/pages/AdsAnalyticsPage';
+-import PollsPage from '@/features/polls/pages/PollsPage';
+-import PollFormPage from '@/features/polls/pages/PollFormPage';
+-import PollsTrashPage from '@/features/polls/pages/PollsTrashPage';
+-import PollAnalyticsOverviewPage from '@/features/polls/pages/PollAnalyticsOverviewPage';
+-import PollAnalyticsPage from '@/features/polls/pages/PollAnalyticsPage';
+-import NotifDashboardPage from '@/features/notifications/pages/NotificationsDashboardPage';
+-import NotifCampaignsPage from '@/features/notifications/pages/CampaignsPage';
+-import NotifCampaignDetailPage from '@/features/notifications/pages/CampaignDetailPage';
+-import NotifChannelHealthPage from '@/features/notifications/pages/ChannelHealthPage';
+-import NotifComposerPage from '@/features/notifications/pages/CampaignComposerPage';
+-import NotifEventMatrixPage from '@/features/notifications/pages/EventMatrixPage';
+-import NotifTemplatesPage from '@/features/notifications/pages/TemplatesPage';
+-import NotifSettingsPage from '@/features/notifications/pages/NotificationSettingsPage';
++const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
++const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
++const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'));
++const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'));
++const VerifyEmailPage = lazy(() => import('@/features/auth/pages/VerifyEmailPage'));
++const SettingsLayoutPage = lazy(() => import('@/features/settings/pages/SettingsLayoutPage'));
++const GeneralSettingsPage = lazy(() => import('@/features/settings/pages/GeneralSettingsPage'));
++const BrandingSettingsPage = lazy(() => import('@/features/settings/pages/BrandingSettingsPage'));
++const EmailSettingsPage = lazy(() => import('@/features/settings/pages/EmailSettingsPage'));
++const SocialSettingsPage = lazy(() => import('@/features/settings/pages/SocialSettingsPage'));
++const AnalyticsSettingsPage = lazy(() => import('@/features/settings/pages/AnalyticsSettingsPage'));
++const MediaStorageSettingsPage = lazy(() => import('@/features/settings/pages/MediaStorageSettingsPage'));
++const NewspaperSettingsPage = lazy(() => import('@/features/settings/pages/NewspaperSettingsPage'));
++const MatchBarSettingsPage = lazy(() => import('@/features/sport/pages/MatchBarSettingsPage'));
++const CompetitionsPage = lazy(() => import('@/features/sport/pages/CompetitionsPage'));
++const ThirdPartyLayoutPage = lazy(() => import('@/features/third-party/pages/ThirdPartyLayoutPage'));
++const SocialLoginPage = lazy(() => import('@/features/third-party/pages/SocialLoginPage'));
++const RecaptchaPage = lazy(() => import('@/features/third-party/pages/RecaptchaPage'));
++const FirebasePage = lazy(() => import('@/features/third-party/pages/FirebasePage'));
++const GoogleMapsPage = lazy(() => import('@/features/third-party/pages/GoogleMapsPage'));
++const AiProvidersPage = lazy(() => import('@/features/third-party/pages/AiProvidersPage'));
++const WhatsappPage = lazy(() => import('@/features/third-party/pages/WhatsappPage'));
++const AppLinksPage = lazy(() => import('@/features/third-party/pages/AppLinksPage'));
++const IntegrationsPage = lazy(() => import('@/features/third-party/pages/IntegrationsPage'));
++const CdnPage = lazy(() => import('@/features/cdn/pages/CdnPage'));
++const SchedulerPage = lazy(() => import('@/features/system/pages/SchedulerPage'));
++const OpsOverviewPage = lazy(() => import('@/features/system/pages/OpsOverviewPage'));
++const FailedJobsPage = lazy(() => import('@/features/system/pages/FailedJobsPage'));
++const DiagnosticsPage = lazy(() => import('@/features/system/pages/DiagnosticsPage'));
++const AiUsagePage = lazy(() => import('@/features/ai/pages/AiUsagePage'));
++const UsersPage = lazy(() => import('@/features/user-management/pages/UsersPage'));
++const TeamMembersPage = lazy(() => import('@/features/team/pages/TeamMembersPage'));
++const TeamMemberFormPage = lazy(() => import('@/features/team/pages/TeamMemberFormPage'));
++const UserFormPage = lazy(() => import('@/features/user-management/pages/UserFormPage'));
++const RolesPage = lazy(() => import('@/features/user-management/pages/RolesPage'));
++const PermissionsPage = lazy(() => import('@/features/user-management/pages/PermissionsPage'));
++const PermissionGroupsPage = lazy(() => import('@/features/user-management/pages/PermissionGroupsPage'));
++const WriterRequestsPage = lazy(() => import('@/features/user-management/pages/WriterRequestsPage'));
++const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
++const ChatPage = lazy(() => import('@/features/chat/pages/ChatPage'));
++const ContactUsPage = lazy(() => import('@/features/contact/pages/ContactUsPage'));
++const ActivityLogPage = lazy(() => import('@/features/user-management/pages/ActivityLogPage'));
++const ArticlesPage = lazy(() => import('@/features/content/pages/ArticlesPage'));
++const ArticleFormPage = lazy(() => import('@/features/content/pages/ArticleFormPage'));
++const ArticleAnalyticsPage = lazy(() => import('@/features/content/pages/ArticleAnalyticsPage'));
++const ArticleAnalyticsOverviewPage = lazy(() => import('@/features/content/pages/ArticleAnalyticsOverviewPage'));
++const ReviewQueuePage = lazy(() => import('@/features/content/pages/ReviewQueuePage'));
++const CategoriesPage = lazy(() => import('@/features/content/pages/CategoriesPage'));
++const TagsPage = lazy(() => import('@/features/content/pages/TagsPage'));
++const CommentsModerationPage = lazy(() => import('@/features/content/pages/CommentsModerationPage'));
++const ReelsPage = lazy(() => import('@/features/content/pages/ReelsPage'));
++const ReelFormPage = lazy(() => import('@/features/content/pages/ReelFormPage'));
++const ReelAnalyticsPage = lazy(() => import('@/features/content/pages/ReelAnalyticsPage'));
++const ReelAnalyticsOverviewPage = lazy(() => import('@/features/content/pages/ReelAnalyticsOverviewPage'));
++const PagesPage = lazy(() => import('@/features/content/pages/PagesPage'));
++const PageFormPage = lazy(() => import('@/features/content/pages/PageFormPage'));
++const LiveCoverageConsole = lazy(() => import('@/features/content/pages/LiveCoverageConsole'));
++const MediaLibraryPage = lazy(() => import('@/features/content/pages/MediaLibraryPage'));
++const VideoDashboardPage = lazy(() => import('@/features/video-library/pages/VideoDashboardPage'));
++const VideosPage = lazy(() => import('@/features/video-library/pages/VideosPage'));
++const VideoFormPage = lazy(() => import('@/features/video-library/pages/VideoFormPage'));
++const VideoCategoriesPage = lazy(() => import('@/features/video-library/pages/VideoCategoriesPage'));
++const PlaylistsPage = lazy(() => import('@/features/video-library/pages/PlaylistsPage'));
++const PlaylistFormPage = lazy(() => import('@/features/video-library/pages/PlaylistFormPage'));
++const AnalyticsPage = lazy(() => import('@/features/video-library/pages/AnalyticsPage'));
++const VideoAnalyticsPage = lazy(() => import('@/features/video-library/pages/VideoAnalyticsPage'));
++const OperationsPage = lazy(() => import('@/features/video-library/pages/OperationsPage'));
++const CommandCenterPage = lazy(() => import('@/features/broadcast/pages/CommandCenterPage'));
++const BroadcastsPage = lazy(() => import('@/features/broadcast/pages/BroadcastsPage'));
++const BroadcastFormPage = lazy(() => import('@/features/broadcast/pages/BroadcastFormPage'));
++const BroadcastCategoriesPage = lazy(() => import('@/features/broadcast/pages/BroadcastCategoriesPage'));
++const BroadcastAnalyticsPage = lazy(() => import('@/features/broadcast/pages/BroadcastAnalyticsPage'));
++const MigrationConsolePage = lazy(() => import('@/features/wp-migration/pages/MigrationConsolePage'));
++const VertixMigrationPage = lazy(() => import('@/features/vertix/pages/VertixMigrationPage'));
++const EpapersPage = lazy(() => import('@/features/epaper/pages/EpapersPage'));
++const EpaperFormPage = lazy(() => import('@/features/epaper/pages/EpaperFormPage'));
++const EpaperAnalyticsDashboardPage = lazy(() => import('@/features/epaper/pages/EpaperAnalyticsDashboardPage'));
++const WhatsappGroupsPage = lazy(() => import('@/features/whatsapp/pages/WhatsappGroupsPage'));
++const WhatsappContactsPage = lazy(() => import('@/features/whatsapp/pages/WhatsappContactsPage'));
++const WhatsappCampaignsPage = lazy(() => import('@/features/whatsapp/pages/WhatsappCampaignsPage'));
++const WhatsappCampaignFormPage = lazy(() => import('@/features/whatsapp/pages/WhatsappCampaignFormPage'));
++const WhatsappCampaignDetailPage = lazy(() => import('@/features/whatsapp/pages/WhatsappCampaignDetailPage'));
++const CampaignsPage = lazy(() => import('@/features/advertising/pages/CampaignsPage'));
++const CampaignFormPage = lazy(() => import('@/features/advertising/pages/CampaignFormPage'));
++const AdZonesPage = lazy(() => import('@/features/advertising/pages/AdZonesPage'));
++const AdZoneFormPage = lazy(() => import('@/features/advertising/pages/AdZoneFormPage'));
++const CreativesPage = lazy(() => import('@/features/advertising/pages/CreativesPage'));
++const CreativeFormPage = lazy(() => import('@/features/advertising/pages/CreativeFormPage'));
++const AdPlacementsPage = lazy(() => import('@/features/advertising/pages/PlacementsPage'));
++const AdsAnalyticsPage = lazy(() => import('@/features/advertising/pages/AdsAnalyticsPage'));
++const PollsPage = lazy(() => import('@/features/polls/pages/PollsPage'));
++const PollFormPage = lazy(() => import('@/features/polls/pages/PollFormPage'));
++const PollsTrashPage = lazy(() => import('@/features/polls/pages/PollsTrashPage'));
++const PollAnalyticsOverviewPage = lazy(() => import('@/features/polls/pages/PollAnalyticsOverviewPage'));
++const PollAnalyticsPage = lazy(() => import('@/features/polls/pages/PollAnalyticsPage'));
++const NotifDashboardPage = lazy(() => import('@/features/notifications/pages/NotificationsDashboardPage'));
++const NotifCampaignsPage = lazy(() => import('@/features/notifications/pages/CampaignsPage'));
++const NotifCampaignDetailPage = lazy(() => import('@/features/notifications/pages/CampaignDetailPage'));
++const NotifChannelHealthPage = lazy(() => import('@/features/notifications/pages/ChannelHealthPage'));
++const NotifComposerPage = lazy(() => import('@/features/notifications/pages/CampaignComposerPage'));
++const NotifEventMatrixPage = lazy(() => import('@/features/notifications/pages/EventMatrixPage'));
++const NotifTemplatesPage = lazy(() => import('@/features/notifications/pages/TemplatesPage'));
++const NotifSettingsPage = lazy(() => import('@/features/notifications/pages/NotificationSettingsPage'));
+ import { RouteError } from '@/components/RouteError';
+ import { paths } from './paths';
+ 
+@@ -129,11 +130,13 @@
+     path: paths.verifyEmail,
+     errorElement: <RouteError />,
+     element: (
+-      <div className="grid min-h-screen place-items-center p-6">
+-        <div className="w-full max-w-md animate-fade-in">
+-          <VerifyEmailPage />
++      <Suspense fallback={<div className="grid min-h-screen place-items-center p-6">…</div>}>
++        <div className="grid min-h-screen place-items-center p-6">
++          <div className="w-full max-w-md animate-fade-in">
++            <VerifyEmailPage />
++          </div>
+         </div>
+-      </div>
++      </Suspense>
+     ),
+   },
+   {

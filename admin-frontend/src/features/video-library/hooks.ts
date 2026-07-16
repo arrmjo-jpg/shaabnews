@@ -27,7 +27,7 @@ function useVlInvalidate() {
 export function useVideos(params: VideosListParams) {
   return useQuery({
     queryKey: [...VL, 'videos', params],
-    queryFn: () => videosService.list(params),
+    queryFn: ({ signal }) => videosService.list(params, signal),
   });
 }
 
@@ -250,7 +250,7 @@ export function useForceDeleteVideoCategory() {
 export function usePlaylists(params: PlaylistsListParams) {
   return useQuery({
     queryKey: [...VL, 'playlists', params],
-    queryFn: () => videoPlaylistsService.list(params),
+    queryFn: ({ signal }) => videoPlaylistsService.list(params, signal),
   });
 }
 

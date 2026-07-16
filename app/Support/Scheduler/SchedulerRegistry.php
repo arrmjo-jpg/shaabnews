@@ -195,6 +195,34 @@ final class SchedulerRegistry
                 'critical' => false,
                 'manual_run_allowed' => true,
             ],
+            'competitions_sync_fixtures' => [
+                'command' => 'competitions:sync-fixtures',
+                'cron' => '* * * * *',
+                'frequency' => 'everyMinute',
+                'critical' => false,
+                'manual_run_allowed' => true,
+            ],
+            'notifications_probe_channels' => [
+                'command' => 'notifications:probe-channels',
+                'cron' => '*/10 * * * *',
+                'frequency' => 'everyTenMinutes',
+                'critical' => false,
+                'manual_run_allowed' => true,
+            ],
+            'notifications_dispatch_due' => [
+                'command' => 'notifications:dispatch-due',
+                'cron' => '* * * * *',
+                'frequency' => 'everyMinute',
+                'critical' => true,
+                'manual_run_allowed' => true,
+            ],
+            'notifications_reconcile' => [
+                'command' => 'notifications:reconcile-campaigns',
+                'cron' => '*/15 * * * *',
+                'frequency' => 'everyFifteenMinutes',
+                'critical' => false,
+                'manual_run_allowed' => true,
+            ],
         ];
     }
 

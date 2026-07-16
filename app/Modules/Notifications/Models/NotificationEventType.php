@@ -6,6 +6,7 @@ namespace App\Modules\Notifications\Models;
 
 use App\Support\Audit\AuditsChanges;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * نوع حدث إشعار — مرآة DB لـEventCatalog (المصدر الكوديّ). الأدمن يبدّل enabled فقط؛ بقيّة
@@ -37,7 +38,7 @@ class NotificationEventType extends Model
         ];
     }
 
-    public function channels(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function channels(): HasMany
     {
         return $this->hasMany(NotificationEventChannel::class, 'event_id');
     }

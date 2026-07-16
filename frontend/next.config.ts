@@ -11,12 +11,6 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.dirname(fileURLToPath(import.meta.url)),
 
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   experimental: {
     cpus: 1,
     workerThreads: false,
@@ -32,6 +26,22 @@ const nextConfig: NextConfig = {
       { source: "/:locale(ar|en)/epaper", destination: `${API}/:locale/epaper` },
       { source: "/:locale(ar|en)/epaper/:path*", destination: `${API}/:locale/epaper/:path*` },
       { source: "/build/:path*", destination: `${API}/build/:path*` },
+    ];
+  },
+
+  // Legacy URL migration for routes retired in the site refactor. Article/category shapes map
+  // 1:1 to their new equivalents (same backend slug/id, just a new path prefix) so those are
+  // permanent redirects for SEO link-equity. /en/* (English locale, fully removed) and /writers
+  // (directory page removed, no replacement) don't have an equivalent page to point at — routed
+  // home rather than left as a bare 404, but not asserted as a permanent 1:1 replacement.
+  async redirects() {
+    return [
+      { source: "/article/:path*", destination: "/articles/:path*", permanent: true },
+      { source: "/category/:id(\\d+)/:slug*", destination: "/category/:slug*", permanent: true },
+      { source: "/category-:id(\\d+)/:slug*", destination: "/category/:slug*", permanent: true },
+      { source: "/writers", destination: "/", permanent: false },
+      { source: "/en", destination: "/", permanent: false },
+      { source: "/en/:path*", destination: "/", permanent: false },
     ];
   },
 };

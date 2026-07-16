@@ -58,10 +58,14 @@ type Item = z.infer<typeof ItemSchema>;
 
 const EnvelopeSchema = z.object({ data: z.array(ItemSchema).nullish() }).passthrough();
 
-// نزع بادئة اللغة من canonical_path (الواجهة العامة بلا /ar|/en) → /articles/{id}-{slug}.
+// نزع بادئة اللغة من canonical_path، ثمّ تطبيع مسار المقال القانوني من الباك إند (Article::canonicalPath،
+// وفق ADR A3.6): /article/{id} (بالمفرد، بلا slug) → مسار الواجهة الفعليّ /articles/{id} (بالجمع؛
+// صفحة /articles/[idslug] تقبل id مجرّداً أو id-slug). بلا هذا التطبيع تُصبح روابط كلّ مقال معطوبة.
 function localeless(path: string | null | undefined): string {
   if (!path) return '#';
-  return path.replace(/^\/[a-z]{2}(?=\/)/, '') || '#';
+  const stripped = path.replace(/^\/[a-z]{2}(?=\/)/, '');
+  if (!stripped) return '#';
+  return stripped.replace(/^\/article\//, '/articles/');
 }
 
 // شارة الكرت من أعلام حقيقية فقط: تغطية مباشرة (live) تسبق عاجل (breaking)؛ غير ذلك ⇒ بلا شارة.
@@ -120,6 +124,9 @@ export const getHeroFeed = (locale = 'ar') => fetchFeed('hero', 5, locale, 300);
 
 // كتلة «آخر المستجدات»: أخبار الهيدر (is_header) — حدّ 9 (كرت رئيسيّ + شبكة 8)، ISR 300s.
 export const getHeaderFeed = (locale = 'ar') => fetchFeed('header', 9, locale, 300);
+
+// شريط الأخبار العاجلة (is_breaking) — حدّ 10، ISR 60s (عاجل = تحديث أسرع).
+export const getBreakingFeed = (locale = 'ar') => fetchFeed('breaking', 10, locale, 60);
 
 // صفحة «آخر المستجدات» /latest: أحدث الأخبار المنشورة — حدّ 30، ISR 60s (أحدث = تحديث أسرع).
 export const getLatestFeed = (locale = 'ar') => fetchFeed('latest', 30, locale, 60);

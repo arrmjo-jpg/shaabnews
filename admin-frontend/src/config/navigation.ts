@@ -8,6 +8,7 @@ import {
   UsersRound,
   User,
   ShieldCheck,
+  Trophy,
   KeyRound,
   Boxes,
   PenLine,
@@ -108,6 +109,12 @@ export const navSections: NavSection[] = [
       { key: 'vlAnalytics', to: paths.vlAnalytics, icon: BarChart3, permission: 'videos.view' },
       { key: 'vlOperations', to: paths.vlOperations, icon: Wrench, permission: 'videos.view' },
     ],
+  },
+  {
+    key: 'sport',
+    titleKey: 'sport',
+    icon: Trophy,
+    items: [{ key: 'competitions', to: paths.competitions, icon: Trophy, permission: 'competitions.view' }],
   },
   {
     key: 'broadcast',

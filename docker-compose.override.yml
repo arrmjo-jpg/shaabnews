@@ -1,0 +1,256 @@
+# ── Local development overrides (Docker Desktop — Windows / macOS / Linux) ─────────────────────
+# Auto-loaded by `docker compose up` alongside docker-compose.yml (standard Compose behavior —
+# no `-f` flag needed). Coolify does NOT read this file in production; it only applies when a
+# developer runs Compose directly from a checkout of this repo.
+#
+# What this changes: docker-compose.yml's media bind mounts point at absolute Linux host paths
+# (/data/uploads, /data/storage-public) that only exist on the production server. This file
+# replaces them for local dev with:
+#   - storage/app/public -> a RELATIVE bind mount into the repo checkout (./storage/app/public).
+#     Works unmodified on Windows/macOS/Linux; Compose resolves it against the project directory.
+#   - public/uploads -> the Docker-managed `uploads_data` NAMED VOLUME (not a bind mount). It's
+#     seeded once from ./public/uploads via the `seed-uploads` service below, then the stack runs
+#     entirely off that volume - no host media path is needed once seeded. See seed-uploads's own
+#     comment for the one-time copy step and its idempotency guarantee.
+#
+# Result: storage/app/public changes on the host appear in the container instantly (bind mount);
+# public/uploads is fully Docker-managed after the one-time seed (named volume).
+#
+# Note on merge semantics: Compose merges `volumes:` entries by target container path (the part
+# after the colon) — a mount defined here for the same target REPLACES the one in
+# docker-compose.yml for that service rather than adding a second, conflicting mount. This is
+# documented Compose merge behavior; run `docker compose config` once after pulling this file to
+# see the fully-resolved result before relying on it.
+
+# ROOT CAUSE FIX (worker/worker-media restart loop): .env's DB_HOST/REDIS_HOST are 127.0.0.1 —
+# correct for the non-Docker native workflow (`php artisan serve` + a locally-installed MySQL/
+# Redis, evidenced by .env's Windows-native FFMPEG_PATH=C:\ffmpeg\...), but 127.0.0.1 INSIDE a
+# container is the container's own loopback, not your host machine — nothing listens there, so
+# `php artisan queue:work redis` fails to connect the instant it boots and the container restart-
+# loops. docker-compose.yml defines no redis/mysql service at all (production/Coolify is expected
+# to point at externally-managed services), so for local dev the lowest-risk fix — no new data
+# stores, no migration — is teaching the containers to reach your EXISTING host MySQL/Redis via
+# Docker Desktop's host.docker.internal DNS name. This does NOT touch .env (still correct for
+# non-Docker local dev) and does NOT touch docker-compose.yml (production topology unchanged).
+#
+# Prerequisite: your host MySQL/Redis must accept connections from the Docker network, not only
+# 127.0.0.1 (e.g. MySQL bind-address=0.0.0.0 or specifically allow the Docker Desktop vEthernet/
+# WSL2 adapter; Windows Firewall must allow inbound on 3306/6379 from that adapter). If you'd
+# rather run a fully self-contained dev stack instead (containerized MySQL/Redis, no host
+# dependency), say so and this can be swapped for `mysql:`/`redis:` services here instead.
+x-dev-container-network: &dev-container-network
+  environment:
+    DB_HOST: host.docker.internal
+    REDIS_HOST: host.docker.internal
+    MEILISEARCH_HOST: http://meilisearch:7700
+  extra_hosts:
+    # Docker Desktop (Windows/macOS) resolves host.docker.internal automatically — this line is a
+    # no-op there. On native Linux Docker Engine it's required for the same hostname to work, so
+    # this file behaves identically on both, per the Windows+Linux compatibility requirement.
+    - "host.docker.internal:host-gateway"
+
+services:
+  # ── One-time media seed: public/uploads -> the `uploads_data` named volume (local dev only) ───
+  # Copies your existing public/uploads/assets (91,580 files) into a Docker-managed named volume
+  # ONE TIME, so the stack no longer depends on a host bind mount for media at all after that.
+  # The host directory is mounted `:ro` here - this container only ever READS from it; your
+  # original files are never modified, moved, or deleted.
+  #
+  # Not part of the default `docker compose up` (profiles: ["seed"]) - it only runs when you
+  # explicitly ask for it, and running it again is a safe no-op: it checks whether the volume
+  # already has files before copying anything.
+  #
+  # Run once:  docker compose --profile seed run --rm seed-uploads
+  seed-uploads:
+    image: alpine:3.20
+    profiles: ["seed"]
+    volumes:
+      - ./public/uploads:/source:ro
+      - uploads_data:/dest
+    entrypoint: ["sh", "-c"]
+    # command as a single-element list (not a plain scalar): Compose shell-word-splits a plain
+    # string `command:` value (like Dockerfile CMD shell form), which mangles a multi-line script
+    # with quotes/brackets in it. Wrapping the whole script as ONE list item keeps it as one
+    # literal argv token, so `sh -c` receives it intact.
+    command:
+      - |
+        if [ -n "$$(ls -A /dest 2>/dev/null)" ]; then
+          echo "uploads_data already has files - skipping copy (safe no-op)"
+        else
+          echo "Seeding uploads_data from host public/uploads (one-time copy)..."
+          cp -a /source/. /dest/
+          echo "Done: copied $$(find /dest -type f | wc -l) files into uploads_data"
+        fi
+
+  # ── Isolated legacy-data database (local dev only) ────────────────────────────────────────────
+  # Hosts database/shaab.sql — a raw WordPress export (tables like `3b5qs_posts`, `3b5qs_postmeta`,
+  # Yoast/WPForms tables, ~79k news records) with a schema totally unrelated to AlphaCMS's own
+  # tables. This is NOT the app's runtime database (that stays on your host MySQL via DB_HOST in
+  # .env, untouched) - it's a standalone, throwaway-safe container purely for querying/migrating
+  # the legacy data. Nothing in docker-compose.yml or the app's DB_* env vars reference it.
+  #
+  # Import is automatic and one-time: the official mysql image runs every *.sql file found in
+  # /docker-entrypoint-initdb.d on the container's FIRST boot, but only while its data directory
+  # (the `legacy_db_data` volume below) is still empty. The dump is bind-mounted `:ro` - MySQL
+  # only ever reads it, so database/shaab.sql on your host is never modified, moved, or deleted.
+  # After that first import, the data lives in the named volume and survives `docker compose down`
+  # / restarts (everything except `docker compose down -v`, which would also wipe your OTHER
+  # named volumes like meili-data - so avoid `-v` unless you mean to reset everything).
+  # ── Verification-only stand-in for the app's OWN database (local dev only) ────────────────────
+  # Purpose: .env already points the app at DB_HOST=127.0.0.1, DB_PORT=3306, DB_DATABASE=shaabfinal,
+  # DB_USERNAME=root, DB_PASSWORD=(empty) - but nothing was actually listening on 127.0.0.1:3306 on
+  # this machine (no MySQL/MariaDB installed, no service, no process). This container fills that
+  # gap by binding to the SAME host port/credentials .env already expects, so it becomes reachable
+  # exactly the way a native local MySQL install would have been - with ZERO .env changes.
+  #
+  # It starts completely EMPTY (MYSQL_DATABASE creates `shaabfinal` with 0 tables, no import, no
+  # seed). That emptiness is itself the verification result: there is no pre-existing native
+  # AlphaCMS data on this host to compare against shaab.sql. Going from here to an actual populated
+  # schema requires running Laravel migrations - deliberately NOT done here without your separate,
+  # explicit approval (per your instruction). Do not add an initdb.d import here without discussing
+  # it first; the whole point of this container right now is to observe the true starting state.
+  app-db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: shaabfinal
+      # Matches .env's DB_USERNAME=root / DB_PASSWORD=(empty) exactly - MYSQL_ALLOW_EMPTY_PASSWORD
+      # is the official mysql-image mechanism for a blank-password root login (not a workaround).
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      # 3306:3306 deliberately (not 3307 like legacy-db below): this must match .env's DB_HOST/
+      # DB_PORT exactly so it's a drop-in stand-in for "local MySQL" with no config changes.
+      - "3306:3306"
+    volumes:
+      - app_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # ── Verification-only stand-in for the app's Redis (local dev only) ───────────────────────────
+  # Same gap as app-db above: .env expects REDIS_HOST=127.0.0.1, REDIS_PORT=6379, no password
+  # (REDIS_PASSWORD=null) - but nothing was listening there either (no local Redis installed or
+  # running). Some migrations (e.g. Spatie permission's create_permission_tables) touch the cache
+  # at migrate-time, which fails outright without a reachable Redis. This fills the gap with the
+  # SAME host port/credentials .env already expects - zero .env changes.
+  redis-app:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_app_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  legacy-db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${LEGACY_DB_NAME:-shaab_legacy}
+      MYSQL_ROOT_PASSWORD: ${LEGACY_DB_ROOT_PASSWORD:?Set LEGACY_DB_ROOT_PASSWORD in .env (local dev value is fine - this container is never exposed to production)}
+    ports:
+      # Host 3307 -> container 3306, deliberately NOT 3306:3306: your existing local MySQL
+      # (DB_HOST=127.0.0.1, DB_PORT=3306 in .env) already owns host port 3306. A different host
+      # port keeps this container fully separate from that instance.
+      - "${LEGACY_DB_PORT:-3307}:3306"
+    volumes:
+      - legacy_db_data:/var/lib/mysql
+      - ./database/shaab.sql:/docker-entrypoint-initdb.d/shaab.sql:ro
+    healthcheck:
+      # CMD-SHELL (not CMD) is required here: CMD runs the command directly with no shell, so
+      # $MYSQL_ROOT_PASSWORD would never expand and the healthcheck would try to auth with the
+      # literal string "$MYSQL_ROOT_PASSWORD" as the password.
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  backend:
+    <<: *dev-container-network
+    volumes:
+      - ./storage/app/public:/var/www/html/storage/app/public:rw
+      # Docker-managed named volume, not a host bind mount - see seed-uploads above for the
+      # one-time copy step. The stack no longer needs ./public/uploads present on the host to run.
+      - uploads_data:/var/www/html/public/uploads:rw
+    ports:
+      - "8080:80"
+
+  worker:
+    <<: *dev-container-network
+    volumes:
+      - ./storage/app/public:/var/www/html/storage/app/public:rw
+
+  worker-media:
+    <<: *dev-container-network
+    volumes:
+      - ./storage/app/public:/var/www/html/storage/app/public:rw
+
+  # ── Local-dev-only worker for the WP Migration queue ───────────────────────────────────────────
+  # ROOT CAUSE FIX (discovered running the full migration): DispatchMigrationChunkJob and
+  # ImportWpPostJob both dispatch onto queue "migration" (config('wp-migration.queue')) on the
+  # default `redis` connection - but docker-compose.yml's `worker` only consumes
+  # default,notifications,mail,search,sitemap,ai,analytics (not "migration"), and `worker-media`
+  # listens on a DIFFERENT connection (redis-media, queue=media) entirely. Nothing was ever wired
+  # up to process this queue, in this compose file or production's. This service fills that gap
+  # for local dev. Same image, same network/env as worker/worker-media - and critically the SAME
+  # uploads_data volume, since ImportWpPostAction writes rehosted media to the 'uploads' disk and
+  # a worker without this mount would write to its own container-local filesystem instead of the
+  # shared volume the backend/host actually serve from.
+  worker-migration:
+    <<: *dev-container-network
+    image: alphacms-backend:latest
+    # env_file is NOT part of the dev-container-network anchor (that anchor only adds
+    # environment/extra_hosts) - backend/worker/worker-media/scheduler all get it from
+    # docker-compose.yml's x-backend-common anchor instead, which this new service doesn't
+    # extend. Without it the container boots with zero real .env config (DB_DATABASE,
+    # CACHE_STORE, REDIS_PASSWORD, everything falls back to Laravel's hardcoded defaults) -
+    # exactly what caused the first start attempt's sqlite/cache error.
+    env_file:
+      - .env
+    restart: unless-stopped
+    command: php artisan queue:work redis --queue=migration --tries=1 --sleep=1 --max-time=3600
+    user: www-data
+    volumes:
+      - ./storage/app/public:/var/www/html/storage/app/public:rw
+      - uploads_data:/var/www/html/public/uploads:rw
+
+  scheduler:
+    <<: *dev-container-network
+    volumes:
+      - ./storage/app/public:/var/www/html/storage/app/public:rw
+
+  frontend:
+    ports:
+      - "3000:3000"
+
+  admin:
+    # docker-compose.yml's build.args point Vite at the production API (bakes in at BUILD time,
+    # not runtime - the compiled bundle literally contains this string). Overriding just these two
+    # keys here (Compose merges build.args by key) makes a LOCAL admin build talk to the local
+    # backend on :8080 instead of any real domain - needed for reCAPTCHA/login to work at all
+    # against this local stack.
+    build:
+      args:
+        VITE_API_BASE_URL: http://localhost:8080/api/v1
+        VITE_PUBLIC_SITE_URL: http://localhost:3000
+    ports:
+      - "8081:80"
+
+  meilisearch:
+    ports:
+      - "7700:7700"
+
+volumes:
+  legacy_db_data:
+  uploads_data:
+  app_db_data:
+  redis_app_data:

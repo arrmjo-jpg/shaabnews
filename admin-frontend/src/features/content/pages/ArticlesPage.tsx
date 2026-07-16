@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -30,6 +30,7 @@ import { ErrorState } from '@/components/feedback';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { paths } from '@/router/paths';
+import { articlesService } from '@/services/articles.service';
 import {
   useArticleStats,
   useArticles,
@@ -40,9 +41,11 @@ import {
   useForceDeleteArticle,
   useRestoreArticle,
   useUpdateArticle,
+  useWritersList,
 } from '../hooks';
 import { ArticleRowShare } from '../components/ArticleRowShare';
 import { EngagementMetricsButton } from '../components/EngagementMetricsButton';
+import { DISPLAY_FLAGS } from '../constants';
 import type {
   ArticleData,
   ArticleStatus,
@@ -50,6 +53,7 @@ import type {
   ArticlesListParams,
   ContentLocale,
 } from '@/types/content.types';
+import type { NormalizedError } from '@/types/api';
 
 const PER_PAGE = 15;
 
@@ -76,24 +80,11 @@ const TYPE_VARIANTS: Record<ArticleType, 'default' | 'success' | 'destructive'> 
   live: 'destructive',
 };
 
-// أعلام «مكان العرض» — كل علم منطقة عرض على الموقع، قابلة للإلغاء من الجدول.
-const DISPLAY_FLAGS: Array<{
-  key: 'is_pinned' | 'is_breaking' | 'is_featured' | 'is_header' | 'is_editor_pick';
-  labelKey: string;
-  variant: 'default' | 'success' | 'muted' | 'destructive';
-}> = [
-  { key: 'is_pinned', labelKey: 'articles.form.isPinned', variant: 'muted' },
-  { key: 'is_breaking', labelKey: 'articles.form.isBreaking', variant: 'destructive' },
-  { key: 'is_featured', labelKey: 'articles.form.isFeatured', variant: 'default' },
-  { key: 'is_header', labelKey: 'articles.form.isHeader', variant: 'default' },
-  { key: 'is_editor_pick', labelKey: 'articles.form.isEditorPick', variant: 'success' },
-];
-
 export default function ArticlesPage() {
   const { t, i18n } = useTranslation('content');
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
-  const { confirm } = useToast();
+  const { confirm, error: showError } = useToast();
 
   const canCreate = hasPermission('articles.create');
   const canEdit = hasPermission('articles.edit');
@@ -101,27 +92,30 @@ export default function ArticlesPage() {
   const canRestore = hasPermission('articles.restore');
   const canForceDelete = hasPermission('articles.force_delete');
 
-  // Deep link from the categories page: ?category={id} pre-filters the list.
-  const [searchParams] = useSearchParams();
-  const initialCategory = Number(searchParams.get('category')) || '';
+  // Deep link and filters synced directly with the browser's URL search parameters
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [params, setParams] = useState<ArticlesListParams>({
-    page: 1,
-    per_page: PER_PAGE,
-    search: '',
-    status: '',
-    type: '',
-    locale: '',
-    category: initialCategory,
-    placement: '',
-    // الأحدث أولًا حسب تاريخ النشر الفعليّ (created_at = وقت الاستيراد، مقلوب لأخبار فيرتكس).
-    sort: '-published_at',
-    trashed: '',
-  });
+  const params = useMemo<ArticlesListParams>(() => {
+    return {
+      page: Number(searchParams.get('page')) || 1,
+      per_page: PER_PAGE,
+      search: searchParams.get('search') || '',
+      status: (searchParams.get('status') as ArticlesListParams['status']) || '',
+      type: (searchParams.get('type') as ArticlesListParams['type']) || '',
+      locale: (searchParams.get('locale') as ArticlesListParams['locale']) || '',
+      category: searchParams.get('category') ? Number(searchParams.get('category')) : '',
+      author_id: searchParams.get('author_id') ? Number(searchParams.get('author_id')) : '',
+      placement: (searchParams.get('placement') as ArticlesListParams['placement']) || '',
+      // الأحدث أولًا حسب تاريخ النشر الفعليّ (created_at = وقت الاستيراد، مقلوب لأخبار فيرتكس).
+      sort: (searchParams.get('sort') as ArticlesListParams['sort']) || '-published_at',
+      trashed: (searchParams.get('trashed') as ArticlesListParams['trashed']) || '',
+    };
+  }, [searchParams]);
 
   const q = useArticles(params);
   const statsQ = useArticleStats();
   const catsQ = useCategories();
+  const writersQ = useWritersList();
   const del = useDeleteArticle();
   const restore = useRestoreArticle();
   const forceDel = useForceDeleteArticle();
@@ -170,8 +164,51 @@ export default function ArticlesPage() {
       clearPinned.mutate();
   };
 
-  const patch = (p: Partial<ArticlesListParams>) =>
-    setParams((prev) => ({ ...prev, ...p, page: p.page ?? 1 }));
+  const patch = useCallback(
+    (p: Partial<ArticlesListParams>) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        Object.entries(p).forEach(([key, val]) => {
+          if (val === undefined || val === null || val === '') {
+            next.delete(key);
+          } else {
+            next.set(key, String(val));
+          }
+        });
+        // Reset to page 1 if changing filters other than page itself
+        if (!('page' in p)) {
+          next.set('page', '1');
+        }
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
+
+  // صفحة مطلوبة يدوياً (رابط قديم/مُعدَّل) تتجاوز حد الـ Backend (404) — نجلب
+  // صفحة 1 بنفس الفلاتر لمعرفة meta.total_pages الفعلي (المُقيَّد بـ maxPage
+  // في الـ Backend) وننتقل إليها مباشرة، بدل تخمين رقم ثابت في الواجهة قد
+  // ينحرف عن قيمة الـ Backend الحقيقية، وبدل إرجاع المستخدم لصفحة 1 بلا داعٍ.
+  useEffect(() => {
+    const err = q.error as NormalizedError | null;
+    if (!q.isError || err?.status !== 404 || params.page <= 1) return;
+
+    let cancelled = false;
+    articlesService
+      .list({ ...params, page: 1 })
+      .then((res) => {
+        if (cancelled) return;
+        showError(t('articles.pagination_out_of_range'));
+        patch({ page: res.pagination.total_pages || 1 });
+      })
+      .catch(() => {
+        if (!cancelled) patch({ page: 1 });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [q.isError, q.error, params, patch, showError, t]);
 
   const fmtDate = (v: string | null) =>
     v
@@ -566,10 +603,11 @@ export default function ArticlesPage() {
           }
         >
           <option value="">{t('articles.filter.placementAll')}</option>
-          <option value="is_pinned">{t('articles.form.isPinned')}</option>
-          <option value="is_breaking">{t('articles.form.isBreaking')}</option>
-          <option value="is_featured">{t('articles.form.isFeatured')}</option>
-          <option value="is_header">{t('articles.form.isHeader')}</option>
+          {DISPLAY_FLAGS.map((flag) => (
+            <option key={flag.key} value={flag.key}>
+              {t(flag.labelKey)}
+            </option>
+          ))}
         </select>
         <select
           className={selectCls}
@@ -598,6 +636,22 @@ export default function ArticlesPage() {
         </select>
         <select
           className={selectCls}
+          value={params.author_id ?? ''}
+          onChange={(e) =>
+            patch({
+              author_id: e.target.value === '' ? '' : Number(e.target.value),
+            })
+          }
+        >
+          <option value="">{t('articles.filter.authorAll')}</option>
+          {(writersQ.data?.data ?? []).map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
+        </select>
+        <select
+          className={selectCls}
           value={params.sort}
           onChange={(e) => patch({ sort: e.target.value as ArticlesListParams['sort'] })}
         >
@@ -618,12 +672,14 @@ export default function ArticlesPage() {
         ) : null}
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={q.data?.data ?? []}
-        rowKey={(a) => a.id}
-        loading={q.isLoading}
-      />
+      <div className={q.isFetching && !q.isLoading ? 'opacity-70 transition-opacity duration-200' : ''}>
+        <DataTable
+          columns={columns}
+          rows={q.data?.data ?? []}
+          rowKey={(a) => a.id}
+          loading={q.isLoading}
+        />
+      </div>
 
       {q.data ? <Pagination meta={q.data.pagination} onPage={(page) => patch({ page })} /> : null}
     </div>

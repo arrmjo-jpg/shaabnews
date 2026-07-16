@@ -28,17 +28,22 @@ final class VideoCacheTags
 
     public static function feed(string $locale): string
     {
-        return 'videos:feed:'.$locale;
+        return self::scheme()->feed($locale);
     }
 
     public static function detail(string $locale, string $slug): string
     {
-        return 'videos:detail:'.$locale.':'.$slug;
+        return self::scheme()->detail($locale, $slug);
     }
 
     public static function category(string $locale, string $categorySlug): string
     {
-        return 'videos:category:'.$locale.':'.$categorySlug;
+        return self::scheme()->category($locale, $categorySlug);
+    }
+
+    private static function scheme(): CacheTagScheme
+    {
+        return new CacheTagScheme(self::ALL, self::SITEMAP);
     }
 
     public static function playlist(string $locale, string $slug): string
@@ -49,19 +54,19 @@ final class VideoCacheTags
     /** @return array<int,string> وسوم إدخال خلاصة لغة. */
     public static function feedTags(string $locale): array
     {
-        return [self::ALL, self::feed($locale)];
+        return self::scheme()->feedTags($locale);
     }
 
     /** @return array<int,string> وسوم إدخال تفاصيل فيديو (مظلّة + تفاصيله فقط). */
     public static function detailTags(string $locale, string $slug): array
     {
-        return [self::ALL, self::detail($locale, $slug)];
+        return self::scheme()->detailTags($locale, $slug);
     }
 
     /** @return array<int,string> وسوم صفحة/قائمة تصنيف. */
     public static function categoryTags(string $locale, string $categorySlug): array
     {
-        return [self::ALL, self::category($locale, $categorySlug)];
+        return self::scheme()->categoryTags($locale, $categorySlug);
     }
 
     /** @return array<int,string> وسوم صفحة قائمة تشغيل. */
@@ -83,28 +88,14 @@ final class VideoCacheTags
         ?string $categorySlug = null,
         ?string $oldCategorySlug = null,
     ): array {
-        $locale = $video->locale;
-        $slug = (string) $video->slug;
-
-        $tags = [self::SITEMAP, self::feed($locale), self::detail($locale, $slug)];
-        if ($categorySlug !== null && $categorySlug !== '') {
-            $tags[] = self::category($locale, $categorySlug);
-        }
-
-        $oldLocale ??= $locale;
-        $oldSlug ??= $slug;
-
-        if ($oldLocale !== $locale) {
-            $tags[] = self::feed($oldLocale);
-        }
-        if ($oldLocale !== $locale || $oldSlug !== $slug) {
-            $tags[] = self::detail($oldLocale, $oldSlug);
-        }
-        if ($oldCategorySlug !== null && $oldCategorySlug !== '') {
-            $tags[] = self::category($oldLocale, $oldCategorySlug);
-        }
-
-        return array_values(array_unique($tags));
+        return self::scheme()->invalidationTags(
+            dimension: $video->locale,
+            slug: (string) $video->slug,
+            categorySlugs: ($categorySlug !== null && $categorySlug !== '') ? [$categorySlug] : [],
+            oldDimension: $oldLocale,
+            oldSlug: $oldSlug,
+            oldCategorySlugs: ($oldCategorySlug !== null && $oldCategorySlug !== '') ? [$oldCategorySlug] : [],
+        );
     }
 
     /**

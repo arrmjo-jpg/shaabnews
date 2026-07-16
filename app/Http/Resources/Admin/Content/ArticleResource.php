@@ -45,6 +45,7 @@ class ArticleResource extends JsonResource
             'is_pinned' => $this->is_pinned,
             'is_header' => $this->is_header,
             'is_editor_pick' => $this->is_editor_pick,
+            'is_squares' => $this->is_squares,
             'event_status' => $this->event_status?->value,
             'comments_enabled' => $this->comments_enabled,
             'published_at' => $this->published_at?->toISOString(),

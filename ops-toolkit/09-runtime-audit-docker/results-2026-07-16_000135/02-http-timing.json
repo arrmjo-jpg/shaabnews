@@ -1,0 +1,68 @@
+﻿[
+    {
+        "label":  "backend: /api/v1/homepage",
+        "url":  "http://localhost:8080/api/v1/homepage",
+        "samples":  [
+                        "    dns_lookup:  0.000064s    tcp_connect: 0.000646s    ttfb:        0.133301s    total:       0.133415s    http_code:   404    size_bytes:  88",
+                        "    dns_lookup:  0.000072s    tcp_connect: 0.000710s    ttfb:        0.059158s    total:       0.059271s    http_code:   404    size_bytes:  88",
+                        "    dns_lookup:  0.000050s    tcp_connect: 0.000486s    ttfb:        0.043384s    total:       0.043502s    http_code:   404    size_bytes:  88",
+                        "    dns_lookup:  0.000064s    tcp_connect: 0.000604s    ttfb:        0.042747s    total:       0.042852s    http_code:   404    size_bytes:  88",
+                        "    dns_lookup:  0.000052s    tcp_connect: 0.000782s    ttfb:        0.083191s    total:       0.083277s    http_code:   404    size_bytes:  88"
+                    ]
+    },
+    {
+        "label":  "backend: /api/v1/categories",
+        "url":  "http://localhost:8080/api/v1/categories",
+        "samples":  [
+                        "    dns_lookup:  0.000046s    tcp_connect: 0.000557s    ttfb:        0.032464s    total:       0.032561s    http_code:   404    size_bytes:  88",
+                        "    dns_lookup:  0.000051s    tcp_connect: 0.000508s    ttfb:        0.050833s    total:       0.050963s    http_code:   404    size_bytes:  88",
+                        "    dns_lookup:  0.000061s    tcp_connect: 0.000636s    ttfb:        0.072054s    total:       0.072196s    http_code:   404    size_bytes:  88",
+                        "    dns_lookup:  0.000075s    tcp_connect: 0.002974s    ttfb:        0.067385s    total:       0.067463s    http_code:   404    size_bytes:  88",
+                        "    dns_lookup:  0.000169s    tcp_connect: 0.000905s    ttfb:        0.042449s    total:       0.042528s    http_code:   404    size_bytes:  88"
+                    ]
+    },
+    {
+        "label":  "backend: /api/v1/articles (list)",
+        "url":  "http://localhost:8080/api/v1/articles",
+        "samples":  [
+                        "    dns_lookup:  0.000045s    tcp_connect: 0.000687s    ttfb:        0.031613s    total:       0.031695s    http_code:   405    size_bytes:  106",
+                        "    dns_lookup:  0.000045s    tcp_connect: 0.000463s    ttfb:        0.029332s    total:       0.029414s    http_code:   405    size_bytes:  106",
+                        "    dns_lookup:  0.000050s    tcp_connect: 0.000694s    ttfb:        0.033803s    total:       0.033911s    http_code:   405    size_bytes:  106",
+                        "    dns_lookup:  0.000059s    tcp_connect: 0.000653s    ttfb:        0.031903s    total:       0.031998s    http_code:   405    size_bytes:  106",
+                        "    dns_lookup:  0.000061s    tcp_connect: 0.000571s    ttfb:        0.035917s    total:       0.036059s    http_code:   405    size_bytes:  106"
+                    ]
+    },
+    {
+        "label":  "frontend: / (homepage)",
+        "url":  "http://localhost:3000/",
+        "samples":  [
+                        "    dns_lookup:  0.000043s    tcp_connect: 0.000467s    ttfb:        0.811744s    total:       0.921260s    http_code:   200    size_bytes:  892652",
+                        "    dns_lookup:  0.000063s    tcp_connect: 0.018952s    ttfb:        0.155184s    total:       0.261736s    http_code:   200    size_bytes:  892652",
+                        "    dns_lookup:  0.000052s    tcp_connect: 0.000460s    ttfb:        0.134225s    total:       0.220730s    http_code:   200    size_bytes:  892652",
+                        "    dns_lookup:  0.000044s    tcp_connect: 0.000487s    ttfb:        0.126691s    total:       0.192064s    http_code:   200    size_bytes:  892652",
+                        "    dns_lookup:  0.000047s    tcp_connect: 0.000603s    ttfb:        0.113213s    total:       0.179138s    http_code:   200    size_bytes:  892652"
+                    ]
+    },
+    {
+        "label":  "frontend: /search?q=test",
+        "url":  "http://localhost:3000/search?q=test",
+        "samples":  [
+                        "    dns_lookup:  0.000061s    tcp_connect: 0.000615s    ttfb:        0.270704s    total:       0.281317s    http_code:   200    size_bytes:  118086",
+                        "    dns_lookup:  0.000044s    tcp_connect: 0.024784s    ttfb:        0.050180s    total:       0.059243s    http_code:   200    size_bytes:  118086",
+                        "    dns_lookup:  0.000045s    tcp_connect: 0.015094s    ttfb:        0.038815s    total:       0.047209s    http_code:   200    size_bytes:  118086",
+                        "    dns_lookup:  0.000044s    tcp_connect: 0.018685s    ttfb:        0.044757s    total:       0.056786s    http_code:   200    size_bytes:  118086",
+                        "    dns_lookup:  0.000045s    tcp_connect: 0.000444s    ttfb:        0.031564s    total:       0.043201s    http_code:   200    size_bytes:  118086"
+                    ]
+    },
+    {
+        "label":  "admin: /",
+        "url":  "http://localhost:8081/",
+        "samples":  [
+                        "    dns_lookup:  0.000045s    tcp_connect: 0.000459s    ttfb:        0.029870s    total:       0.031245s    http_code:   200    size_bytes:  438",
+                        "    dns_lookup:  0.000047s    tcp_connect: 0.000535s    ttfb:        0.003700s    total:       0.003761s    http_code:   200    size_bytes:  438",
+                        "    dns_lookup:  0.000046s    tcp_connect: 0.000479s    ttfb:        0.004229s    total:       0.004300s    http_code:   200    size_bytes:  438",
+                        "    dns_lookup:  0.000052s    tcp_connect: 0.000468s    ttfb:        0.007862s    total:       0.007944s    http_code:   200    size_bytes:  438",
+                        "    dns_lookup:  0.000046s    tcp_connect: 0.000457s    ttfb:        0.005492s    total:       0.005562s    http_code:   200    size_bytes:  438"
+                    ]
+    }
+]

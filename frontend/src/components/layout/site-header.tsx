@@ -9,6 +9,7 @@ import { getRecaptchaConfig } from '@/lib/recaptcha';
 import { getNavCategories, getSiteSettings } from '@/lib/site-settings';
 import { getStaticPages } from '@/lib/static-pages';
 
+import { BreakingBar } from './breaking-bar';
 import { Container } from './container';
 import { HeaderSearch } from './header-search';
 import { MainNav } from './main-nav';
@@ -77,6 +78,8 @@ export async function SiteHeader() {
           <MobileNav staticPages={staticPages} />
         </div>
       </Container>
+
+      <BreakingBar />
     </header>
   );
 }

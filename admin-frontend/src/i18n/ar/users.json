@@ -17,7 +17,9 @@
   "pagination": {
     "summary": "صفحة {{current}} من {{total}} — {{count}} عنصر",
     "prev": "السابق",
-    "next": "التالي"
+    "next": "التالي",
+    "first": "الأولى",
+    "last": "الأخيرة"
   },
   "users": {
     "title": "المستخدمون",

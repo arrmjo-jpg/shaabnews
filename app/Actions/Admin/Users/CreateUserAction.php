@@ -7,6 +7,7 @@ namespace App\Actions\Admin\Users;
 use App\Enums\UserStatus;
 use App\Http\Resources\Admin\Users\UserResource;
 use App\Models\User;
+use App\Services\Auth\EmailIdentityGenerator;
 use App\Support\Audit\RbacAudit;
 use App\Support\Authorization\RoleEscalationGuard;
 use App\Support\Responses\ApiResponse;
@@ -28,10 +29,15 @@ class CreateUserAction
         }
 
         $user = DB::transaction(function () use ($validated): User {
+            $email = $validated['email'] ?? null;
+            if (empty($email)) {
+                $email = app(EmailIdentityGenerator::class)->generate($validated['name']);
+            }
+
             $user = User::create([
                 'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => $validated['password'], // يُجزَّأ تلقائياً عبر cast
+                'email' => $email,
+                'password' => $validated['password'] ?? null, // يُجزَّأ تلقائياً عبر cast
                 'status' => $validated['status'] ?? UserStatus::Active->value,
                 'avatar' => $validated['avatar'] ?? null,
                 'bio' => $validated['bio'] ?? null,

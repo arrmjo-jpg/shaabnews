@@ -34,12 +34,12 @@
 @endphp
 
 @section('seo')
-    <title>{{ $kindMeta['title'] }} — {{ config('app.name', 'AlphaCMS') }}</title>
+    <title>{{ $kindMeta['title'] }} — {{ \App\Support\Content\PublicSeoBuilder::getSiteName() }}</title>
     <meta name="description" content="{{ $kindMeta['tagline'] }}">
     <link rel="canonical" href="{{ url()->current() }}">
     <meta name="robots" content="{{ config('seo.robots.default', 'index, follow') }}">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="{{ config('app.name', 'AlphaCMS') }}">
+    <meta property="og:site_name" content="{{ \App\Support\Content\PublicSeoBuilder::getSiteName() }}">
     <meta property="og:locale" content="ar_AR">
     <meta property="og:title" content="{{ $kindMeta['title'] }}">
     <meta property="og:description" content="{{ $kindMeta['tagline'] }}">

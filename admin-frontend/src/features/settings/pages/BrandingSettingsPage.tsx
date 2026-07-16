@@ -20,12 +20,14 @@ import { storageUrl } from '@/lib/storage';
 import { useGeneralSettings, useUploadBranding, useUpdateGeneral } from '../hooks';
 import { watermarkSchema, type WatermarkValues } from '../schemas';
 
-type Slot = 'logo_light' | 'logo_dark' | 'favicon' | 'watermark_image';
+type Slot = 'logo_light' | 'logo_dark' | 'logo_light_en' | 'logo_dark_en' | 'favicon' | 'watermark_image';
 
 // أنواع تطابق قيود الـ backend (UploadBrandingMediaRequest)
 const SLOTS: { key: Slot; accept: string; hintKey: string }[] = [
   { key: 'logo_light', accept: '.png,.jpg,.jpeg,.webp', hintKey: 'allowedLogos' },
   { key: 'logo_dark', accept: '.png,.jpg,.jpeg,.webp', hintKey: 'allowedLogos' },
+  { key: 'logo_light_en', accept: '.png,.jpg,.jpeg,.webp', hintKey: 'allowedLogos' },
+  { key: 'logo_dark_en', accept: '.png,.jpg,.jpeg,.webp', hintKey: 'allowedLogos' },
   { key: 'favicon', accept: '.png,.ico', hintKey: 'allowedFavicon' },
   { key: 'watermark_image', accept: '.png,.webp', hintKey: 'allowedWatermark' },
 ];

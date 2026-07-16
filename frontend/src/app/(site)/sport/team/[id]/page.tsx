@@ -5,6 +5,7 @@ import { Container } from '@/components/layout/container';
 import { EntityListBlock } from '@/components/sport/entity-list-block';
 import { FollowButton } from '@/components/sport/follow-button';
 import { StandingsTable } from '@/components/sport/standings-table';
+import { buildMetadata } from '@/lib/seo';
 import { getStandings, getTeam } from '@/lib/sport/stats';
 
 // صفحة الفريق `/sport/team/[id]` (مثل 365 `/team/{id}`) — ترويسة + ترتيب دوريه الرئيس (صفّ الفريق مُميَّز) + بطولاته
@@ -12,9 +13,16 @@ import { getStandings, getTeam } from '@/lib/sport/stats';
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const tid = Number(id);
-  if (!Number.isInteger(tid) || tid <= 0) return { title: 'الفريق' };
+  if (!Number.isInteger(tid) || tid <= 0) return buildMetadata({ title: 'الفريق', path: `/sport/team/${id}` });
   const team = await getTeam(tid);
-  return { title: team ? team.name : 'الفريق' };
+  if (!team) return buildMetadata({ title: 'الفريق', path: `/sport/team/${tid}` });
+
+  return buildMetadata({
+    title: team.name,
+    description: `ترتيب وبطولات فريق ${team.name}`,
+    path: `/sport/team/${tid}`,
+    type: 'website',
+  });
 }
 
 export default async function TeamPage({ params }: { params: Promise<{ id: string }> }) {

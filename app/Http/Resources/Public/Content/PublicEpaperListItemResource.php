@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Public\Content;
 
 use App\Models\Epaper;
+use App\Support\Content\EpaperSeoBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,6 +36,7 @@ class PublicEpaperListItemResource extends JsonResource
             'brief_points' => $this->brief_points,
             'highlights' => $this->highlights,
             'inside_this_issue' => $this->inside_this_issue,
+            'seo' => EpaperSeoBuilder::build($this->resource),
         ];
     }
 }

@@ -12,6 +12,7 @@ use App\Models\Category;
 use App\Models\VertixRun;
 use App\Support\Content\SlugGenerator;
 use App\Support\Vertix\VertixSource;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Throwable;
 
 /**
@@ -44,8 +45,10 @@ class ImportVertixCategoriesAction
         // إنشاء مسطّح (المعرّف = catid).
         foreach ($rows as $c) {
             $catid = (int) $c->catid;
-            if (Category::query()->whereKey($catid)->exists()) {
-                continue; // موجود بنفس المعرّف ⇒ لا تكرار (Idempotent)
+            // withTrashed: القسم المحذوف منطقيًّا يبقى فيزيائيًّا (categories يستخدم
+            // SoftDeletes)؛ الفحص بالنطاق الافتراضيّ ينجح كذباً ثمّ يفشل الإدراج بتضارب PRIMARY.
+            if (Category::withTrashed()->whereKey($catid)->exists()) {
+                continue; // موجود بنفس المعرّف (ولو محذوفاً منطقيًّا) ⇒ لا تكرار (Idempotent)
             }
             try {
                 $category = new Category;
@@ -59,6 +62,8 @@ class ImportVertixCategoriesAction
                 ]);
                 $category->slug = $this->slug($c, $locale);
                 $category->save();
+            } catch (UniqueConstraintViolationException $e) {
+                continue; // سُبِق إنشاؤه (سباق/صفّ غير مرئيّ للفحص) ⇒ تخطٍّ لا فشل
             } catch (Throwable $e) {
                 $failed++;
                 $errors[] = ['type' => 'category', 'id' => $catid, 'error' => mb_substr($e->getMessage(), 0, 300), 'at' => now()->toISOString()];

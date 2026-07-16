@@ -12,7 +12,7 @@ import { socialSchema, type SocialValues } from '../schemas';
 
 const FIELDS: (keyof SocialValues)[] = [
   'facebook', 'facebook_page_id', 'twitter_x', 'instagram',
-  'linkedin', 'youtube', 'tiktok', 'whatsapp', 'whatsapp_channel',
+  'linkedin', 'youtube', 'tiktok', 'whatsapp', 'whatsapp_channel', 'nabd',
 ];
 
 const EMPTY = Object.fromEntries(FIELDS.map((k) => [k, ''])) as SocialValues;

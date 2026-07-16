@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { SlidersHorizontal, Palette, Mail, Share2, BarChart3, HardDrive, Newspaper } from 'lucide-react';
+import { SlidersHorizontal, Palette, Mail, Share2, BarChart3, HardDrive, Newspaper, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { paths } from '@/router/paths';
 
@@ -12,6 +12,7 @@ const items = [
   { key: 'analytics', to: paths.settingsAnalytics, icon: BarChart3 },
   { key: 'mediaStorage', to: paths.settingsMediaStorage, icon: HardDrive },
   { key: 'newspaper', to: paths.settingsNewspaper, icon: Newspaper },
+  { key: 'matchBar', to: paths.settingsMatchBar, icon: Trophy },
 ];
 
 export function SettingsNav() {

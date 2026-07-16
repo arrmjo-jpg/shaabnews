@@ -64,21 +64,39 @@ class ListMostReadArticlesAction
     {
         $morph = (new Article)->getMorphClass();
 
-        /** @var array<int,int> $ids */
-        $ids = Article::query()
+        // 1. Fetch top viewed articles via inner join (uses composite index on engagement_counters)
+        $viewedIds = Article::query()
             ->published()
             ->forLocale($locale)
-            ->when($days > 0, fn ($q) => $q->where('published_at', '>=', now()->subDays($days)))
-            ->leftJoin('engagement_counters', function ($join) use ($morph): void {
+            ->when($days > 0, fn ($q) => $q->where('articles.published_at', '>=', now()->subDays($days)))
+            ->join('engagement_counters', function ($join) use ($morph): void {
                 $join->on('engagement_counters.engageable_id', '=', 'articles.id')
                     ->where('engagement_counters.engageable_type', '=', $morph);
             })
-            ->orderByRaw('COALESCE(engagement_counters.views, 0) DESC')
-            ->orderByRaw('(COALESCE(engagement_counters.likes, 0) + COALESCE(engagement_counters.favorites, 0)) DESC')
+            ->orderByDesc('engagement_counters.views')
+            ->orderByRaw('(engagement_counters.likes + engagement_counters.favorites) DESC')
             ->orderByDesc('articles.published_at')
             ->limit($limit)
             ->pluck('articles.id')
             ->all();
+
+        $ids = $viewedIds;
+        $needed = $limit - count($ids);
+
+        if ($needed > 0) {
+            // 2. Fetch latest published articles to fill remaining slots (equivalent to 0 views fallback)
+            $latestIds = Article::query()
+                ->published()
+                ->forLocale($locale)
+                ->when($days > 0, fn ($q) => $q->where('published_at', '>=', now()->subDays($days)))
+                ->when($ids !== [], fn ($q) => $q->whereNotIn('id', $ids))
+                ->orderByDesc('published_at')
+                ->limit($needed)
+                ->pluck('id')
+                ->all();
+
+            $ids = array_merge($ids, $latestIds);
+        }
 
         if ($ids === []) {
             return new Collection;
@@ -87,10 +105,20 @@ class ListMostReadArticlesAction
         $order = array_flip($ids);
 
         return Article::query()
+            ->select([
+                'id', 'author_id', 'primary_category_id', 'type', 'status', 'locale',
+                'title', 'subtitle', 'slug', 'excerpt', 'published_at',
+                'is_featured', 'is_breaking', 'is_pinned', 'is_header', 'is_editor_pick', 'is_squares',
+                'views_count', 'event_status', 'created_at', 'deleted_at',
+            ])
             ->published()
             ->forLocale($locale)
             ->whereIn('articles.id', $ids)
-            ->with(['author:id,name', 'primaryCategory:id,name,slug', 'mediaAssets' => fn ($q) => $q->wherePivot('collection', 'cover')])
+            ->with([
+                'author:id,name,avatar,is_writer',
+                'primaryCategory:id,name,slug',
+                'mediaAssets' => fn ($q) => $q->wherePivot('collection', 'cover'),
+            ])
             ->get()
             ->sortBy(fn (Article $a): int => $order[$a->id] ?? PHP_INT_MAX)
             ->values();

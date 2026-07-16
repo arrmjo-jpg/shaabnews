@@ -29,39 +29,68 @@ final class FrontendCacheTags
      *
      * @return array<int,string>
      */
-    public static function article(Article $article, ?string $oldSlug = null): array
-    {
+    public static function article(
+        Article $article,
+        ?string $oldSlug = null,
+        array $oldCategorySlugs = [],
+        array $oldTags = [],
+        ?int $oldAuthorId = null,
+    ): array {
         $slug = (string) $article->slug;
 
         $tags = [
-            'feed:latest',     // getLatestFeed (صفحة /latest + الشريط الجانبيّ)
-            'feed:most_read',  // getMostReadFeed («الأكثر شيوعا» + /trending)
+            'homepage',        // getHomepageFeed (Hero, Latest, Breaking, Editors Pick)
+            'feed:latest',     // getLatestFeed (قسم /latest + الشريط الإخباري)
+            'feed:most_read',  // getMostReadFeed («الأكثر قراءة» + /trending)
             "article:{$slug}", // getArticle (صفحة تفاصيل المقال)
         ];
 
+        // 1. Editors Pick, Hero, Header transitions
         if ($article->is_featured || $article->wasChanged('is_featured')) {
-            $tags[] = 'feed:hero'; // getHeroFeed — فقط حين يخصّ الكتلة (أو غادرها)
+            $tags[] = 'feed:hero';
         }
         if ($article->is_header || $article->wasChanged('is_header')) {
-            $tags[] = 'feed:header'; // getHeaderFeed (آخر المستجدات) — نفس الشرط
+            $tags[] = 'feed:header';
+        }
+        if ($article->is_editor_pick || $article->wasChanged('is_editor_pick')) {
+            $tags[] = 'feed:editors_pick';
         }
 
-        // تغيّر السلَغ: أبطل وسم القديم أيضاً كي تتجدّد صفحته المُكاشة (إلى 301) لا تبقى بمحتواه القديم.
+        // 2. Slug transition
         if ($oldSlug !== null && $oldSlug !== '' && $oldSlug !== $slug) {
             $tags[] = "article:{$oldSlug}";
         }
 
-        // تصنيفات المقال (الأساسي + الثانوية) — تُجدِّد أقسام التصنيف في الرئيسية (getCategoryFeed → category:{slug}).
+        // 3. Category transitions
         $article->loadMissing(['primaryCategory:id,slug', 'categories:id,slug']);
         $categorySlugs = collect([$article->primaryCategory])
             ->merge($article->categories)
             ->filter()
             ->map(fn ($category): ?string => $category->slug)
+            ->merge($oldCategorySlugs) // Append old categories!
             ->filter()
             ->unique();
 
         foreach ($categorySlugs as $categorySlug) {
             $tags[] = "category:{$categorySlug}";
+        }
+
+        // 4. Author transitions
+        $authorId = $article->author_id;
+        if ($authorId) {
+            $tags[] = "author_articles:{$authorId}";
+        }
+        if ($oldAuthorId !== null && $oldAuthorId !== $authorId) {
+            $tags[] = "author_articles:{$oldAuthorId}";
+        }
+
+        // 5. Tag transitions
+        $article->loadMissing('tags');
+        $currentTags = $article->tags->pluck('name')->all();
+        $allTags = collect($currentTags)->merge($oldTags)->filter()->unique();
+
+        foreach ($allTags as $tag) {
+            $tags[] = "tag:{$tag}";
         }
 
         return $tags;

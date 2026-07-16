@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\Public\Content\WriterProfileController;
 use App\Http\Controllers\Api\V1\Public\Content\WriterReelController;
 use App\Http\Controllers\Api\V1\Public\Content\WriterVideoController;
 use App\Http\Controllers\Api\V1\Public\Follow\FollowController;
+use App\Http\Controllers\Api\V1\Public\MatchBarController;
 use App\Http\Controllers\Api\V1\Public\Media\WriterMediaController;
 use App\Http\Controllers\Api\V1\Public\NotificationController;
 use App\Http\Controllers\Api\V1\Public\Polls\PollController;
@@ -62,7 +63,8 @@ Route::middleware(['public.cache', 'throttle:public.read'])
         Route::get('/categories', [CategoryController::class, 'index']);
         Route::get('/categories/{slug}', [CategoryController::class, 'show']);
 
-        // بروفيل كاتب عامّ بالـ id — بوّابة is_writer نشِط فقط (في الـ Action)؛ {id} رقميّ فلا يتقاطع.
+        // دليل الكتّاب (Writers Directory) + بروفيل كاتب عامّ بالـ id. {id} رقميّ فلا يتقاطع.
+        Route::get('/writers', [WriterProfileController::class, 'index']);
         Route::get('/writers/{id}', [WriterProfileController::class, 'show'])->whereNumber('id');
 
         // المقالات: قائمة (filter/sort/pagination) + المسار السريع للعاجل + تفاصيل بالـ slug.
@@ -177,6 +179,11 @@ Route::middleware(['public.cache', 'throttle:public.read'])
 Route::middleware('throttle:public.read')
     ->get('/redirects/team', [TeamMemberController::class, 'redirect']);
 
+// ─── شريط المباريات (عام) — نطاق مستقل عربي فقط: لا بادئة {locale}، مثل team/broadcasts.
+// منظر مُصفّى فوق بيانات مُزامَنة أصلًا (Competition::is_tracked) — راجع BuildMatchBarAction.
+Route::middleware(['public.cache', 'throttle:public.read'])
+    ->get('/match-bar', [MatchBarController::class, 'show']);
+
 // ─── البثّ العام (B4) — نطاق مستقل عربي فقط: لا بادئة {locale} ────────────
 // النوع قطعةُ مسارٍ محصورة بـ where (live|tv|radio) فلا تُلتقط كـ slug ولا تتقاطع
 // مع مجموعة {locale} (ar|en). داخل public.cache (CDN/ETag) + throttle:public.read.
@@ -224,6 +231,11 @@ Route::prefix('engagement/{type}/{id}')
 // إبداع الصورة تحويل موقّع لوجهة مُخزَّنة (no-store، لا open redirect)؛ نقرة إبداع HTML
 // (روابطه الخاصّة) تُحتسب بمنارة POST /track/click (V2). كلّها محدودة المعدّل.
 Route::prefix('ads')->group(function (): void {
+    // دفعة الصفحة: كلّ مساحاتها في استجابة واحدة (?page= → chrome + مساحات الصفحة). نفس المحرّك/الرموز/
+    // كاش الحافة كنقطة العرض المفردة؛ الواجهة تمرّر page فقط (فصل تامّ عن أسماء المساحات).
+    Route::get('/', [AdServeController::class, 'batch'])
+        ->middleware(['public.cache', 'throttle:ads.serve']);
+
     Route::get('/serve/{zoneKey}', [AdServeController::class, 'serve'])
         ->where('zoneKey', '[a-z0-9_]+')
         ->middleware(['public.cache', 'throttle:ads.serve']);

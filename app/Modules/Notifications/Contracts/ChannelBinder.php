@@ -6,6 +6,7 @@ namespace App\Modules\Notifications\Contracts;
 
 use App\Modules\Notifications\Enums\ChannelKey;
 use App\Modules\Notifications\Support\AudienceResult;
+use App\Modules\Notifications\Support\RecipientBatch;
 
 /**
  * مُجسِّر قناة — يحوّل AudienceResult (سبيك محايد) إلى RecipientBatch خاصّ بالقناة. **channel-aware**
@@ -17,7 +18,7 @@ interface ChannelBinder
     public function channel(): ChannelKey;
 
     /**
-     * @return iterable<\App\Modules\Notifications\Support\RecipientBatch> دفعات (topic واحدة أو tokens مُجزّأة)
+     * @return iterable<RecipientBatch> دفعات (topic واحدة أو tokens مُجزّأة)
      */
     public function bind(AudienceResult $audience): iterable;
 }

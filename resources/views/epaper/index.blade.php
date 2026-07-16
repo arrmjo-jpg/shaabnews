@@ -1,12 +1,12 @@
 @extends('epaper.layout')
 
 @section('seo')
-    <title>{{ $displayName }} — {{ config('app.name', 'AlphaCMS') }}</title>
+    <title>{{ $displayName }} — {{ \App\Support\Content\PublicSeoBuilder::getSiteName() }}</title>
     <meta name="description" content="{{ __('epaper.public.tagline') }}">
     <link rel="canonical" href="{{ url()->current() }}">
     <meta name="robots" content="{{ config('seo.robots.default', 'index, follow') }}">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="{{ config('app.name', 'AlphaCMS') }}">
+    <meta property="og:site_name" content="{{ \App\Support\Content\PublicSeoBuilder::getSiteName() }}">
     <meta property="og:locale" content="{{ $locale === 'en' ? 'en_US' : 'ar_AR' }}">
     <meta property="og:title" content="{{ $displayName }}">
     <meta property="og:description" content="{{ __('epaper.public.tagline') }}">

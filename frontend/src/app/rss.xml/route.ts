@@ -1,37 +1,28 @@
 import { env } from '@/lib/env';
-import { getSiteSettings } from '@/lib/site-settings';
 
-export const revalidate = 300;
-
-function esc(v: string): string {
-  return v.replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c] as string);
-}
-
-// RSS infrastructure — channel metadata from Site Settings. Item generation plugs in when content
-// (articles/news) lands, without restructuring this endpoint.
+// Proxies the backend's main news RSS feed (routes/web.php: GET /rss/news.xml → RssController@news),
+// rewriting backend URLs to the frontend's public site URL. Per-category feeds (videos/reels) are
+// served at /rss/[feed].xml. The backend owns feed-item generation — no frontend recomputation.
 export async function GET(): Promise<Response> {
-  const s = await getSiteSettings();
-  const site = env.siteUrl;
-  const title = s?.site_name?.trim() || 'AlphaCMS';
-  const description = s?.description?.trim() || title;
+  const backendUrl = env.apiBaseUrl.replace(/\/api\/v1$/, '').replace(/\/v1$/, '');
+  const siteUrl = env.siteUrl;
 
-  const items = ''; // no content yet — ready for <item>…</item> entries
+  try {
+    const res = await fetch(`${backendUrl}/rss/news.xml`, {
+      headers: { ...env.internalHeaders },
+      cache: 'no-store',
+    });
+    if (!res.ok) return new Response('Not Found', { status: 404 });
+    let xml = await res.text();
+    xml = xml.replaceAll(backendUrl, siteUrl);
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>${esc(title)}</title>
-    <link>${site}</link>
-    <description>${esc(description)}</description>
-    <language>ar</language>
-    <atom:link href="${site}/rss.xml" rel="self" type="application/rss+xml"/>
-${items}  </channel>
-</rss>`;
-
-  return new Response(xml, {
-    headers: {
-      'Content-Type': 'application/rss+xml; charset=utf-8',
-      'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
-    },
-  });
+    return new Response(xml, {
+      headers: {
+        'Content-Type': 'application/rss+xml; charset=utf-8',
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+      },
+    });
+  } catch {
+    return new Response('Internal Server Error', { status: 500 });
+  }
 }

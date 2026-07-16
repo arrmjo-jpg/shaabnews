@@ -1,0 +1,9 @@
+﻿NAME                     IMAGE                        COMMAND                  SERVICE        CREATED          STATUS                    PORTS
+shaabjo-admin-1          shaabjo-admin                "/docker-entrypoint.ΓÇª"   admin          2 hours ago      Up 2 hours                0.0.0.0:8081->80/tcp, [::]:8081->80/tcp
+shaabjo-backend-1        alphacms-backend:latest      "entrypoint.sh /usr/ΓÇª"   backend        25 minutes ago   Up 25 minutes             0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+shaabjo-frontend-1       alphacms-frontend:shaabjo    "/usr/local/bin/dockΓÇª"   frontend       25 minutes ago   Up 25 minutes             0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp
+shaabjo-meilisearch-1    getmeili/meilisearch:v1.16   "tini -- /bin/sh -c ΓÇª"   meilisearch    25 minutes ago   Up 25 minutes             0.0.0.0:7700->7700/tcp, [::]:7700->7700/tcp
+shaabjo-scheduler-1      alphacms-backend:latest      "entrypoint.sh php aΓÇª"   scheduler      25 minutes ago   Up 25 minutes             80/tcp, 9000/tcp
+shaabjo-worker-1         alphacms-backend:latest      "entrypoint.sh php aΓÇª"   worker         25 minutes ago   Up 25 minutes (healthy)   80/tcp, 9000/tcp
+shaabjo-worker-media-1   alphacms-backend:latest      "entrypoint.sh php aΓÇª"   worker-media   25 minutes ago   Up 25 minutes             80/tcp, 9000/tcp
+

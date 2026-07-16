@@ -5,14 +5,22 @@ const optEmail = z.string().email('settings:validation.email').or(z.literal(''))
 
 export const generalSchema = z.object({
   site_name: z.string().min(1, 'settings:validation.required'),
+  site_name_ar: z.string().min(1, 'settings:validation.required'),
+  site_name_en: z.string(),
   site_email: optEmail,
   site_url: optUrl,
   timezone: z.string().min(1, 'settings:validation.required'),
   site_phone: z.string(),
   site_description: z.string(),
+  site_description_ar: z.string(),
+  site_description_en: z.string(),
   copyright_text: z.string(),
+  copyright_text_ar: z.string(),
+  copyright_text_en: z.string(),
   footer_extra_text: z.string(),
   cookie_policy_text: z.string(),
+  cookie_policy_text_ar: z.string(),
+  cookie_policy_text_en: z.string(),
   latitude: z.string(),
   longitude: z.string(),
   comments_enabled: z.boolean(),
@@ -51,6 +59,7 @@ export const socialSchema = z.object({
   tiktok: optUrl,
   whatsapp: z.string(),
   whatsapp_channel: z.string(),
+  nabd: optUrl,
 });
 export type SocialValues = z.infer<typeof socialSchema>;
 

@@ -23,9 +23,10 @@ function buildParams(p: AdCampaignsListParams): Record<string, string | number> 
  * مسار status مستقلّ (آلة الحالة + حارس النافذة). حذف ناعم + استرجاع + حذف نهائيّ.
  */
 export const adCampaignsService = {
-  async list(p: AdCampaignsListParams): Promise<AdCampaignsListResult> {
+  async list(p: AdCampaignsListParams, signal?: AbortSignal): Promise<AdCampaignsListResult> {
     const { data } = await http.get<ApiSuccess<AdCampaignData[]>>('/admin/campaigns', {
       params: buildParams(p),
+      signal,
     });
     const pagination = (data.meta as { pagination: PaginationMeta }).pagination;
     return { data: data.data, pagination };

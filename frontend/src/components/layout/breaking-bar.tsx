@@ -1,8 +1,15 @@
-import { Container } from './container';
-import { BREAKING } from './nav-data';
+import Link from 'next/link';
 
-// Breaking-news strip — sits directly under the header. Static placeholder content (no API).
-export function BreakingBar() {
+import { getBreakingFeed } from '@/lib/feed';
+
+import { Container } from './container';
+
+// Breaking-news strip — sits directly under the header. Real is_breaking articles from the CMS
+// (GET /feed/breaking); renders nothing when there's no breaking news (no placeholder fallback).
+export async function BreakingBar() {
+  const items = await getBreakingFeed();
+  if (items.length === 0) return null;
+
   return (
     <div className="border-b border-border bg-surface">
       <Container className="flex h-11 items-center gap-3">
@@ -12,11 +19,11 @@ export function BreakingBar() {
         </span>
         <div className="relative flex-1 overflow-hidden">
           <div className="flex items-center gap-7 whitespace-nowrap text-sm font-medium text-fg">
-            {BREAKING.map((t, i) => (
-              <span key={i} className="inline-flex shrink-0 items-center gap-2">
+            {items.map((item) => (
+              <Link key={item.id} href={item.href} className="inline-flex shrink-0 items-center gap-2 hover:text-primary">
                 <span className="size-1 rounded-full bg-primary" aria-hidden />
-                {t}
-              </span>
+                {item.title}
+              </Link>
             ))}
           </div>
           <div className="pointer-events-none absolute inset-y-0 start-0 w-12 bg-gradient-to-r from-transparent to-surface" aria-hidden />

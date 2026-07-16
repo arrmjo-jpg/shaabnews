@@ -5,19 +5,14 @@ declare(strict_types=1);
 namespace App\Actions\Admin\VideoLibrary;
 
 use App\Enums\VideoStatus;
+use App\Events\Content\VideoStatusChanged;
 use App\Http\Resources\Admin\VideoLibrary\VideoResource;
 use App\Models\User;
 use App\Models\Video;
-use App\Support\Cache\VideoCacheTags;
 use App\Support\Content\VideoWorkflowGuard;
-use App\Support\Frontend\FrontendCacheTags;
-use App\Support\Frontend\FrontendRevalidate;
-use App\Support\Notifications\WriterNotifier;
 use App\Support\Responses\ApiResponse;
-use App\Support\Seo\SearchEngineNotify;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -51,6 +46,8 @@ class TransitionVideoStatusAction
             return ApiResponse::error(__('video.media_not_ready'), [], 422);
         }
 
+        $from = $video->status;
+
         $video = DB::transaction(function () use ($video, $actor, $target, $scheduledAt): Video {
             $video->status = $target->value;
 
@@ -66,18 +63,9 @@ class TransitionVideoStatusAction
             return $video;
         });
 
-        $video->load('category');
-        $tags = VideoCacheTags::invalidationTags($video, categorySlug: $video->category?->slug);
-        Cache::tags($tags)->flush();
-        FrontendRevalidate::tags(FrontendCacheTags::fromVideoTags($tags));
-
-        // إخطار محركات البحث عند نشر فيديو (بوابته SEARCH_PING_ENABLED).
-        if ($target === VideoStatus::Published) {
-            SearchEngineNotify::sitemaps();
-        }
-
-        // إشعار الكاتب (نشر/رفض فقط) — بعد commit وخارج أي transaction (best-effort).
-        WriterNotifier::contentStatusChanged($video, 'video', $target->value);
+        // حدث نطاقيّ (Task 6b، مرآة ADR-E2): يستبدل النداءات الأمريّة القائمة
+        // (كاش/تجديد الواجهة/إشعار) بمستمعين متزامنين — نفس التوقيت والتسلسل تماماً.
+        event(new VideoStatusChanged($video, $from, $target, $actor));
 
         return ApiResponse::success(
             __('video.status_changed'),

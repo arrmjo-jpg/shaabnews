@@ -9,6 +9,7 @@ import {
 import { articlesService } from '@/services/articles.service';
 import { mediaLibraryService } from '@/services/mediaLibrary.service';
 import { categoriesService } from '@/services/categories.service';
+import { entitiesService, type EntityContentType, type EntityType } from '@/services/entities.service';
 import { liveUpdatesService } from '@/services/liveUpdates.service';
 import { tagsService } from '@/services/tags.service';
 import { usersService } from '@/services/users.service';
@@ -42,8 +43,26 @@ const LIVE_UPDATES = ['live-updates'] as const;
 export function useArticles(params: ArticlesListParams) {
   return useQuery({
     queryKey: [...ARTICLES, params],
-    queryFn: () => articlesService.list(params),
+    queryFn: ({ signal }) => articlesService.list(params, signal),
     placeholderData: keepPreviousData,
+  });
+}
+
+/** Fetch up to 100 active writers for the filter dropdown. */
+export function useWritersList() {
+  return useQuery({
+    queryKey: [...WRITERS, 'list-all'],
+    queryFn: () =>
+      usersService.list({
+        page: 1,
+        per_page: 100,
+        search: '',
+        status: 'active',
+        role: '',
+        trashed: 'none',
+        is_writer: 1,
+      }),
+    staleTime: 60_000,
   });
 }
 
@@ -412,7 +431,7 @@ export function useQuickCreateWriter() {
       password: string;
       avatar?: string | null;
     }) => {
-      await usersService.create({
+      const res = await usersService.create({
         name: input.name,
         email: input.email,
         password: input.password,
@@ -422,26 +441,8 @@ export function useQuickCreateWriter() {
         email_verified: false,
         avatar: input.avatar ?? null,
       });
-      // Re-fetch the search list scoped to the new email so we get the id back.
-      const result = await usersService.list({
-        page: 1,
-        per_page: 20,
-        search: input.email,
-        status: 'active',
-        role: '',
-        trashed: 'none',
-        is_writer: 1,
-      });
-      const created = result.data.find((u) => u.email === input.email);
-      if (!created) {
-        throw {
-          status: 0,
-          message: 'Created writer not found in search results.',
-          errors: {},
-        };
-      }
       void qc.invalidateQueries({ queryKey: WRITERS });
-      return created;
+      return res.data;
     },
     onError: (e: NormalizedError) => error(e.message),
   });
@@ -654,6 +655,55 @@ export function useDeleteMediaAsset() {
       success(m);
       invalidate();
     },
+  });
+}
+
+// ─── Entities (canonical registry — Task 12) ─────────────────────────────
+
+const ENTITIES = ['entities'] as const;
+
+/** Search/typeahead, optionally filtered by type. Mirrors useTagSuggestions. */
+export function useEntitySuggestions(query: string, type?: EntityType) {
+  const trimmed = query.trim();
+  return useQuery({
+    queryKey: [...ENTITIES, 'search', type, trimmed],
+    queryFn: () => entitiesService.search(trimmed, type, 20),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+}
+
+/** Create a new canonical entity. Caller merges the result into local widget state. */
+export function useCreateEntity() {
+  const { error } = useToast();
+  return useMutation({
+    mutationFn: entitiesService.create,
+    onError: (e: NormalizedError) => error(e.message),
+  });
+}
+
+/**
+ * Current entities tagged on a piece of content (GET, read-only) — disabled
+ * until the content has an id (a brand-new, unsaved item can't be tagged yet).
+ */
+export function useContentEntities(contentType: EntityContentType, contentId: number | undefined) {
+  return useQuery({
+    queryKey: [...ENTITIES, 'for', contentType, contentId],
+    queryFn: () => entitiesService.currentFor(contentType, contentId!),
+    enabled: contentId !== undefined,
+  });
+}
+
+/** Replace the full set of entities tagged on a piece of content. */
+export function useSyncContentEntities(contentType: EntityContentType, contentId: number | undefined) {
+  const qc = useQueryClient();
+  const { error } = useToast();
+  return useMutation({
+    mutationFn: (entityIds: number[]) => entitiesService.sync(contentType, contentId!, entityIds),
+    onSuccess: (data) => {
+      qc.setQueryData([...ENTITIES, 'for', contentType, contentId], data);
+    },
+    onError: (e: NormalizedError) => error(e.message),
   });
 }
 

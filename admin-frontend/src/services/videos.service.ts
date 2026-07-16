@@ -22,6 +22,7 @@ function buildParams(p: VideosListParams): Record<string, string | number> {
   if (p.visibility) params['filter[visibility]'] = p.visibility;
   if (p.source_type) params['filter[source_type]'] = p.source_type;
   if (p.locale) params['filter[locale]'] = p.locale;
+  if (p.video_category_id) params['filter[video_category_id]'] = p.video_category_id;
   if (p.sort) params.sort = p.sort;
   if (p.trashed) params.trashed = p.trashed;
   return params;
@@ -32,9 +33,10 @@ function buildParams(p: VideosListParams): Record<string, string | number> {
  * (ApiResponse + pagination meta) وأنماط بقية الخدمات (reels/articles). لا بنية موازية.
  */
 export const videosService = {
-  async list(p: VideosListParams): Promise<VideosListResult> {
+  async list(p: VideosListParams, signal?: AbortSignal): Promise<VideosListResult> {
     const { data } = await http.get<ApiSuccess<VideoData[]>>('/admin/videos', {
       params: buildParams(p),
+      signal,
     });
     const pagination = (data.meta as { pagination: PaginationMeta }).pagination;
     return { data: data.data, pagination };

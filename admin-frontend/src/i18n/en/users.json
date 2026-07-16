@@ -17,7 +17,9 @@
   "pagination": {
     "summary": "Page {{current}} of {{total}} — {{count}} items",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "first": "First",
+    "last": "Last"
   },
   "users": {
     "title": "Users",

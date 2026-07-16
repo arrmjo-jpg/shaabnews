@@ -166,9 +166,10 @@ it('exposes a full SEO payload on the article detail endpoint', function (): voi
     expect($seo['title'])->toBe('العنوان');
     expect($seo['description'])->toBe('الملخّص');
 
-    // Canonical URL is absolute, derived from canonical_path
+    // Canonical URL is absolute, derived from canonical_path — id-only, no slug (ADR A3.6:
+    // the id never changes, unlike the slug, so it's the stable part of the canonical URL).
     expect($seo['canonical_url'])->toStartWith('http');
-    expect($seo['canonical_url'])->toContain($a->slug);
+    expect($seo['canonical_url'])->toContain('/articles/'.$a->id);
 
     // OpenGraph + Twitter + JSON-LD blocks
     expect($seo['og']['type'])->toBe('article');

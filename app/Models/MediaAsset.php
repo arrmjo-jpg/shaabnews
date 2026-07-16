@@ -25,6 +25,7 @@ class MediaAsset extends Model
         'original_name', 'visibility', 'path', 'uploaded_by',
         'alt', 'caption', 'credit', 'source',
         'kind', 'provider', 'source_url',
+        'license_type', 'rights_expiry_at', 'usage_terms',
     ];
 
     protected $fillable = [
@@ -48,6 +49,9 @@ class MediaAsset extends Model
         'caption',
         'credit',
         'source',
+        'license_type',
+        'rights_expiry_at',
+        'usage_terms',
         'conversions',
         'visibility',
         'uploaded_by',
@@ -76,6 +80,7 @@ class MediaAsset extends Model
             'height' => 'integer',
             'duration_seconds' => 'integer',
             'visibility' => MediaVisibility::class,
+            'rights_expiry_at' => 'datetime',
             'stored_local' => 'boolean',
             'stored_remote' => 'boolean',
             'last_remote_sync_at' => 'datetime',

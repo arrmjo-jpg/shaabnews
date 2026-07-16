@@ -168,9 +168,14 @@ const ArticleSchema = z
 type RawArticle = z.infer<typeof ArticleSchema>;
 const ArticleEnvelope = z.object({ data: ArticleSchema.nullish() }).passthrough();
 
+// نزع بادئة اللغة من canonical_path، ثمّ تطبيع مسار المقال القانوني من الباك إند (Article::canonicalPath،
+// وفق ADR A3.6): /article/{id} (بالمفرد، بلا slug) → مسار الواجهة الفعليّ /articles/{id} (بالجمع؛
+// صفحة /articles/[idslug] تقبل id مجرّداً أو id-slug). بلا هذا التطبيع تُصبح روابط كلّ مقال معطوبة.
 function localeless(path: string | null | undefined): string {
   if (!path) return '#';
-  return path.replace(/^\/[a-z]{2}(?=\/)/, '') || '#';
+  const stripped = path.replace(/^\/[a-z]{2}(?=\/)/, '');
+  if (!stripped) return '#';
+  return stripped.replace(/^\/article\//, '/articles/');
 }
 
 function mapImage(i: z.infer<typeof ImageSchema> | null | undefined): ArticleImage | null {

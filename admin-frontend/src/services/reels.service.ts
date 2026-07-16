@@ -29,9 +29,10 @@ function buildParams(p: ReelsListParams): Record<string, string | number> {
  * (ApiResponse + pagination meta) وأنماط بقية الخدمات. لا بنية موازية.
  */
 export const reelsService = {
-  async list(p: ReelsListParams): Promise<ReelsListResult> {
+  async list(p: ReelsListParams, signal?: AbortSignal): Promise<ReelsListResult> {
     const { data } = await http.get<ApiSuccess<ReelData[]>>('/admin/reels', {
       params: buildParams(p),
+      signal,
     });
     const pagination = (data.meta as { pagination: PaginationMeta }).pagination;
     return { data: data.data, pagination };

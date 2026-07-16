@@ -4,3 +4,11 @@ node_modules
 *.log
 *.tsbuildinfo
 .git
+.gitignore
+coverage
+.turbo
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+

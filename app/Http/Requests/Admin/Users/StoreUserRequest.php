@@ -20,7 +20,7 @@ class StoreUserRequest extends BaseFormRequest
     {
         return [
             'name' => ['required', 'string', 'min:2', 'max:100'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', Password::defaults(), 'confirmed'],
             'status' => ['sometimes', Rule::enum(UserStatus::class)],
             'email_verified' => ['sometimes', 'boolean'],

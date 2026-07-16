@@ -9,6 +9,4 @@ use DomainException;
 /**
  * انتقال حالة حملة غير مسموح أو فاشل بسبب سباق (claimed=0). يُحوَّل في الـController إلى 409.
  */
-final class CampaignTransitionException extends DomainException
-{
-}
+final class CampaignTransitionException extends DomainException {}

@@ -62,6 +62,7 @@ final class WpPostReader
             categoryTtids: $ttids,
             primaryCategoryTtid: $primaryTermId !== null ? $this->ttidForTerm((int) $primaryTermId) : null,
             featuredUrl: $thumbId !== null ? $this->attachmentUrl((int) $thumbId) : null,
+            featuredWpAttachmentId: $thumbId !== null ? (int) $thumbId : null,
             seo: $yoast['seo'],
             permalink: $yoast['permalink'],
         );

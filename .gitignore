@@ -40,8 +40,6 @@ rr
 
 /public/storage
 /storage/logs
+/public/uploads
 
-# Admin Frontend ignores
-/admin-frontend/.env
-/admin-frontend/*.zip
-/admin-frontend/*.tsbuildinfo
+

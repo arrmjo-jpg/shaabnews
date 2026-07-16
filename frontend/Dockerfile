@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat
 
@@ -5,9 +6,11 @@ RUN apk add --no-cache libc6-compat
 FROM base AS deps
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies. Cache mount: persists npm's download cache across builds independently
+# of the layer cache, so a package-lock.json bump only re-downloads the changed packages instead
+# of everything.
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm,id=alphacms-frontend-npm npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Notifications\Audiences;
 
+use App\Models\User;
 use App\Modules\Notifications\Enums\AudienceType;
 use App\Modules\Notifications\Support\AudienceResult;
 use Illuminate\Database\Eloquent\Builder;
@@ -29,7 +30,7 @@ final class WhatsappSubscribersResolver extends AbstractAudienceResolver
         return $this->base();
     }
 
-    /** @return Builder<\App\Models\User> */
+    /** @return Builder<User> */
     private function base(): Builder
     {
         return $this->activeUsers()->where('whatsapp_subscribed', true);

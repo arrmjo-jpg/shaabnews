@@ -20,14 +20,27 @@ class UpdateGeneralSettingsRequest extends BaseFormRequest
         return [
             // Site
             'site_name' => ['sometimes', 'string', 'min:2', 'max:150'],
+            'site_name_ar' => ['sometimes', 'string', 'min:2', 'max:150'],
+            'site_name_en' => ['sometimes', 'nullable', 'string', 'max:150'],
             'site_email' => ['sometimes', 'email', 'max:255'],
             'site_url' => ['sometimes', 'nullable', 'url', 'max:255'],
             'timezone' => ['sometimes', 'timezone'],
             'site_phone' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'site_phones' => ['sometimes', 'array', 'max:20'],
+            'site_phones.*' => ['array'],
+            'site_phones.*.name' => ['nullable', 'string', 'max:100'],
+            'site_phones.*.title' => ['nullable', 'string', 'max:100'],
+            'site_phones.*.phone' => ['nullable', 'string', 'max:50'],
             'site_description' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'site_description_ar' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'site_description_en' => ['sometimes', 'nullable', 'string', 'max:500'],
             'copyright_text' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'copyright_text_ar' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'copyright_text_en' => ['sometimes', 'nullable', 'string', 'max:500'],
             'footer_extra_text' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'cookie_policy_text' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'cookie_policy_text_ar' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'cookie_policy_text_en' => ['sometimes', 'nullable', 'string', 'max:5000'],
 
             // Watermark
             'watermark_enabled' => ['sometimes', 'boolean'],
@@ -64,6 +77,7 @@ class UpdateGeneralSettingsRequest extends BaseFormRequest
             'social_tiktok' => ['sometimes', 'nullable', 'url', 'max:255'],
             'social_whatsapp' => ['sometimes', 'nullable', 'string', 'max:50'],
             'social_whatsapp_channel' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'social_nabd' => ['sometimes', 'nullable', 'url', 'max:255'],
 
             // Analytics
             'analytics_google_meta_tag' => ['sometimes', 'nullable', 'string', 'max:500'],

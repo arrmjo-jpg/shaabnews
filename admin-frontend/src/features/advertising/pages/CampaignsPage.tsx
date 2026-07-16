@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, ArchiveRestore, MoreHorizontal, Pencil, Plus, Repeat, Trash2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { DataTable, type Column } from '@/components/data/DataTable';
 import { Pagination } from '@/components/data/Pagination';
+import { SearchInput } from '@/components/data/SearchInput';
+import { cn } from '@/lib/utils';
 import { paths } from '@/router/paths';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -66,15 +67,17 @@ export default function CampaignsPage() {
   const canForceDelete = hasPermission('ads.force_delete');
   const canSeeTrash = canRestore || canForceDelete;
 
-  const [params, setParams] = useState<AdCampaignsListParams>({
-    page: 1,
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const params = useMemo<AdCampaignsListParams>(() => ({
+    page: Number(searchParams.get('page')) || 1,
     per_page: PER_PAGE,
-    search: '',
-    status: '',
-    pacing_mode: '',
-    sort: '-created_at',
-    trashed: '',
-  });
+    search: searchParams.get('search') || '',
+    status: (searchParams.get('status') as AdCampaignsListParams['status']) || '',
+    pacing_mode: (searchParams.get('pacing_mode') as AdCampaignsListParams['pacing_mode']) || '',
+    sort: searchParams.get('sort') || '-created_at',
+    trashed: (searchParams.get('trashed') as AdCampaignsListParams['trashed']) || '',
+  }), [searchParams]);
 
   const q = useAdCampaigns(params);
   const del = useDeleteAdCampaign();
@@ -84,7 +87,15 @@ export default function CampaignsPage() {
 
   const inTrash = params.trashed === 'only';
   const rows = q.data?.data ?? [];
-  const patch = (p: Partial<AdCampaignsListParams>) => setParams((prev) => ({ ...prev, ...p, page: p.page ?? 1 }));
+  const patch = (p: Partial<AdCampaignsListParams>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(p).forEach(([k, v]) => {
+      if (v === '' || v == null) next.delete(k);
+      else next.set(k, String(v));
+    });
+    if (p.page === undefined) next.set('page', '1');
+    setSearchParams(next);
+  };
 
   /** التفعيل اليدوي ممنوع بعد انتهاء النافذة (مرآة AdCampaignLifecycle::canActivateNow). */
   const canActivate = (c: AdCampaignData) => !c.ends_at || new Date(c.ends_at).getTime() >= Date.now();
@@ -254,11 +265,10 @@ export default function CampaignsPage() {
       </header>
 
       <div className="flex flex-wrap items-center gap-3 border border-border bg-background p-3">
-        <Input
+        <SearchInput
           value={params.search}
-          onChange={(e) => patch({ search: e.target.value })}
+          onDebouncedChange={(v) => patch({ search: v })}
           placeholder={t('campaigns.filter.search')}
-          className="min-w-[200px] flex-1"
         />
         <select
           className={selectCls}
@@ -322,7 +332,7 @@ export default function CampaignsPage() {
           </Button>
         </div>
       ) : (
-        <>
+        <div className={cn('transition-opacity duration-200', q.isFetching && 'opacity-70')}>
           <DataTable
             columns={columns}
             rows={rows}
@@ -332,7 +342,7 @@ export default function CampaignsPage() {
             emptyDescription={inTrash ? t('campaigns.empty.trashDescription') : t('campaigns.empty.description')}
           />
           {q.data ? <Pagination meta={q.data.pagination} onPage={(page) => patch({ page })} /> : null}
-        </>
+        </div>
       )}
     </div>
   );

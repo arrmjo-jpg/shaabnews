@@ -45,6 +45,7 @@ export const articleFormSchema = z
     is_pinned: z.boolean(),
     is_header: z.boolean(),
     is_editor_pick: z.boolean(),
+    is_squares: z.boolean(),
     comments_enabled: z.boolean(),
     views_count: z.coerce.number().int().min(0),
   })

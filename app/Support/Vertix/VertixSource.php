@@ -62,6 +62,43 @@ final class VertixSource
         return $this->newsSelect($this->eligibleNews()->where('newsid', '<', $below), $limit);
     }
 
+    /**
+     * الأخبار المؤهَّلة التي قسمها (catid) ليس ضمن المعرّفات الصالحة — «أيتام القسم»
+     * (تلك التي تفشل بـcategory_missing). keyset تنازليّ لاسترجاعها وإسنادها قسماً احتياطيّاً.
+     *
+     * @param  array<int,int>  $validCatids
+     * @return array<int,object>
+     */
+    public function newsMissingCategoryBelow(array $validCatids, int $below, int $limit): array
+    {
+        $q = $this->eligibleNews()->where('newsid', '<', $below);
+        if ($validCatids !== []) {
+            $q->whereNotIn('catid', $validCatids);
+        }
+
+        return $this->newsSelect($q, $limit);
+    }
+
+    /**
+     * صفوف المصدر بمعرّفاتها (newsid) — لردم بيانات لاحقة (غلاف/متن) لأخبار مُستورَدة سابقاً.
+     *
+     * @param  array<int,int>  $ids
+     * @return array<int,object>
+     */
+    public function newsByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return $this->eligibleNews()->whereIn('newsid', $ids)
+            ->get([
+                'newsid', 'catid', 'title', 'link', 'brief', 'body', 'keywords',
+                'ph_name', 'folder', 'createdate', 'updatedate_int', 'lang', 'views',
+            ])
+            ->all();
+    }
+
     private function newsSelect(Builder $q, int $limit): array
     {
         return $q->orderByDesc('newsid')

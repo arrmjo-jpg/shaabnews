@@ -1,0 +1,16 @@
+HTTP/1.1 200 OK
+Host: localhost:8000
+Connection: close
+X-Powered-By: PHP/8.4.12
+Cache-Control: max-age=60, public, s-maxage=300, stale-while-revalidate=86400
+Date: Fri, 10 Jul 2026 18:00:56 GMT
+Content-Type: application/json
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: no-referrer
+Permissions-Policy: geolocation=(), microphone=(), camera=(), browsing-topics=()
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
+X-RateLimit-Limit: 120
+X-RateLimit-Remaining: 117
+Vary: Origin
+

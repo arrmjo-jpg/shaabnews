@@ -30,7 +30,7 @@ const PGROUPS = ['permission-groups'] as const;
 export function useUsers(params: UsersListParams) {
   return useQuery({
     queryKey: [...USERS, params],
-    queryFn: () => usersService.list(params),
+    queryFn: ({ signal }) => usersService.list(params, signal),
     placeholderData: keepPreviousData,
   });
 }
@@ -61,8 +61,8 @@ export function useCreateUser() {
   const { success, error } = useToast();
   return useMutation({
     mutationFn: (payload: UserUpsertPayload) => usersService.create(payload),
-    onSuccess: (m) => {
-      success(m);
+    onSuccess: (res) => {
+      success(res.message);
       invalidate();
     },
     onError: (e: NormalizedError) => error(e.message),

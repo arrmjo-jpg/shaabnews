@@ -20,6 +20,21 @@ class ListReelsAction
         $perPage = max(1, min((int) request()->integer('per_page', $default), $max));
 
         $query = QueryBuilder::for(Reel::class)
+            ->select([
+                'id',
+                'uuid',
+                'status',
+                'is_featured',
+                'locale',
+                'translation_group',
+                'title',
+                'slug',
+                'media_asset_id',
+                'author_id',
+                'published_at',
+                'created_at',
+                'deleted_at',
+            ])
             ->with(['author:id,name', 'mediaAsset', 'engagementCounter'])
             ->allowedFilters(
                 AllowedFilter::exact('status'),

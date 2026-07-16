@@ -1,50 +1,40 @@
-# ── AlphaCMS — Coolify Production ─────────────────────────
+
+# -- AlphaCMS -- Coolify Production ------------------------
+#
+# Media handling (audit note): both media paths are host bind mounts to fixed absolute paths on
+# the production server, NOT baked into any image and NOT anonymous Docker-managed volumes.
+#   - storage/app/public (Laravel's default "public" disk)  -> ${STORAGE_PUBLIC_HOST_PATH}
+#   - public/uploads     (the custom "uploads" disk, config/filesystems.php) -> ${UPLOADS_HOST_PATH}
+# Both env vars default to the paths already in production use so this is a drop-in, non-breaking
+# change; overriding them lets ops relocate media storage (e.g. to a mounted block volume) without
+# touching this file. Bind mounts (vs. the previous Docker-managed named volume for storage/public)
+# were chosen so both media directories are equally easy to inspect, back up, and rsync directly
+# from the host -- a named volume's data lives inside Docker's own storage driver directory, which
+# is harder to reach and easy to lose with an incautious `docker compose down -v`.
+#
+# For local development (Docker Desktop on Windows/macOS/Linux), see docker-compose.override.yml,
+# which is auto-loaded alongside this file and replaces these absolute Linux host paths with
+# relative bind mounts into the repo itself.
 
 x-backend-common: &backend-common
   image: alphacms-backend:latest
+
   restart: unless-stopped
+  # ROOT CAUSE FIX: backend/worker/worker-media/scheduler had NEITHER env_file NOR an
+  # environment: block anywhere in this file. .env is excluded from the image by .dockerignore
+  # (correctly — secrets must not be baked in) and never mounted either, so these 4 containers
+  # booted with ZERO Laravel configuration: APP_KEY, DB_*, REDIS_*, MEILISEARCH_KEY all fell back
+  # to Laravel's internal package defaults. php-fpm/schedule:work don't hard-fail on that (no DB/
+  # Redis connection needed just to boot), which is why `backend`/`scheduler` looked "running" —
+  # but `queue:work` (worker/worker-media) connects to its queue driver immediately at startup,
+  # so it crashed on boot every time -> restart loop. This line is the fix: every service built
+  # from this anchor now actually receives .env at runtime.
+  env_file:
+    - .env
   volumes:
-    - media:/var/www/html/storage/app/public
-    - uploads:/var/www/html/public/uploads
+    - ${STORAGE_PUBLIC_HOST_PATH:-/data/storage-public}:/var/www/html/storage/app/public:rw
 
 services:
-  nginx:
-    build:
-      context: ./docker/nginx
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - backend
-      - frontend
-    volumes:
-      - .:/var/www/html:ro
-      - media:/srv/media:ro
-      - uploads:/var/www/html/public/uploads:ro
-    expose:
-      - "80"
-    networks:
-      - default
-      - coolify
-
-    labels:
-      - traefik.enable=true
-
-      # -------- Main Website --------
-      - traefik.http.routers.harer.rule=Host(`harer.store`) || Host(`www.harer.store`)
-      - traefik.http.routers.harer.entrypoints=https
-      - traefik.http.routers.harer.tls=true
-      - traefik.http.routers.harer.tls.certresolver=letsencrypt
-      - traefik.http.routers.harer.service=harer
-      - traefik.http.services.harer.loadbalancer.server.port=80
-
-      # -------- API --------
-      - traefik.http.routers.api.rule=Host(`api.harer.store`)
-      - traefik.http.routers.api.entrypoints=https
-      - traefik.http.routers.api.tls=true
-      - traefik.http.routers.api.tls.certresolver=letsencrypt
-      - traefik.http.routers.api.service=harer
-      - traefik.http.services.api.loadbalancer.server.port=80
-      - traefik.docker.network=coolify
 
   admin:
     build:
@@ -52,9 +42,17 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: https://api.harer.store/api/v1
+        VITE_PUBLIC_SITE_URL: https://harer.store
     restart: unless-stopped
     expose:
       - "80"
+    healthcheck:
+      # 127.0.0.1 لا localhost: busybox wget في Alpine يفضّل ::1 (IPv6) الذي لا يُستمَع عليه هنا.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     labels:
       - traefik.enable=true
       - traefik.http.routers.admin.rule=Host(`admin.harer.store`)
@@ -70,28 +68,62 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     expose:
-      - "9000"
-    depends_on:
-      - redis
-      - meilisearch
+      - "80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    volumes:
+      - ${STORAGE_PUBLIC_HOST_PATH:-/data/storage-public}:/var/www/html/storage/app/public:rw
+      - ${UPLOADS_HOST_PATH:-/data/uploads}:/var/www/html/public/uploads:rw
+    # -- Public media on the SITE domain, served directly by the backend web server --------------
+    # Route `<public-site>/storage/*` to the backend nginx (-> public/storage, static + Cache-Control).
+    # So branding/media resolve on the public origin and Cloudflare caches them:
+    #   Browser -> Cloudflare -> Traefik -> backend nginx -> Laravel public/storage   (never via Next.js).
+    # The API domain (api.<domain> -> backend) stays as Coolify manages it; this is an extra router.
+    # NOTE: the Host() below must equal the PUBLIC site domain (SITE_URL). priority beats the
+    # frontend catch-all so only /storage is peeled off to the backend.
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.public-storage.rule=Host(`harer.store`) && PathPrefix(`/storage`)"
+      - traefik.http.routers.public-storage.entrypoints=https
+      - traefik.http.routers.public-storage.tls=true
+      - traefik.http.routers.public-storage.tls.certresolver=letsencrypt
+      - traefik.http.routers.public-storage.priority=100
+      - traefik.http.routers.public-storage.service=public-storage
+      - traefik.http.services.public-storage.loadbalancer.server.port=80
 
   worker:
     <<: *backend-common
+    user: www-data
     command: php artisan queue:work redis --queue=default,notifications,mail,search,sitemap,ai,analytics --tries=3 --backoff=10 --sleep=1 --max-time=3600
-    depends_on:
-      - redis
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "queue:work"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   worker-media:
     <<: *backend-common
+    user: www-data
     command: php artisan queue:work redis-media --queue=media --tries=2 --timeout=2520 --sleep=2 --max-time=3600
-    depends_on:
-      - redis
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "queue:work"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   scheduler:
     <<: *backend-common
+    user: www-data
     command: php artisan schedule:work
-    depends_on:
-      - redis
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "schedule:work"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   frontend:
     build:
@@ -102,43 +134,50 @@ services:
     image: alphacms-frontend:${CLIENT:-shaabjo}
     restart: unless-stopped
     environment:
-      API_BASE_URL: ${API_BASE_URL}
-      SITE_URL: ${SITE_URL}
-      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+      # :? بدل قيمة افتراضية فارغة صامتة — كانت هذه بالضبط سلاسل التحذير الثلاث التي ظهرت
+      # ("variable is not set. Defaulting to a blank string"). الفراغ الصامت هنا لا يكسر
+      # `docker compose build` (Compose يكمل بتحذير فقط) لكنه يكسر Next.js فعلياً في وقت
+      # التشغيل (rewrites() في next.config.ts تُعطّل، lib/env.ts apiBaseUrl يصبح ""). :? يحوّل
+      # هذا لفشل فوري وواضح في `docker compose up`/`config` بدل عطل صامت يُكتشف لاحقاً بالصدفة.
+      API_BASE_URL: ${API_BASE_URL:?API_BASE_URL is required — set it in .env (see .env.example)}
+      SITE_URL: ${SITE_URL:?SITE_URL is required — set it in .env (see .env.example)}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?REVALIDATE_SECRET is required — must match FRONTEND_REVALIDATE_SECRET}
     volumes:
       - frontend-cache:/app/.next/cache
     expose:
       - "3000"
+    healthcheck:
+      # Next.js standalone هنا يستمع على عنوان الحاوية نفسها لا 127.0.0.1/localhost —
+      # $HOSTNAME (يضبطه Docker تلقائياً) يحلّ لعنوان الحاوية عبر /etc/hosts الداخلي.
+      test: ["CMD-SHELL", "wget --spider -q http://$$HOSTNAME:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
       - backend
 
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    expose:
-      - "6379"
-    volumes:
-      - redis-data:/data
 
   meilisearch:
     image: getmeili/meilisearch:v1.16
+
     restart: unless-stopped
     environment:
-      MEILI_MASTER_KEY: ${MEILISEARCH_KEY}
+      # :? بدل الفراغ الصامت — هذا تحديداً ما كان يُنتج "The master key must be at least 16
+      # bytes... The provided key is only 0 bytes": .env كان يعرّف MEILISEARCH_MASTER_KEY (اسم
+      # خاطئ لا تقرأه Compose) بينما هذا السطر يستبدل ${MEILISEARCH_KEY} (فارغ) -> "". أُصلح الاسم
+      # في .env، و:? هنا يمنع تكرار هذا الصنف من الأخطاء صامتاً في المستقبل.
+      MEILI_MASTER_KEY: ${MEILISEARCH_KEY:?MEILISEARCH_KEY is required (>=16 bytes) — set it in .env}
       MEILI_ENV: production
-    expose:
-      - "7700"
+    healthcheck:
+      # 127.0.0.1 لا localhost: نفس ملاحظة busybox wget/IPv6 في خدمة admin أعلاه.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - meili-data:/meili_data
 
-networks:
-  coolify:
-    external: true
-
 volumes:
-  media:
-  uploads:
   frontend-cache:
   meili-data:
-  redis-data:

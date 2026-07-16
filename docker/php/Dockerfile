@@ -1,45 +1,93 @@
 # syntax=docker/dockerfile:1
 # ── AlphaCMS backend — Laravel (PHP 8.4-FPM) production image ───────────────────
-# Used by three roles (same image, different commands): php-fpm (API), queue workers, scheduler.
-# Includes ffmpeg (video transcode) + image optimizers (spatie/image-optimizer) + Redis ext.
+# Used by four roles (same image, different `command:` in docker-compose.yml): php-fpm (API),
+# two queue workers, and the scheduler. Includes ffmpeg (video transcode) + image optimizers
+# (spatie/image-optimizer) + Redis ext, all needed by every role since they share job classes.
+#
+# Two-stage build:
+#   1) `vendor`  — resolves composer dependencies using the official composer:2 image. Isolated
+#      from the runtime image so git/composer (build-only tools, no legitimate use once the app
+#      is deployed) never end up in the final image, and so a PHP-extension change in the runtime
+#      stage can never invalidate this stage's cache (it only depends on composer.json/lock).
+#   2) `runtime` — the actual php:8.4-fpm image the containers run. Application code is copied
+#      with an explicit allow-list (not `COPY . .`) so nothing outside Laravel's real runtime
+#      footprint can end up in the image, regardless of what the .dockerignore does or doesn't
+#      catch in the future (defense in depth — see .dockerignore for the primary fix).
 
-FROM php:8.4-fpm AS base
+FROM composer:2 AS vendor
+WORKDIR /app
+ENV COMPOSER_CACHE_DIR=/tmp/composer-cache
+COPY composer.json composer.lock ./
+# --ignore-platform-reqs: this stage's php-cli doesn't have gd/redis/etc — it only resolves and
+# downloads packages, it never executes app code, so the real runtime extensions are irrelevant
+# here (they're installed for real in the `runtime` stage below and will fail loudly at boot if
+# something is actually missing).
+# BuildKit cache mount: a persistent composer download cache across builds, independent of
+# Docker's layer cache. A plain layer-cache hit still requires composer.lock to be byte-identical
+# to a previous build; this mount speeds up the common case where composer.lock DID change
+# (a dependency was bumped) by skipping re-download of every unchanged package's dist archive.
+RUN --mount=type=cache,target=/tmp/composer-cache,id=alphacms-composer \
+    composer install --no-dev --no-interaction --no-progress --prefer-dist \
+      --optimize-autoloader --no-scripts --ignore-platform-reqs
 
-# System libraries + media tooling. ffmpeg/ffprobe → video HLS/MP4 transcode; the optimizer
-# binaries are auto-detected by spatie/laravel-image-optimizer.
+FROM php:8.4-fpm AS runtime
+
+# System libraries + media tooling (all needed at RUNTIME, unlike git/composer which stay in the
+# `vendor` stage above). ffmpeg/ffprobe → video HLS/MP4 transcode; the optimizer binaries are
+# auto-detected by spatie/laravel-image-optimizer. unzip is kept (tiny, ~200KB) as a safety net
+# for any runtime archive handling; git is intentionally NOT installed here (build-only need).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      git unzip libicu-dev libzip-dev libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev \
-      ffmpeg jpegoptim optipng pngquant gifsicle webp \
+      unzip libicu-dev libzip-dev libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev \
+      ffmpeg jpegoptim optipng pngquant gifsicle webp nginx supervisor procps \
     && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
-    && docker-php-ext-install pdo_mysql gd intl zip bcmath exif pcntl opcache \
+    && docker-php-ext-install -j"$(nproc)" pdo_mysql gd intl zip bcmath exif pcntl opcache \
     && pecl install redis && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-alphacms.ini
 COPY docker/php/zz-fpm.conf /usr/local/etc/php-fpm.d/zz-fpm.conf
+COPY docker/php/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/php/nginx-backend.conf /etc/nginx/sites-available/default
+RUN rm -f /etc/nginx/sites-enabled/default && ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+
 WORKDIR /var/www/html
 
-# Vendor layer (cached on composer.lock). --no-scripts: artisan isn't bootable until app is copied.
-COPY composer.json composer.lock ./
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --no-progress \
-    --optimize-autoloader \
-    --no-scripts
+# Vendor from the dedicated stage — cached independently of every app-code change below; only
+# invalidates when composer.json/composer.lock change.
+COPY --from=vendor /app/vendor ./vendor
 
-# Application code, then finalize the autoloader + package manifest.
-COPY . .
-RUN composer dump-autoload --optimize --no-dev \
+# Selective application copy. With .dockerignore fixed this is no longer strictly required for
+# correctness, but an explicit allow-list is the stronger, future-proof guarantee: it copies
+# exactly what Laravel needs to boot (app, bootstrap, config, database, lang, public, resources,
+# routes, artisan, composer.json/lock) and nothing else, so any stray file that lands at the repo
+# root in the future (the audit found six of them: liked.html, saved.html, redis_test*.php,
+# publish_test*.php, scratch_test_*.php, an unidentified `alphacms` binary) can never silently
+# re-enter the image even if someone forgets to update .dockerignore.
+COPY app ./app
+COPY bootstrap ./bootstrap
+COPY config ./config
+COPY database ./database
+COPY lang ./lang
+COPY public ./public
+COPY resources ./resources
+COPY routes ./routes
+COPY artisan ./artisan
+COPY composer.json composer.lock ./
+
+# Writable runtime skeleton. .dockerignore strips the *contents* of storage/logs,
+# storage/framework/{cache,sessions,views,testing} and storage/app/public (they're runtime state,
+# either regenerated on demand or supplied by the volumes in docker-compose.yml) — but Laravel
+# still requires the directories themselves to exist and be writable before it can boot, so they
+# are recreated here explicitly rather than relying on empty directories surviving COPY.
+RUN mkdir -p storage/app/public storage/framework/cache storage/framework/sessions \
+      storage/framework/views storage/framework/testing storage/logs bootstrap/cache \
+    && composer dump-autoload --optimize --no-dev \
     && php artisan package:discover --ansi || true \
-    && php artisan storage:link \
-    && chown -R www-data:www-data storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache public
 
 COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-USER www-data
-EXPOSE 9000
+EXPOSE 80
 ENTRYPOINT ["entrypoint.sh"]
-CMD ["php-fpm"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

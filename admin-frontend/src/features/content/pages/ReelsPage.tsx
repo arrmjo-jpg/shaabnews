@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Archive,
@@ -29,9 +29,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { DataTable, type Column } from '@/components/data/DataTable';
 import { Pagination } from '@/components/data/Pagination';
+import { SearchInput } from '@/components/data/SearchInput';
 import { cn } from '@/lib/utils';
 import { EngagementMetricsButton } from '../components/EngagementMetricsButton';
 import { ReelVideoPreviewModal } from '../components/reels/ReelVideoPreviewModal';
@@ -131,15 +131,19 @@ export default function ReelsPage() {
   const canForceDelete = hasPermission('reels.force_delete');
   const canSeeTrash = canRestore || canForceDelete;
 
-  const [params, setParams] = useState<ReelsListParams>({
-    page: 1,
-    per_page: PER_PAGE,
-    search: '',
-    status: '',
-    locale: '',
-    sort: '-created_at',
-    trashed: '',
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const params = useMemo<ReelsListParams>(() => {
+    return {
+      page: Number(searchParams.get('page')) || 1,
+      per_page: PER_PAGE,
+      search: searchParams.get('search') || '',
+      status: (searchParams.get('status') as ReelsListParams['status']) || '',
+      locale: (searchParams.get('locale') as ReelsListParams['locale']) || '',
+      sort: (searchParams.get('sort') as ReelsListParams['sort']) || '-created_at',
+      trashed: (searchParams.get('trashed') as ReelsListParams['trashed']) || '',
+    };
+  }, [searchParams]);
 
   const [preview, setPreview] = useState<ReelData | null>(null);
 
@@ -150,8 +154,23 @@ export default function ReelsPage() {
   const forceDel = useForceDeleteReel();
   const transition = useTransitionReel();
 
-  const patch = (p: Partial<ReelsListParams>) =>
-    setParams((prev) => ({ ...prev, ...p, page: p.page ?? 1 }));
+  const patch = (p: Partial<ReelsListParams>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(p).forEach(([k, v]) => {
+      if (v === '' || v == null) {
+        next.delete(k);
+      } else {
+        next.set(k, String(v));
+      }
+    });
+    if (p.page === undefined) {
+      next.set('page', '1');
+    }
+    setSearchParams(next);
+  };
+
+  const inTrash = params.trashed === 'only';
+  const rows = q.data?.data ?? [];
 
   const onDelete = async (r: ReelData) => {
     if (
@@ -201,7 +220,6 @@ export default function ReelsPage() {
       transition.mutate({ id: r.id, status: 'archived' });
   };
 
-  const inTrash = params.trashed === 'only';
   const activeCard = inTrash ? 'trashed' : params.status || 'total';
   const s = statsQ.data;
 
@@ -407,11 +425,10 @@ export default function ReelsPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 border border-border bg-background p-3">
-        <Input
+        <SearchInput
           value={params.search}
-          onChange={(e) => patch({ search: e.target.value })}
+          onDebouncedChange={(v) => patch({ search: v })}
           placeholder={t('reels.filter.search')}
-          className="min-w-[200px] flex-1"
         />
         <select
           className={selectCls}
@@ -458,9 +475,8 @@ export default function ReelsPage() {
             variant="outline"
             size="sm"
             onClick={() =>
-              setParams({
+              patch({
                 page: 1,
-                per_page: PER_PAGE,
                 search: '',
                 status: '',
                 locale: '',
@@ -475,14 +491,16 @@ export default function ReelsPage() {
         ) : null}
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={q.data?.data ?? []}
-        rowKey={(r) => r.id}
-        loading={q.isLoading}
-        emptyTitle={inTrash ? t('reels.empty.trashTitle') : t('reels.empty.title')}
-        emptyDescription={inTrash ? t('reels.empty.trashDescription') : t('reels.empty.description')}
-      />
+      <div className={cn('transition-opacity duration-200', q.isFetching && 'opacity-70')}>
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(r) => r.id}
+          loading={q.isLoading}
+          emptyTitle={inTrash ? t('reels.empty.trashTitle') : t('reels.empty.title')}
+          emptyDescription={inTrash ? t('reels.empty.trashDescription') : t('reels.empty.description')}
+        />
+      </div>
 
       {q.data ? <Pagination meta={q.data.pagination} onPage={(page) => patch({ page })} /> : null}
 

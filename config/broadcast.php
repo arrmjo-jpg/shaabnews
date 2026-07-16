@@ -80,6 +80,10 @@ return [
     */
     'notifications' => [
         'enabled' => (bool) env('BROADCAST_NOTIFICATIONS_ENABLED', true),
+        // الناقل الفعليّ (BroadcastPushDriver المُربَط في AppServiceProvider) — "log" هو
+        // المُقلِّد الوحيد المُنفَّذ اليوم. تفعيل FCM لاحقاً = كتابة ناقل جديد يطبّق العقد
+        // وضبط هذه القيمة على "fcm"، بلا تعديل BroadcastPushGateway أو أيّ مستدعٍ.
+        'push_driver' => (string) env('BROADCAST_PUSH_DRIVER', 'log'),
         // دقائق قبل البدء المجدوَل لإرسال التذكير.
         'reminder_lead_minutes' => max(1, (int) env('BROADCAST_REMINDER_LEAD_MIN', 30)),
         // مواضيع التسليم (FCM topics) — موضوع عام + قالب لكل حدث.

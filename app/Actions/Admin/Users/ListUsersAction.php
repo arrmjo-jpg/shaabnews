@@ -21,6 +21,17 @@ class ListUsersAction
         ));
 
         $users = QueryBuilder::for(User::class)
+            ->select([
+                'id',
+                'name',
+                'email',
+                'avatar',
+                'status',
+                'is_writer',
+                'last_login_at',
+                'created_at',
+                'deleted_at',
+            ])
             ->with('roles:id,name,display_name')
             ->allowedFilters(
                 AllowedFilter::partial('name'),

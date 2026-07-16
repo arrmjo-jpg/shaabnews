@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Notifications\Audiences;
 
 use App\Models\Follow;
+use App\Models\User;
 use App\Modules\Notifications\Enums\AudienceType;
 use App\Modules\Notifications\Support\AudienceResult;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,7 +28,7 @@ final class SportsFollowersResolver extends AbstractAudienceResolver
         return $this->base();
     }
 
-    /** @return Builder<\App\Models\User> */
+    /** @return Builder<User> */
     private function base(): Builder
     {
         return $this->activeUsers()->whereIn('id', Follow::query()->select('user_id'));

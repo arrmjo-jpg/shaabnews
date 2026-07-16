@@ -31,6 +31,7 @@ final class ArticleRevisionRecorder
                 'is_featured' => $article->is_featured,
                 'is_breaking' => $article->is_breaking,
                 'is_header' => $article->is_header,
+                'is_squares' => $article->is_squares,
                 'comments_enabled' => $article->comments_enabled,
             ],
             'tags_snapshot' => $article->tags->pluck('name')->values()->all(),

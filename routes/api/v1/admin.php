@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Admin\Activity\ActivityController;
+use App\Http\Controllers\Api\V1\Admin\Ad\AdRequestController;
 use App\Http\Controllers\Api\V1\Admin\Advertising\AdAnalyticsController;
 use App\Http\Controllers\Api\V1\Admin\Advertising\AdCampaignController;
 use App\Http\Controllers\Api\V1\Admin\Advertising\AdCreativeController;
@@ -17,19 +18,19 @@ use App\Http\Controllers\Api\V1\Admin\Broadcast\BroadcastController;
 use App\Http\Controllers\Api\V1\Admin\Broadcast\BroadcastLifecycleController;
 use App\Http\Controllers\Api\V1\Admin\Broadcast\BroadcastModerationController;
 use App\Http\Controllers\Api\V1\Admin\Chat\ChatController;
+use App\Http\Controllers\Api\V1\Admin\Contact\ContactMessageController;
 use App\Http\Controllers\Api\V1\Admin\Content\ArticleController;
 use App\Http\Controllers\Api\V1\Admin\Content\AuthorMediaController;
 use App\Http\Controllers\Api\V1\Admin\Content\CategoryController;
-use App\Http\Controllers\Api\V1\Admin\Ad\AdRequestController;
-use App\Http\Controllers\Api\V1\Admin\Contact\ContactMessageController;
-use App\Http\Controllers\Api\V1\Admin\Inbox\InboxController;
 use App\Http\Controllers\Api\V1\Admin\Content\CommentController;
+use App\Http\Controllers\Api\V1\Admin\Content\EntityController;
 use App\Http\Controllers\Api\V1\Admin\Content\LiveUpdateController;
 use App\Http\Controllers\Api\V1\Admin\Content\PageController;
 use App\Http\Controllers\Api\V1\Admin\Content\ReelController;
 use App\Http\Controllers\Api\V1\Admin\Content\TagController;
 use App\Http\Controllers\Api\V1\Admin\Epaper\EpaperController;
 use App\Http\Controllers\Api\V1\Admin\Epaper\NewspaperSettingsController;
+use App\Http\Controllers\Api\V1\Admin\Inbox\InboxController;
 use App\Http\Controllers\Api\V1\Admin\Media\MediaAssetController;
 use App\Http\Controllers\Api\V1\Admin\Permissions\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\Permissions\PermissionGroupController;
@@ -39,18 +40,20 @@ use App\Http\Controllers\Api\V1\Admin\Roles\RoleController;
 use App\Http\Controllers\Api\V1\Admin\Scheduler\SchedulerController;
 use App\Http\Controllers\Api\V1\Admin\Settings\MediaController;
 use App\Http\Controllers\Api\V1\Admin\Settings\SettingsController;
-use App\Http\Controllers\Api\V1\Admin\Whatsapp\WhatsappCampaignController;
-use App\Http\Controllers\Api\V1\Admin\Whatsapp\WhatsappContactController;
-use App\Http\Controllers\Api\V1\Admin\Whatsapp\WhatsappGroupController;
+use App\Http\Controllers\Api\V1\Admin\Sport\CompetitionController;
+use App\Http\Controllers\Api\V1\Admin\Sport\MatchBarSettingsController;
 use App\Http\Controllers\Api\V1\Admin\System\FailedJobController;
 use App\Http\Controllers\Api\V1\Admin\System\OpsController;
 use App\Http\Controllers\Api\V1\Admin\System\SystemController;
 use App\Http\Controllers\Api\V1\Admin\Team\TeamMemberController;
 use App\Http\Controllers\Api\V1\Admin\Users\UserController;
+use App\Http\Controllers\Api\V1\Admin\Vertix\VertixMigrationController;
 use App\Http\Controllers\Api\V1\Admin\VideoLibrary\VideoCategoryController;
 use App\Http\Controllers\Api\V1\Admin\VideoLibrary\VideoController;
 use App\Http\Controllers\Api\V1\Admin\VideoLibrary\VideoPlaylistController;
-use App\Http\Controllers\Api\V1\Admin\Vertix\VertixMigrationController;
+use App\Http\Controllers\Api\V1\Admin\Whatsapp\WhatsappCampaignController;
+use App\Http\Controllers\Api\V1\Admin\Whatsapp\WhatsappContactController;
+use App\Http\Controllers\Api\V1\Admin\Whatsapp\WhatsappGroupController;
 use App\Http\Controllers\Api\V1\Admin\WpMigration\WpMigrationController;
 use App\Http\Controllers\Api\V1\Admin\WriterRequests\WriterRequestController;
 use App\Modules\CDN\Http\Controllers\CdnController;
@@ -439,6 +442,32 @@ Route::prefix('team-members')->group(function (): void {
         ->middleware('permission:team.force_delete')
         ->withTrashed()
         ->whereNumber('teamMember');
+});
+
+// ─── Competitions (تغطية المزامنة + أعلام شريط المباريات التحريريّة — مستقلّان بنيويًّا،
+// راجع Competition::class docblock). حجم متوقَّع صغير ⇒ بلا ترقيم صفحات/حذف ناعم. ────
+Route::prefix('competitions')->group(function (): void {
+    Route::get('/', [CompetitionController::class, 'index'])
+        ->middleware('permission:competitions.view');
+
+    Route::post('/', [CompetitionController::class, 'store'])
+        ->middleware('permission:competitions.manage');
+
+    Route::put('/{competition}', [CompetitionController::class, 'update'])
+        ->middleware('permission:competitions.manage')
+        ->whereNumber('competition');
+
+    Route::delete('/{competition}', [CompetitionController::class, 'destroy'])
+        ->middleware('permission:competitions.manage')
+        ->whereNumber('competition');
+});
+
+// ─── إعدادات شريط المباريات — وضع واحد حصريّ (MatchBarSource). القراءة مصادَقة عامّة؛
+// التبديل settings.edit (مطابق لنمط NewspaperSettingsController). ────────────────────
+Route::prefix('settings/match-bar')->group(function (): void {
+    Route::get('/', [MatchBarSettingsController::class, 'show']);
+    Route::put('/', [MatchBarSettingsController::class, 'update'])
+        ->middleware('permission:settings.edit');
 });
 
 // ─── Video Library → Videos (نطاق من الدرجة الأولى) ────────────────────
@@ -1130,6 +1159,30 @@ Route::put('tags/{tag}', [TagController::class, 'update'])
 Route::delete('tags/{tag}', [TagController::class, 'destroy'])
     ->middleware('permission:tags.delete')
     ->whereNumber('tag');
+
+// ─── Content → Entities (canonical registry — Task 12) ────────────────
+Route::get('entities', [EntityController::class, 'index'])
+    ->middleware('permission:articles.edit|articles.create|videos.edit|reels.edit');
+Route::post('entities', [EntityController::class, 'store'])
+    ->middleware('permission:entities.create');
+Route::get('articles/{article}/entities', [EntityController::class, 'forArticle'])
+    ->middleware('permission:articles.edit')
+    ->whereNumber('article');
+Route::patch('articles/{article}/entities', [EntityController::class, 'syncForArticle'])
+    ->middleware('permission:articles.edit')
+    ->whereNumber('article');
+Route::get('videos/{video}/entities', [EntityController::class, 'forVideo'])
+    ->middleware('permission:videos.edit')
+    ->whereNumber('video');
+Route::patch('videos/{video}/entities', [EntityController::class, 'syncForVideo'])
+    ->middleware('permission:videos.edit')
+    ->whereNumber('video');
+Route::get('reels/{reel}/entities', [EntityController::class, 'forReel'])
+    ->middleware('permission:reels.edit')
+    ->whereNumber('reel');
+Route::patch('reels/{reel}/entities', [EntityController::class, 'syncForReel'])
+    ->middleware('permission:reels.edit')
+    ->whereNumber('reel');
 
 // ─── Content → Comments moderation (read + moderate + delete) ──────────
 Route::get('comments', [CommentController::class, 'index'])

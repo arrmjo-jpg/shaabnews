@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Support\WpMigration;
 
 use App\Actions\Admin\Media\StoreMediaAssetAction;
+use App\Enums\MigrationMediaStatus;
 use App\Models\MediaAsset;
+use App\Models\MigrationMedia;
+use App\Models\MigrationRun;
 use App\Models\User;
 use App\Support\Security\SafeUrl;
 use Illuminate\Http\UploadedFile;
@@ -21,12 +24,22 @@ use Throwable;
  * حدّ تشعّب لكل منشور #3؛ حدّ حجم حتميّ #4؛ تحقّق MIME بالمحتوى (finfo) #5؛
  * جلب خارجي بأمان SSRF (SafeUrl) + مهلة/محاولات/تحديد إعادة توجيه #3/#4؛
  * عند الفشل: يُبقي المرجع الأصلي ويُسجّل تحذيراً مُصنَّفاً — لا يُفسد المتن #1.
+ *
+ * دفتر الوسائط (wp_migration_media، $run غير null): كل مرجع صورة — بهويّة ثابتة
+ * عبر إعادة التشغيل (source_key = att:{wp_attachment_id} للصورة البارزة، أو
+ * url:{sha1(src)} لصور المتن الداخلية بلا معرّف مرفق) — يُسجَّل بنتيجته (نجاح مع
+ * media_asset_id/checksum، أو فشل مع last_error + عدّاد محاولات). عند إعادة
+ * التشغيل: نجاح سابق (والأصل ما يزال موجوداً) ⇒ إعادة استخدام فورية بلا شبكة ولا
+ * قرص؛ فشل سابق دون بلوغ الحدّ ⇒ محاولة جديدة؛ فشل بلغ الحدّ ⇒ توقّف فوري (dead-
+ * letter) بلا إنهاك الشبكة بمحاولات لا تنتهي. $run=null (اختبارات مباشرة لا
+ * تستدعي ImportWpPostAction) يُبقي السلوك القديم بلا دفتر إطلاقاً.
  */
 final class WpMediaImporter
 {
     public function __construct(
         private readonly WpMediaResolver $resolver,
         private readonly User $actor,
+        private readonly ?MigrationRun $run = null,
     ) {}
 
     /**
@@ -95,9 +108,63 @@ final class WpMediaImporter
     /**
      * يستورد صورة واحدة (محلية/خارجية) → MediaAsset أو فشل مُصنَّف.
      *
+     * $wpAttachmentId: مُمرَّر من الصورة البارزة فقط (معرّف مرفق ووردبريس معروف) —
+     * صور المتن الداخلية تُترَك null فتُعرَّف بهاش الرابط بدلاً منه (#انظر تعليق الصنف).
+     *
      * @return array{asset: ?MediaAsset, reason: ?string}
      */
-    public function import(string $src): array
+    public function import(string $src, ?int $wpAttachmentId = null): array
+    {
+        if ($this->run === null) {
+            return $this->resolveAndStore($src);
+        }
+
+        $sourceKey = $wpAttachmentId !== null ? "att:{$wpAttachmentId}" : 'url:'.sha1($src);
+
+        $ledger = MigrationMedia::firstOrNew(['run_id' => $this->run->id, 'source_key' => $sourceKey]);
+
+        if ($ledger->exists) {
+            if ($ledger->status === MigrationMediaStatus::Done && $ledger->media_asset_id !== null) {
+                $existing = MediaAsset::find($ledger->media_asset_id);
+                if ($existing !== null) {
+                    return ['asset' => $existing, 'reason' => null]; // إعادة استخدام فورية — بلا شبكة/قرص
+                }
+                // الأصل المسجَّل اختفى (حُذف يدويّاً) رغم تسجيله منجزاً — أعد المحاولة بدل التعليق الدائم.
+            } elseif ($ledger->status === MigrationMediaStatus::Failed
+                && $ledger->attempts >= $this->maxMediaAttempts()) {
+                return ['asset' => null, 'reason' => $ledger->last_error ?? 'media_unresolved']; // dead-letter
+            }
+        }
+
+        $ledger->forceFill([
+            'wp_attachment_id' => $wpAttachmentId,
+            'source_url' => $src,
+            'status' => MigrationMediaStatus::Processing->value,
+            'attempts' => ($ledger->attempts ?? 0) + 1,
+        ])->save();
+
+        $result = $this->resolveAndStore($src);
+
+        if ($result['asset'] !== null) {
+            $ledger->forceFill([
+                'media_asset_id' => $result['asset']->id,
+                'checksum' => $result['asset']->checksum,
+                'status' => MigrationMediaStatus::Done->value,
+                'imported_at' => now(),
+                'last_error' => null,
+            ])->save();
+        } else {
+            $ledger->forceFill([
+                'status' => MigrationMediaStatus::Failed->value,
+                'last_error' => mb_substr((string) $result['reason'], 0, 500),
+            ])->save();
+        }
+
+        return $result;
+    }
+
+    /** @return array{asset: ?MediaAsset, reason: ?string} */
+    private function resolveAndStore(string $src): array
     {
         $resolution = $this->resolver->resolve($src);
 
@@ -108,6 +175,11 @@ final class WpMediaImporter
         return $resolution->isLocal()
             ? $this->importLocal((string) $resolution->path)
             : $this->importExternal((string) $resolution->url);
+    }
+
+    private function maxMediaAttempts(): int
+    {
+        return (int) config('wp-migration.media.max_attempts', 3);
     }
 
     /** @return array{asset: ?MediaAsset, reason: ?string} */
@@ -174,7 +246,15 @@ final class WpMediaImporter
 
             $file = new UploadedFile($tmp, 'remote-'.Str::random(8).self::extFor($mime), $mime, null, true);
 
-            return ['asset' => (new StoreMediaAssetAction)->handle($file, $this->actor), 'reason' => null];
+            $asset = (new StoreMediaAssetAction)->handle($file, $this->actor);
+            // احتفظ بالرابط الأصلي كبيانات وصفية (source_url موجود أصلاً على media_assets
+            // منذ 2026_05_20_130000) — لا يُكتب فوق قيمة موجودة (مثلاً عند إعادة استخدام
+            // أصل مُديدَب من مصدر آخر سبق أن سجّل رابطه الخاص).
+            if ($asset->source_url === null) {
+                $asset->forceFill(['source_url' => $url])->save();
+            }
+
+            return ['asset' => $asset, 'reason' => null];
         } catch (Throwable) {
             return ['asset' => null, 'reason' => 'media_network_error'];
         } finally {

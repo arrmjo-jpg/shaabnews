@@ -1,15 +1,33 @@
+/** جهة اتصال هاتفيّة واحدة: اسم الشخص + المسمى الوظيفي + الرقم. */
+export interface ContactPhone {
+  name: string;
+  title: string;
+  phone: string;
+}
+
 export interface GeneralSiteData {
   site_name: string;
+  site_name_ar: string;
+  site_name_en: string;
   site_email: string;
   site_url: string;
   timezone: string;
   site_phone: string;
+  site_phones: ContactPhone[];
   site_description: string;
+  site_description_ar: string;
+  site_description_en: string;
   copyright_text: string;
+  copyright_text_ar: string;
+  copyright_text_en: string;
   footer_extra_text: string;
   cookie_policy_text: string;
+  cookie_policy_text_ar: string;
+  cookie_policy_text_en: string;
   logo_light: string | null;
   logo_dark: string | null;
+  logo_light_en: string | null;
+  logo_dark_en: string | null;
   favicon: string | null;
   watermark_enabled: boolean;
   watermark_image: string | null;
@@ -45,6 +63,7 @@ export interface GeneralSocialData {
   tiktok: string;
   whatsapp: string;
   whatsapp_channel: string;
+  nabd: string;
 }
 
 export interface GeneralAnalyticsData {
@@ -65,7 +84,7 @@ export interface GeneralSettingsData {
 }
 
 /** حمولة التحديث مسطّحة (UpdateGeneralSettingsRequest) */
-export type GeneralUpdatePayload = Record<string, string | number | boolean | null>;
+export type GeneralUpdatePayload = Record<string, string | number | boolean | null | string[] | ContactPhone[]>;
 
 export interface MediaAssetResponse {
   id: string;

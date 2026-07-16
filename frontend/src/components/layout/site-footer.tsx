@@ -2,12 +2,12 @@ import Link from 'next/link';
 
 import { SiteLogo } from '@/components/branding/site-logo';
 import { WhatsappIcon } from '@/components/icons';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getNavCategories, getSiteSettings } from '@/lib/site-settings';
 import { getStaticPages, type StaticPage } from '@/lib/static-pages';
 
 import { Container } from './container';
 import { CookiePolicyModal } from './cookie-policy-modal';
-import { FOOTER_SECTIONS, PLATFORM_LINKS } from './nav-data';
+import { MEDIA_FOOTER_LINKS, PLATFORM_LINKS } from './nav-data';
 import { ScrollTopButton } from './scroll-top-button';
 import { socialEntries } from './social-map';
 
@@ -17,10 +17,15 @@ const LEGAL_RE = /سياس|شروط|أحكام|خصوص|ارتباط|cookie|priv
 const isLegal = (p: StaticPage) => LEGAL_RE.test(p.title);
 
 // Large premium footer (DARK), classic 4-column layout. Brand = logo_dark; social = Site Settings;
-// "المنصّة" = CMS info pages + platform placeholders; legal/policy links = CMS pages in the bottom
-// bar. Zero hardcoded page links. Failed API → CMS sections simply hide (placeholders remain).
+// "الأقسام" = CMS categories (getNavCategories, same source as the header nav); "الوسائط" = real
+// internal site sections; "المنصّة" = CMS info pages + platform links. Zero hardcoded page links.
+// Failed API → CMS-driven sections simply hide (no placeholder fallback).
 export async function SiteFooter() {
-  const [settings, pages] = await Promise.all([getSiteSettings(), getStaticPages('footer')]);
+  const [settings, pages, categories] = await Promise.all([
+    getSiteSettings(),
+    getStaticPages('footer'),
+    getNavCategories(),
+  ]);
 
   const siteName = settings?.site_name?.trim() || 'الشعب';
   const year = new Date().getFullYear();
@@ -147,27 +152,47 @@ export async function SiteFooter() {
                 )}
               </div>
 
-              {/* أعمدة الأقسام (placeholders قائمة) */}
-              {FOOTER_SECTIONS.map((col) => (
-                <nav key={col.title} aria-label={col.title} className="flex flex-col gap-4">
+              {/* الأقسام — من CMS (نفس مصدر تنقّل الهيدر)؛ عمود يختفي إن لم توجد أقسام مفعَّلة. */}
+              {categories.length > 0 && (
+                <nav aria-label="الأقسام" className="flex flex-col gap-4">
                   <h2 className="flex items-center gap-2 text-sm font-extrabold tracking-wide text-white">
                     <span className="h-4 w-1 rounded-full bg-primary" aria-hidden />
-                    {col.title}
+                    الأقسام
                   </h2>
                   <ul className="flex flex-col gap-2.5">
-                    {col.links.map((l) => (
-                      <li key={l}>
+                    {categories.map((cat) => (
+                      <li key={cat.slug}>
                         <Link
-                          href="#"
+                          href={`/category/${encodeURIComponent(cat.slug)}`}
                           className="inline-block text-sm text-white/60 transition-[color,padding] hover:ps-1 hover:text-white motion-reduce:transition-none"
                         >
-                          {l}
+                          {cat.name}
                         </Link>
                       </li>
                     ))}
                   </ul>
                 </nav>
-              ))}
+              )}
+
+              {/* الوسائط — أقسام الموقع الداخليّة (روابط حقيقيّة، ليست بيانات CMS). */}
+              <nav aria-label="الوسائط" className="flex flex-col gap-4">
+                <h2 className="flex items-center gap-2 text-sm font-extrabold tracking-wide text-white">
+                  <span className="h-4 w-1 rounded-full bg-primary" aria-hidden />
+                  الوسائط
+                </h2>
+                <ul className="flex flex-col gap-2.5">
+                  {MEDIA_FOOTER_LINKS.map((l) => (
+                    <li key={l.label}>
+                      <Link
+                        href={l.href}
+                        className="inline-block text-sm text-white/60 transition-[color,padding] hover:ps-1 hover:text-white motion-reduce:transition-none"
+                      >
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
 
               {/* المنصّة — CMS info pages + platform placeholders */}
               <nav aria-label="المنصّة" className="flex flex-col gap-4">

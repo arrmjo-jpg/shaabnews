@@ -33,7 +33,7 @@ final class TeamMemberSeoBuilder
         $asset = $member->avatarAsset;
         $imageUrl = $asset?->conversionUrl('medium') ?? $asset?->url();
 
-        $siteName = (string) config('app.name', 'AlphaCMS');
+        $siteName = PublicSeoBuilder::getSiteName();
         $twitterHandle = (string) config('seo.twitter.@username', '') ?: null;
 
         return [
@@ -111,7 +111,7 @@ final class TeamMemberSeoBuilder
             static fn (string $v): bool => $v !== '',
         ));
 
-        $logo = (string) config('seo.publisher.logo', '');
+        $logo = PublicSeoBuilder::getPublisherLogo();
 
         return array_filter([
             '@context' => 'https://schema.org',
@@ -124,7 +124,7 @@ final class TeamMemberSeoBuilder
             'image' => $image,
             'worksFor' => array_filter([
                 '@type' => 'Organization',
-                'name' => (string) (config('seo.publisher.name') ?: $siteName),
+                'name' => PublicSeoBuilder::getPublisherName(),
                 'logo' => $logo !== '' ? ['@type' => 'ImageObject', 'url' => $logo] : null,
             ], fn ($v): bool => $v !== null),
             'knowsAbout' => $member->department,
@@ -142,7 +142,7 @@ final class TeamMemberSeoBuilder
                 [
                     '@type' => 'ListItem',
                     'position' => 1,
-                    'name' => (string) (config('seo.publisher.name') ?: config('app.name', 'AlphaCMS')),
+                    'name' => PublicSeoBuilder::getPublisherName(),
                     'item' => PublicSeoBuilder::absoluteUrl('/'),
                 ],
                 [

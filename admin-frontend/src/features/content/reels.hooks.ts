@@ -15,7 +15,7 @@ function useReelsInvalidate() {
 export function useReels(params: ReelsListParams) {
   return useQuery({
     queryKey: [...REELS, params],
-    queryFn: () => reelsService.list(params),
+    queryFn: ({ signal }) => reelsService.list(params, signal),
   });
 }
 

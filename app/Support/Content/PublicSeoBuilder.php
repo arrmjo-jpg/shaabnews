@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Support\Content;
 
 use App\Models\Article;
+use App\Settings\GeneralSettings;
+use App\Support\Media\MediaUrl;
+use App\Support\Media\SeoMediaResolver;
 
 /**
  * Constructs the public-facing SEO payload for an Article.
@@ -16,74 +19,99 @@ use App\Models\Article;
  *   - OpenGraph + Twitter card data
  *   - JSON-LD NewsArticle / Article structured data
  *
- * Note on package reuse: ralphjsmit/laravel-seo's SEOData DTO is available for
- * Blade-rendered HTML pages; this builder mirrors that data structure as a
- * plain array for API delivery. Single source of truth either way.
+ * Single source of truth.
  */
 final class PublicSeoBuilder
 {
-    public static function build(Article $article): array
+    public static function build(Article $article): SeoData
     {
+        // GeneralSettings (Spatie Settings) — resolved per request. Spatie caches the *values*
+        // internally; caching the settings **object** in the app cache is invalid: it round-trips
+        // through (un)serialize and comes back as __PHP_Incomplete_Class, throwing on property access
+        // (broke article-detail SEO ⇒ 500). Never cache the settings object.
+        $settings = app(GeneralSettings::class);
+
+        $siteName = $settings->getLocalizedName($article->locale);
         $absoluteUrl = self::absoluteUrl($article->canonicalPath());
-        // صورة المشاركة المخصّصة (og:image) لها الأولوية، ثم الغلاف — مع أبعادها.
-        $shareImage = self::shareImageObject($article);
+
+        // Priority check for social sharing image:
+        // 1. Custom og_image, 2. Article cover image, 3. Configured fallback, 4. Omit completely.
+        $shareImage = self::shareImageObject($article, $settings);
         $coverUrl = $shareImage['url'] ?? null;
+
         $title = $article->seo_title !== null && $article->seo_title !== ''
             ? $article->seo_title
             : $article->title;
+
         $description = $article->seo_description !== null && $article->seo_description !== ''
             ? $article->seo_description
             : $article->excerpt;
 
-        $siteName = (string) config('app.name', 'AlphaCMS');
         $twitterHandle = (string) config('seo.twitter.@username', '') ?: null;
 
-        return [
+        // Open Graph
+        $og = [
+            'type' => 'article',
+            'site_name' => $siteName,
+            'locale' => self::ogLocale($article->locale),
             'title' => $title,
             'description' => $description,
-            'keywords' => $article->seo_keywords,
-            'canonical_url' => $article->canonical_url !== null && $article->canonical_url !== ''
-                ? $article->canonical_url
-                : $absoluteUrl,
-            'robots' => $article->robots !== null && $article->robots !== ''
+            'url' => $absoluteUrl,
+            'article' => [
+                'published_time' => $article->published_at?->toISOString(),
+                'modified_time' => $article->updated_at?->toISOString(),
+                'section' => $article->primaryCategory?->name,
+                'tag' => $article->tags->pluck('name')->values()->all(),
+                'author' => $article->author?->name,
+            ],
+        ];
+
+        if ($coverUrl) {
+            $og['image'] = $coverUrl;
+            $og['image_width'] = $shareImage['width'] ?? null;
+            $og['image_height'] = $shareImage['height'] ?? null;
+            $og['image_secure_url'] = $shareImage['secure_url'] ?? null;
+            $og['image_type'] = $shareImage['type'] ?? null;
+        }
+
+        // Twitter Cards
+        $twitter = [
+            'card' => $coverUrl ? 'summary_large_image' : 'summary',
+            'site' => $twitterHandle ? '@'.$twitterHandle : null,
+            'creator' => $twitterHandle ? '@'.$twitterHandle : null,
+            'title' => $title,
+            'description' => $description,
+        ];
+
+        if ($coverUrl) {
+            $twitter['image'] = $coverUrl;
+        }
+
+        $structuredData = self::structuredData($article, $absoluteUrl, $shareImage, $title, $description, $siteName, $settings);
+        $breadcrumbs = self::breadcrumbs($article, $settings);
+
+        return new SeoData(
+            title: $title,
+            description: $description,
+            keywords: $article->seo_keywords,
+            canonicalUrl: $absoluteUrl,
+            robots: $article->robots !== null && $article->robots !== ''
                 ? $article->robots
                 : (string) config('seo.robots.default'),
-            'image' => $coverUrl,
-            'hreflang' => self::hreflang($article),
-            'og' => [
-                'type' => 'article',
-                'site_name' => $siteName,
-                'locale' => self::ogLocale($article->locale),
-                'title' => $title,
-                'description' => $description,
-                'url' => $absoluteUrl,
-                'image' => $coverUrl,
-                'image_width' => $shareImage['width'] ?? null,
-                'image_height' => $shareImage['height'] ?? null,
-                'article' => [
-                    'published_time' => $article->published_at?->toISOString(),
-                    'modified_time' => $article->updated_at?->toISOString(),
-                    'section' => $article->primaryCategory?->name,
-                    'tag' => $article->tags->pluck('name')->values()->all(),
-                    'author' => $article->author?->name,
-                ],
-            ],
-            'twitter' => [
-                'card' => $coverUrl ? 'summary_large_image' : 'summary',
-                'site' => $twitterHandle ? '@'.$twitterHandle : null,
-                'creator' => $twitterHandle ? '@'.$twitterHandle : null,
-                'title' => $title,
-                'description' => $description,
-                'image' => $coverUrl,
-            ],
-            'structured_data' => self::structuredData($article, $absoluteUrl, $shareImage, $title, $description, $siteName),
-            // BreadcrumbList JSON-LD منفصل (المستهلك يُصدِره كـ script ثانٍ).
-            'breadcrumbs' => self::breadcrumbs($article),
-        ];
+            image: $coverUrl,
+            hreflang: self::hreflang($article),
+            og: $og,
+            twitter: $twitter,
+            structuredData: $structuredData,
+            breadcrumbs: $breadcrumbs
+        );
     }
 
-    /** صورة المشاركة ككائن (url + أبعاد) — og_image ثم الغلاف، وإلا avatar للرأي. */
-    private static function shareImageObject(Article $article): ?array
+    /**
+     * Resolves the sharing image based on strict priorities:
+     * 1. og_image, 2. cover, 3. fallback, 4. null.
+     */
+    private static function shareImageObject(Article $article, GeneralSettings $settings): ?array
     {
         $asset = null;
         if ($article->og_image_id !== null) {
@@ -95,32 +123,38 @@ final class PublicSeoBuilder
         }
 
         if ($asset !== null) {
-            return array_filter([
-                'url' => $asset->url(),
-                'width' => $asset->width,
-                'height' => $asset->height,
-            ], fn ($v): bool => $v !== null);
+            return SeoMediaResolver::resolve($asset);
         }
 
-        // بديل الرأي: صورة الكاتب (بلا أبعاد معروفة).
+        // opinion articles author avatar fallback
         if ($article->type->value === 'opinion') {
             $avatar = $article->authorAvatarUrl();
             if ($avatar !== null) {
-                return ['url' => $avatar];
+                return SeoMediaResolver::resolve($avatar);
             }
+        }
+
+        // Dedicated fallback image configured
+        $fallback = config('seo.image.fallback');
+        if ($fallback) {
+            return SeoMediaResolver::resolve($fallback);
         }
 
         return null;
     }
 
-    /** BreadcrumbList: الرئيسية → التصنيف (إن وُجد) → المقال. */
-    private static function breadcrumbs(Article $article): array
+    /**
+     * BreadcrumbList: Home → Category (if exists) → Article.
+     */
+    private static function breadcrumbs(Article $article, GeneralSettings $settings): array
     {
         $locale = $article->locale;
+        $siteName = $settings->getLocalizedName($locale);
+
         $items = [[
             '@type' => 'ListItem',
             'position' => 1,
-            'name' => (string) (config('seo.publisher.name') ?: config('app.name', 'AlphaCMS')),
+            'name' => $siteName,
             'item' => self::absoluteUrl($locale),
         ]];
 
@@ -148,7 +182,9 @@ final class PublicSeoBuilder
         ];
     }
 
-    /** @return array<int,array{locale:string,url:string}> */
+    /**
+     * @return array<int,array{locale:string,url:string}>
+     */
     private static function hreflang(Article $article): array
     {
         $selfUrl = self::absoluteUrl($article->canonicalPath());
@@ -156,7 +192,6 @@ final class PublicSeoBuilder
         if ($article->translation_group === null || $article->translation_group === '') {
             return [
                 ['locale' => $article->locale, 'url' => $selfUrl],
-                // x-default يشير للنسخة المتاحة (هذه) — توجيه افتراضي للزواحف.
                 ['locale' => 'x-default', 'url' => $selfUrl],
             ];
         }
@@ -175,14 +210,15 @@ final class PublicSeoBuilder
             ->values()
             ->all();
 
-        // x-default → نسخة اللغة الأساسية (ar) إن وُجدت، وإلا هذه النسخة.
         $default = $siblings->firstWhere('locale', 'ar') ?? $article;
         $list[] = ['locale' => 'x-default', 'url' => self::absoluteUrl($default->canonicalPath())];
 
         return $list;
     }
 
-    /** Build the JSON-LD NewsArticle schema. Consumer wraps in <script type="application/ld+json">. */
+    /**
+     * Build the JSON-LD NewsArticle schema.
+     */
     private static function structuredData(
         Article $article,
         string $url,
@@ -190,10 +226,10 @@ final class PublicSeoBuilder
         string $title,
         ?string $description,
         string $siteName,
+        GeneralSettings $settings
     ): array {
         $schemaType = $article->type->value === 'news' ? 'NewsArticle' : 'Article';
 
-        // صورة كـ ImageObject مع الأبعاد إن توفّرت (أصلح لنتائج Google الغنية).
         $image = null;
         if ($shareImage !== null) {
             $image = isset($shareImage['width'], $shareImage['height'])
@@ -203,15 +239,31 @@ final class PublicSeoBuilder
                     'width' => $shareImage['width'],
                     'height' => $shareImage['height'],
                 ], fn ($v): bool => $v !== null)
-                : [$shareImage['url']];
+                : ['@type' => 'ImageObject', 'url' => $shareImage['url']];
         }
 
-        // الناشر مع شعار ImageObject — مطلوب لصلاحية NewsArticle في Google.
-        $logo = (string) config('seo.publisher.logo', '');
+        // Publisher logo
+        $logo = self::getPublisherLogo();
+
+        $logoObject = null;
+        if ($logo !== '') {
+            $resolvedLogo = SeoMediaResolver::resolve($logo);
+            if ($resolvedLogo) {
+                $logoObject = array_filter([
+                    '@type' => 'ImageObject',
+                    'url' => $resolvedLogo['url'],
+                    'width' => $resolvedLogo['width'] ?? null,
+                    'height' => $resolvedLogo['height'] ?? null,
+                ], fn ($v): bool => $v !== null);
+            }
+        }
+
+        $pubName = self::getPublisherName($article->locale);
+
         $publisher = array_filter([
             '@type' => 'Organization',
-            'name' => (string) (config('seo.publisher.name') ?: $siteName),
-            'logo' => $logo !== '' ? ['@type' => 'ImageObject', 'url' => $logo] : null,
+            'name' => $pubName,
+            'logo' => $logoObject,
         ], fn ($v): bool => $v !== null);
 
         return array_filter([
@@ -242,8 +294,44 @@ final class PublicSeoBuilder
         };
     }
 
+    public static function getSiteName(?string $locale = null): string
+    {
+        $settings = app(GeneralSettings::class);
+
+        return $settings->getLocalizedName($locale);
+    }
+
+    public static function getPublisherName(?string $locale = null): string
+    {
+        $siteName = self::getSiteName($locale);
+        $pubName = (string) config('seo.publisher.name', '');
+        if ($pubName === '' || $pubName === 'Laravel') {
+            $pubName = $siteName;
+        }
+
+        return $pubName;
+    }
+
+    public static function getPublisherLogo(): string
+    {
+        $logo = (string) config('seo.publisher.logo', '');
+        if ($logo === '') {
+            $settings = app(GeneralSettings::class);
+            if ($settings->logo_light) {
+                $logo = MediaUrl::forPublic($settings->logo_light) ?? '';
+            }
+        }
+
+        return $logo;
+    }
+
     public static function absoluteUrl(string $path): string
     {
-        return rtrim((string) config('app.url'), '/').'/'.ltrim($path, '/');
+        $baseUrl = (string) config('frontend.public_url');
+        if ($baseUrl === '') {
+            $baseUrl = (string) config('app.url');
+        }
+
+        return rtrim($baseUrl, '/').'/'.ltrim($path, '/');
     }
 }

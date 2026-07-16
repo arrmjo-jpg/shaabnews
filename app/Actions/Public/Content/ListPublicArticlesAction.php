@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Public\Content;
 
+use App\Enums\ArticleStatus;
 use App\Enums\ArticleType;
 use App\Http\Resources\Public\Content\PublicArticleListItemResource;
 use App\Models\Article;
@@ -15,6 +16,8 @@ use App\Support\Cache\CacheTtl;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -43,6 +46,13 @@ class ListPublicArticlesAction
         // وضع cursor (للجوّال/التمرير العميق): ثابت وسريع بلا COUNT ولا إزاحة عناصر.
         $cursorMode = $request->query('paginate') === 'cursor';
 
+        // حماية الإنتاج: نمنع الوصول لصفحات عميقة جداً (مثل page=3324) عبر الترقيم التقليدي
+        // لأن OFFSET يدمر الأداء مع OR EXISTS. (أول 100 صفحة تكفي للـ SEO).
+        $maxPage = (int) config('performance.pagination.max_page', 100);
+        if (! $cursorMode && $maxPage > 0 && $page > $maxPage) {
+            abort(404, 'Page limit exceeded. Use cursor pagination for deep scrolling.');
+        }
+
         $queryHash = $this->hashQuery($request, $perPage, $page);
 
         // إبطال حبيبي: قائمة مفلترة بتصنيف تُوسَم بوسم ذلك التصنيف (تُبطَل عند تغيّر
@@ -56,7 +66,7 @@ class ListPublicArticlesAction
             $tags,
             CacheKeys::publicArticlesList($locale, $queryHash),
             CacheTtl::SHORT,
-            fn (): array => $this->build($locale, $request, $perPage, $cursorMode)
+            fn (): array => $this->build($locale, $request, $perPage, $cursorMode, $maxPage)
         );
 
         return ApiResponse::success(
@@ -66,28 +76,123 @@ class ListPublicArticlesAction
     }
 
     /** @return array<string,mixed> */
-    private function build(string $locale, Request $request, int $perPage, bool $cursorMode): array
+    private function build(string $locale, Request $request, int $perPage, bool $cursorMode, int $maxPage = 0): array
     {
-        // بحث (filter[q]) يُحسب مرّة: Meilisearch يُعيد المعرّفات **مرتّبةً بالصلة** (العنوان موزون أوّلًا).
-        // نُبقي هذا الترتيب بدل التاريخ — وإلا يُدفَن أفضل مطابق للعنوان تحت الأحدث («بحث غبي»).
-        // null = لا بحث · [] = بحث بلا نتائج (أو محرّك معطّل، مُسجَّل).
-        $searchIds = $this->searchIds($request);
+        $term = trim((string) ($request->query('filter')['q'] ?? ''));
 
+        // إذا كان هناك نص بحث، نستخدم Meilisearch ونمطه الأصلي في الترقيم والفرز بالصلة
+        if ($term !== '' && ! $cursorMode) {
+            try {
+                $search = Article::search($term)
+                    ->where('status', ArticleStatus::Published->value)
+                    ->where('locale', $locale);
+
+                // تطبيق مرشحات التصفية الخاصة بالبحث العام داخل Meilisearch (فقط إذا لم يكن محرك المجموعات المحاكي للتوافق مع الاختبارات)
+                $isCollection = config('scout.driver') === 'collection';
+                $categoryFilter = (string) ($request->query('filter')['category'] ?? '');
+                if ($categoryFilter !== '') {
+                    $category = Category::where('slug', $categoryFilter)->where('locale', $locale)->first();
+                    if ($category) {
+                        if (! $isCollection) {
+                            $search->where('category_ids', $category->id);
+                        }
+                    } else {
+                        if (! $isCollection) {
+                            $search->where('category_ids', -1);
+                        }
+                    }
+                }
+
+                $tagFilter = (string) ($request->query('filter')['tag'] ?? '');
+                if ($tagFilter !== '' && ! $isCollection) {
+                    $search->where('tag_names', $tagFilter);
+                }
+
+                $typeFilter = (string) ($request->query('filter')['type'] ?? '');
+                if ($typeFilter !== '' && ! $isCollection) {
+                    $search->where('type', $typeFilter);
+                }
+
+                // الحماية المزدوجة (Double Security): نقيد تحميل النماذج بقوانين النشر وسرية البيانات والأقسام من MySQL
+                $search->query(fn ($q) => $q->published()
+                    ->forLocale($locale)
+                    ->select([
+                        'id', 'author_id', 'primary_category_id', 'type', 'status', 'locale',
+                        'title', 'slug', 'excerpt', 'published_at', 'is_pinned', 'views_count',
+                    ])
+                    ->with([
+                        'author:id,name,avatar,is_writer',
+                        'primaryCategory:id,name,slug',
+                        'mediaAssets' => fn ($ma) => $ma->wherePivot('collection', 'cover'),
+                    ])
+                    ->when($categoryFilter !== '', function ($q) use ($categoryFilter, $locale) {
+                        $category = Category::where('slug', $categoryFilter)->where('locale', $locale)->first();
+                        if ($category) {
+                            $q->where(function ($w) use ($category) {
+                                $w->where('primary_category_id', $category->id)
+                                    ->orWhereHas('categories', fn ($sub) => $sub->where('categories.id', $category->id));
+                            });
+                        } else {
+                            $q->whereRaw('1 = 0');
+                        }
+                    })
+                    ->when($tagFilter !== '', function ($q) use ($tagFilter) {
+                        $q->withAnyTags([$tagFilter]);
+                    })
+                    ->when($typeFilter !== '', function ($q) use ($typeFilter) {
+                        $q->where('type', $typeFilter);
+                    })
+                );
+
+                $paginator = $search->paginate($perPage)->appends($request->query());
+
+                return [
+                    'data' => PublicArticleListItemResource::collection($paginator)->resolve(),
+                    'pagination' => [
+                        'total' => $paginator->total(),
+                        'count' => $paginator->count(),
+                        'per_page' => $paginator->perPage(),
+                        'current_page' => $paginator->currentPage(),
+                        'total_pages' => $maxPage > 0 ? min($paginator->lastPage(), $maxPage) : $paginator->lastPage(),
+                    ],
+                ];
+            } catch (\Throwable $e) {
+                // تدهور رشيق: نرجع للبحث عبر قاعدة البيانات مباشرة في حال تعطل محرك البحث
+                report($e);
+            }
+        }
+
+        // المسار الافتراضي بدون بحث (أو كحالة تراجع في حال تعطل Meilisearch)
         $query = QueryBuilder::for(
             Article::query()
+                ->select([
+                    'id', 'author_id', 'primary_category_id', 'type', 'status', 'locale',
+                    'title', 'subtitle', 'slug', 'excerpt', 'published_at',
+                    'is_featured', 'is_breaking', 'is_pinned', 'is_header', 'is_editor_pick', 'is_squares',
+                    'views_count', 'event_status', 'created_at', 'deleted_at',
+                ])
                 ->published()
                 ->forLocale($locale)
-                ->with(['author:id,name,avatar,is_writer', 'primaryCategory:id,name,slug', 'mediaAssets' => fn ($q) => $q->wherePivot('collection', 'cover')])
+                ->with([
+                    'author:id,name,avatar,is_writer',
+                    'primaryCategory:id,name,slug',
+                    'mediaAssets' => fn ($q) => $q->wherePivot('collection', 'cover'),
+                ])
         )
             ->allowedFilters(
                 AllowedFilter::exact('type'),
+                AllowedFilter::exact('author_id'),
                 AllowedFilter::partial('title', 'title'),
-                AllowedFilter::callback('q', function ($q) use ($searchIds): void {
-                    if ($searchIds === null) {
-                        return; // لا بحث
+                // تصفية البحث التقليدي في قاعدة البيانات (Fallback)
+                AllowedFilter::callback('q', function ($q) use ($term): void {
+                    if ($term === '') {
+                        return;
                     }
-                    // يُقيَّد الناتج بمعرّفات Meilisearch (ضمن باقي الفلاتر/اللغة)؛ الترتيب بالصلة أدناه.
-                    $q->whereIn($q->getModel()->getQualifiedKeyName(), $searchIds ?: [-1]);
+                    if (DB::connection()->getDriverName() === 'mysql') {
+                        $q->whereFullText('title', $term);
+                    } else {
+                        $q->where('title', 'like', '%'.$term.'%');
+                    }
                 }),
                 AllowedFilter::callback('category', function ($q, $value) use ($locale): void {
                     $category = Category::query()
@@ -95,7 +200,7 @@ class ListPublicArticlesAction
                         ->where('locale', $locale)
                         ->first();
                     if ($category === null) {
-                        $q->whereRaw('1 = 0'); // empty set rather than 500
+                        $q->whereRaw('1 = 0');
 
                         return;
                     }
@@ -112,8 +217,6 @@ class ListPublicArticlesAction
                 }),
             );
 
-        // ── cursor: ترتيب ثابت (published_at + id كفاصل) — لا COUNT ولا إزاحة ──
-        // is_pinned أولاً: المثبَّت يتصدّر قائمة قسمه/الخلاصة قبل الأحدث.
         if ($cursorMode) {
             $paginator = $query
                 ->orderByDesc('is_pinned')
@@ -133,29 +236,87 @@ class ListPublicArticlesAction
             ];
         }
 
-        // ── offset (افتراضي للإدارة/الـ SEO): يشمل total/last_page ──
-        // عند البحث: ترتيب صلة Meilisearch (FIELD على المعرّفات) — يتجاوز التثبيت/التاريخ كي لا
-        // يُدفَن أفضل مطابق. غير البحث: is_pinned أوّلاً ثمّ التاريخ (سلوك الخلاصات القائم).
-        if ($searchIds !== null && $searchIds !== []) {
-            // ترتيب صلة Meilisearch محمول (MySQL + SQLite الاختبارات): CASE بدل FIELD (FIELD لا توجد
-            // في SQLite). المعرّفات أعداد صحيحة (آمنة للإدراج المباشر، لا حقن).
-            $key = (new Article)->getQualifiedKeyName();
-            $cases = '';
-            foreach (array_values($searchIds) as $pos => $id) {
-                $cases .= ' WHEN '.(int) $id.' THEN '.$pos;
+        // Optimize COUNT(*) by caching it separately under query filters tags
+        $categoryFilter = (string) ($request->query('filter')['category'] ?? '');
+        $tags = $categoryFilter !== ''
+            ? ArticleCacheTags::categoryTags($locale, $categoryFilter)
+            : ArticleCacheTags::feedTags($locale);
+
+        $relevantFilters = [
+            'filter.type' => (string) ($request->query('filter')['type'] ?? ''),
+            'filter.category' => $categoryFilter,
+            'filter.tag' => (string) ($request->query('filter')['tag'] ?? ''),
+            'filter.q' => $term,
+            'filter.author_id' => (string) ($request->query('filter')['author_id'] ?? ''),
+        ];
+        ksort($relevantFilters);
+        $filterHash = substr(hash('xxh128', json_encode($relevantFilters)), 0, 16);
+        $countCacheKey = "public:articles:count:{$locale}:{$filterHash}";
+
+        // العدّ الإجماليّ مكلف على ٢١٧ ألف+ صفّ (COPY-rebuild constraint side note aside,
+        // قِيس فعليّاً ~700-1400ms على COUNT(*) الأساسيّ). TTL أطول من قائمة النتائج نفسها
+        // عمداً: خطأ في "total"/"total_pages" لدقائق إضافية غير ملحوظ عمليّاً، خلافاً
+        // لقائمة مقالات قديمة — وأيّ نشر/إلغاء نشر فعليّ يُبطِل هذا المفتاح فوراً عبر نفس
+        // وسوم الكتابة (ArticleCacheTags::writeTags) بغضّ النظر عن الـTTL؛ الوحيد الذي
+        // يعتمد على الـTTL فعلاً هو خبر مجدوَل يعبر published_at دون أي كتابة جديدة.
+        $total = CachedRead::remember(
+            $tags,
+            $countCacheKey,
+            CacheTtl::MEDIUM,
+            function () use ($query, $request, $locale) {
+                // إصلاح جذري لـ DEPENDENT SUBQUERY Stampede:
+                // إذا كان الطلب مفلتراً بتصنيف فقط (بدون بحث أو وسوم إضافية)،
+                // نستخدم UNION سريع (~145ms) بدلاً من OR EXISTS البطيء (~44,000ms).
+                $filters = $request->query('filter', []);
+                $catSlug = (string) ($filters['category'] ?? '');
+
+                if ($catSlug !== '' && empty($filters['q']) && empty($filters['tag']) && empty($filters['type'])) {
+                    $category = Category::where('slug', $catSlug)->where('locale', $locale)->first();
+                    if ($category) {
+                        $now = now()->toDateTimeString();
+                        $unionSql = "
+                            SELECT id FROM articles
+                            WHERE status = 'published' AND published_at IS NOT NULL
+                              AND published_at <= ? AND locale = ?
+                              AND primary_category_id = ? AND deleted_at IS NULL
+                            UNION
+                            SELECT a.id FROM articles AS a
+                            INNER JOIN article_category AS ac ON ac.article_id = a.id
+                            INNER JOIN categories AS c        ON c.id = ac.category_id
+                            WHERE a.status = 'published' AND a.published_at IS NOT NULL
+                              AND a.published_at <= ? AND a.locale = ?
+                              AND c.id = ? AND c.deleted_at IS NULL AND a.deleted_at IS NULL
+                        ";
+
+                        return DB::table(DB::raw("({$unionSql}) as unioned"))
+                            ->setBindings([$now, $locale, $category->id, $now, $locale, $category->id])
+                            ->count();
+                    }
+                }
+
+                return $query->toBase()->getCountForPagination();
             }
-            $paginator = $query
-                ->orderByRaw("CASE {$key}{$cases} END")
-                ->paginate($perPage)
-                ->appends($request->query());
-        } else {
-            $paginator = $query
-                ->orderByDesc('is_pinned')
-                ->allowedSorts('published_at', 'views_count')
-                ->defaultSort('-published_at')
-                ->paginate($perPage)
-                ->appends($request->query());
-        }
+        );
+
+        $page = max(1, (int) $request->integer('page', 1));
+
+        $results = $query
+            ->orderByDesc('is_pinned')
+            ->allowedSorts('published_at', 'views_count')
+            ->defaultSort('-published_at')
+            ->forPage($page, $perPage)
+            ->get();
+
+        $paginator = new LengthAwarePaginator(
+            $results,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return [
             'data' => PublicArticleListItemResource::collection($paginator)->resolve(),
@@ -164,28 +325,11 @@ class ListPublicArticlesAction
                 'count' => $paginator->count(),
                 'per_page' => $paginator->perPage(),
                 'current_page' => $paginator->currentPage(),
-                'total_pages' => $paginator->lastPage(),
+                'total_pages' => $maxPage > 0 ? min($paginator->lastPage(), $maxPage) : $paginator->lastPage(),
             ],
         ];
     }
 
-    /** معرّفات نتائج البحث مرتّبةً بالصلة (Meilisearch). null=لا بحث · []=بلا نتائج/محرّك معطّل (مُسجَّل، تدهور رشيق). */
-    private function searchIds(Request $request): ?array
-    {
-        $term = trim((string) ($request->query('filter')['q'] ?? ''));
-        if ($term === '') {
-            return null;
-        }
-        try {
-            return Article::search($term)->take(500)->keys()->all();
-        } catch (\Throwable $e) {
-            report($e);
-
-            return [];
-        }
-    }
-
-    /** هاش مستقرّ لعبور الكاش — يستثني المفاتيح غير المؤثرة. */
     private function hashQuery(Request $request, int $perPage, int $page): string
     {
         $relevant = [
@@ -198,6 +342,7 @@ class ListPublicArticlesAction
             'filter.category' => (string) ($request->query('filter')['category'] ?? ''),
             'filter.tag' => (string) ($request->query('filter')['tag'] ?? ''),
             'filter.q' => (string) ($request->query('filter')['q'] ?? ''),
+            'filter.author_id' => (string) ($request->query('filter')['author_id'] ?? ''),
         ];
         ksort($relevant);
 

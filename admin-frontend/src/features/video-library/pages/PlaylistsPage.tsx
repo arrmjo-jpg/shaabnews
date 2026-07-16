@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
@@ -21,9 +21,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { DataTable, type Column } from '@/components/data/DataTable';
 import { Pagination } from '@/components/data/Pagination';
+import { SearchInput } from '@/components/data/SearchInput';
+import { cn } from '@/lib/utils';
 import { paths } from '@/router/paths';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -67,15 +68,19 @@ export default function PlaylistsPage() {
 
   const canManage = hasPermission('video-playlists.manage');
 
-  const [params, setParams] = useState<PlaylistsListParams>({
-    page: 1,
-    per_page: PER_PAGE,
-    search: '',
-    status: '',
-    locale: '',
-    sort: '-created_at',
-    trashed: '',
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const params = useMemo<PlaylistsListParams>(() => {
+    return {
+      page: Number(searchParams.get('page')) || 1,
+      per_page: PER_PAGE,
+      search: searchParams.get('search') || '',
+      status: (searchParams.get('status') as PlaylistsListParams['status']) || '',
+      locale: (searchParams.get('locale') as PlaylistsListParams['locale']) || '',
+      sort: (searchParams.get('sort') as PlaylistsListParams['sort']) || '-created_at',
+      trashed: (searchParams.get('trashed') as PlaylistsListParams['trashed']) || '',
+    };
+  }, [searchParams]);
 
   const q = usePlaylists(params);
   const del = useDeletePlaylist();
@@ -83,7 +88,20 @@ export default function PlaylistsPage() {
   const forceDel = useForceDeletePlaylist();
 
   const inTrash = params.trashed === 'only';
-  const patch = (p: Partial<PlaylistsListParams>) => setParams((prev) => ({ ...prev, ...p, page: p.page ?? 1 }));
+  const patch = (p: Partial<PlaylistsListParams>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(p).forEach(([k, v]) => {
+      if (v === '' || v == null) {
+        next.delete(k);
+      } else {
+        next.set(k, String(v));
+      }
+    });
+    if (p.page === undefined) {
+      next.set('page', '1');
+    }
+    setSearchParams(next);
+  };
 
   const onDelete = async (p: VideoPlaylistData) => {
     if (
@@ -203,7 +221,7 @@ export default function PlaylistsPage() {
       </header>
 
       <div className="flex flex-wrap items-center gap-3 border border-border bg-background p-3">
-        <Input value={params.search} onChange={(e) => patch({ search: e.target.value })} placeholder={t('playlists.filter.search')} className="min-w-[200px] flex-1" />
+        <SearchInput value={params.search} onDebouncedChange={(v) => patch({ search: v })} placeholder={t('playlists.filter.search')} />
         <select className={selectCls} value={params.status} onChange={(e) => patch({ status: e.target.value as PlaylistsListParams['status'] })}>
           <option value="">{t('playlists.filter.statusAll')}</option>
           <option value="draft">{t('status.draft')}</option>
@@ -246,7 +264,7 @@ export default function PlaylistsPage() {
           </Button>
         </div>
       ) : (
-        <>
+        <div className={cn('transition-opacity duration-200', q.isFetching && 'opacity-70')}>
           <DataTable
             columns={columns}
             rows={q.data?.data ?? []}
@@ -256,7 +274,7 @@ export default function PlaylistsPage() {
             emptyDescription={inTrash ? t('playlists.empty.trashDescription') : t('playlists.empty.description')}
           />
           {q.data ? <Pagination meta={q.data.pagination} onPage={(page) => patch({ page })} /> : null}
-        </>
+        </div>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { Container } from '@/components/layout/container';
 import { FollowButton } from '@/components/sport/follow-button';
 import { PlayerStats } from '@/components/sport/player-stats';
 import { PlayerCareer, PlayerLastMatches, PlayerTrophies } from '@/components/sport/player-widgets';
+import { buildMetadata } from '@/lib/seo';
 import {
   getPlayer,
   getPlayerCareerData,
@@ -28,9 +29,16 @@ const TABS = [
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const pid = Number(id);
-  if (!Number.isInteger(pid) || pid <= 0) return { title: 'اللاعب' };
+  if (!Number.isInteger(pid) || pid <= 0) return buildMetadata({ title: 'اللاعب', path: `/sport/player/${id}` });
   const p = await getPlayer(pid);
-  return { title: p ? p.name : 'اللاعب' };
+  if (!p) return buildMetadata({ title: 'اللاعب', path: `/sport/player/${pid}` });
+
+  return buildMetadata({
+    title: p.name,
+    description: `ملف وإحصائيات اللاعب ${p.name}`,
+    path: `/sport/player/${pid}`,
+    type: 'website',
+  });
 }
 
 export default async function PlayerPage({

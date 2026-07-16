@@ -5,21 +5,42 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\Ai\AiProvider;
+use App\Contracts\Broadcast\BroadcastPushDriver;
 use App\Enums\ClientSource;
+use App\Events\Content\ArticleStatusChanged;
+use App\Events\Content\ReelStatusChanged;
+use App\Events\Content\VideoStatusChanged;
+use App\Health\Checks\ArticleSearchHealthCheck;
+use App\Health\Checks\BroadcastPushHealthCheck;
+use App\Health\Checks\BroadcastSearchHealthCheck;
 use App\Health\Checks\BroadcastSourceHealthCheck;
 use App\Health\Checks\CacheTaggingCheck;
 use App\Health\Checks\EpaperOcrHealthCheck;
 use App\Health\Checks\EpaperSearchHealthCheck;
 use App\Health\Checks\MediaProcessingHealthCheck;
 use App\Health\Checks\RedisProductionCheck;
+use App\Health\Checks\ReelSearchHealthCheck;
 use App\Health\Checks\RemoteStorageHealthCheck;
 use App\Health\Checks\SchedulerHealthCheck;
+use App\Health\Checks\VideoSearchHealthCheck;
+use App\Modules\Notifications\Events\NotificationEvent;
+use App\Modules\Notifications\Listeners\RouteNotificationEvent;
 use App\Settings\GeneralSettings;
 use App\Settings\ThirdPartySettings;
 use App\Support\Advertising\AdClientIp;
 use App\Support\Ai\Providers\FailoverAiProvider;
 use App\Support\Ai\Providers\GeminiProvider;
 use App\Support\Ai\Providers\OpenAiProvider;
+use App\Support\Broadcast\Push\LogBroadcastPushDriver;
+use App\Support\Content\Listeners\InvalidateArticleCacheOnStatusChanged;
+use App\Support\Content\Listeners\InvalidateReelCacheOnStatusChanged;
+use App\Support\Content\Listeners\InvalidateVideoCacheOnStatusChanged;
+use App\Support\Content\Listeners\NotifyWriterOnArticleStatusChanged;
+use App\Support\Content\Listeners\NotifyWriterOnReelStatusChanged;
+use App\Support\Content\Listeners\NotifyWriterOnVideoStatusChanged;
+use App\Support\Content\Listeners\PurgeArticleCdnOnStatusChanged;
+use App\Support\Content\Listeners\PurgeReelCdnOnStatusChanged;
+use App\Support\Content\Listeners\RevalidateVideoFrontendOnStatusChanged;
 use App\Support\Epaper\DefaultEpaperAccessPolicy;
 use App\Support\Epaper\EpaperAccessPolicy;
 use App\Support\Epaper\Ocr\DefaultEpaperOcrProvider;
@@ -27,12 +48,17 @@ use App\Support\Epaper\Ocr\EpaperOcrProvider;
 use App\Support\Media\RemoteStorage;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use RuntimeException;
 use Spatie\Health\Checks\Checks\CacheCheck;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
 use Spatie\Health\Checks\Checks\QueueCheck;
@@ -67,6 +93,18 @@ class AppServiceProvider extends ServiceProvider
         // مزوّد OCR للعدد — المركّب الافتراضيّ: يفضّل النصّ المضمَّن (بلا تكلفة)،
         // ويصعّد إلى Google Document AI إن فُعِّل. المضيف حرّ بإعادة ربطه.
         $this->app->bind(EpaperOcrProvider::class, DefaultEpaperOcrProvider::class);
+
+        // ناقل دفع البثّ — نقطة التبديل الوحيدة لتفعيل FCM لاحقاً (إعداد فقط،
+        // بلا تعديل كود): broadcast.notifications.push_driver. اسم غير معروف
+        // يفشل هنا فوراً وبصوتٍ عالٍ بدل الرجوع الصامت لناقل السجلّ.
+        $this->app->bind(BroadcastPushDriver::class, function (): BroadcastPushDriver {
+            $driver = (string) config('broadcast.notifications.push_driver', 'log');
+
+            return match ($driver) {
+                'log' => new LogBroadcastPushDriver,
+                default => throw new RuntimeException("Unknown broadcast push driver: '{$driver}'."),
+            };
+        });
     }
 
     public function boot(): void
@@ -80,6 +118,72 @@ class AppServiceProvider extends ServiceProvider
         // كي يلتقط الـ worker الطويل العمر أي تغيير من اللوحة بلا إعادة تشغيل.
         RemoteStorage::configureDisk();
         $this->configureHealthChecks();
+        $this->configureNotificationRouting();
+        $this->configureContentEvents();
+        $this->configureSlowQueryLog();
+    }
+
+    /**
+     * يربط حدث الإشعارات الوحيد (NotificationEvent) بالعقل المركزيّ عبر مستمع واحد — كلّ
+     * المصادر تمرّ عبر NotificationManager، فلا مسار إرسال ثانٍ داخل النظام (Event-First).
+     */
+    private function configureNotificationRouting(): void
+    {
+        Event::listen(NotificationEvent::class, RouteNotificationEvent::class);
+    }
+
+    /**
+     * يسجّل SQL queries التي تتجاوز الحد الأدنى (بالمللي ثانية) في قناة perf.
+     *
+     * مُعطَّل افتراضياً (PERF_SLOW_QUERY_MS=0) — صفر overhead في الإنتاج العادي.
+     * فعّله وقت التحقيق فقط: PERF_SLOW_QUERY_MS=200
+     *
+     * كل سطر في perf.log سيحتوي: sql, time_ms, bindings, request_id, url, pid
+     * مما يعطيك الدليل القاطع على أي SQL هو الذي أكل الوقت.
+     */
+    private function configureSlowQueryLog(): void
+    {
+        $threshold = (int) env('PERF_SLOW_QUERY_MS', 0);
+
+        if ($threshold <= 0) {
+            return;
+        }
+
+        DB::listen(function (QueryExecuted $query) use ($threshold): void {
+            if ($query->time < $threshold) {
+                return;
+            }
+
+            Log::channel('perf')->warning('SlowQuery detected', [
+                'sql' => $query->sql,
+                'time_ms' => $query->time,
+                'bindings' => array_map(fn ($b) => is_string($b) ? mb_strimwidth($b, 0, 80) : $b, $query->bindings),
+                'connection' => $query->connectionName,
+                'request_id' => request()->header('X-Request-ID', 'n/a'),
+                'url' => request()->fullUrl(),
+                'pid' => getmypid(),
+            ]);
+        });
+    }
+
+    /**
+     * مستمعو ArticleStatusChanged (ADR-E2) — متزامنون عمداً وبنفس ترتيب
+     * النداءات الأمريّة السابقة (كاش ثم CDN ثم إشعار) كي يبقى السلوك مطابقاً
+     * حرفياً لِما قبل التغليف.
+     */
+    private function configureContentEvents(): void
+    {
+        Event::listen(ArticleStatusChanged::class, InvalidateArticleCacheOnStatusChanged::class);
+        Event::listen(ArticleStatusChanged::class, PurgeArticleCdnOnStatusChanged::class);
+        Event::listen(ArticleStatusChanged::class, NotifyWriterOnArticleStatusChanged::class);
+
+        Event::listen(VideoStatusChanged::class, InvalidateVideoCacheOnStatusChanged::class);
+        Event::listen(VideoStatusChanged::class, RevalidateVideoFrontendOnStatusChanged::class);
+        Event::listen(VideoStatusChanged::class, NotifyWriterOnVideoStatusChanged::class);
+
+        Event::listen(ReelStatusChanged::class, InvalidateReelCacheOnStatusChanged::class);
+        Event::listen(ReelStatusChanged::class, PurgeReelCdnOnStatusChanged::class);
+        Event::listen(ReelStatusChanged::class, NotifyWriterOnReelStatusChanged::class);
     }
 
     /**
@@ -125,9 +229,16 @@ class AppServiceProvider extends ServiceProvider
             RemoteStorageHealthCheck::new(),
             // صحّة مصادر البثّ (B3) — يُبرز البثّ ذا المصدر الفاشل للمشغّل
             BroadcastSourceHealthCheck::new(),
+            // حالة دفع إشعارات البثّ (مُعطَّل/مُقلَّد/حقيقيّ) — Task B، مراجعة الإنتاج
+            BroadcastPushHealthCheck::new(),
             // الجريدة (Enterprise): صحّة فهرس البحث + تراكم/تعليق استخراج OCR
             EpaperSearchHealthCheck::new(),
             EpaperOcrHealthCheck::new(),
+            // صحّة فهارس Meilisearch القياسيّة (انحراف العدّ فهرس/قاعدة) — Task 14 finding
+            ArticleSearchHealthCheck::new(),
+            VideoSearchHealthCheck::new(),
+            ReelSearchHealthCheck::new(),
+            BroadcastSearchHealthCheck::new(),
             // نبض المُجدوِل (يكشف توقّفه كلياً) — يتطلّب health:schedule-check-heartbeat
             ScheduleCheck::new()->heartbeatMaxAgeInMinutes(5),
             // نبض عمّال الطوابير — heartbeat مستقلّ عن السائق (database/redis): يكشف موت العامل

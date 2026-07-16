@@ -24,6 +24,14 @@ class ListAdPlacementsAction
         $perPage = max(1, min((int) request()->integer('per_page', $default), $max));
 
         $query = QueryBuilder::for(AdPlacement::class)
+            ->select([
+                'id',
+                'ad_zone_id',
+                'ad_creative_id',
+                'is_active',
+                'weight',
+                'created_at',
+            ])
             ->with(['creative:id,title,type,weight', 'zone:id,key,name,placement_type'])
             ->allowedFilters(
                 AllowedFilter::exact('ad_zone_id'),

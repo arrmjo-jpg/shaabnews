@@ -33,7 +33,7 @@ final class ReelSeoBuilder
         // أعلى نسخة MP4 تقدّمية كـ contentUrl (توافق مشاركة أوسع من HLS).
         $progressive = is_array($renditions) && $renditions !== [] ? (string) end($renditions) : null;
 
-        $siteName = (string) config('app.name', 'AlphaCMS');
+        $siteName = PublicSeoBuilder::getSiteName($reel->locale);
         $twitterHandle = (string) config('seo.twitter.@username', '') ?: null;
 
         return [
@@ -113,7 +113,7 @@ final class ReelSeoBuilder
         ?string $contentUrl,
         string $siteName,
     ): array {
-        $logo = (string) config('seo.publisher.logo', '');
+        $logo = PublicSeoBuilder::getPublisherLogo();
 
         return array_filter([
             '@context' => 'https://schema.org',
@@ -128,7 +128,7 @@ final class ReelSeoBuilder
             'inLanguage' => $reel->locale,
             'publisher' => array_filter([
                 '@type' => 'Organization',
-                'name' => (string) (config('seo.publisher.name') ?: $siteName),
+                'name' => PublicSeoBuilder::getPublisherName(),
                 'logo' => $logo !== '' ? ['@type' => 'ImageObject', 'url' => $logo] : null,
             ], fn ($v): bool => $v !== null),
         ], fn ($v): bool => $v !== null);

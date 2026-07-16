@@ -24,6 +24,21 @@ class ListAdCampaignsAction
         $perPage = max(1, min((int) request()->integer('per_page', $default), $max));
 
         $query = QueryBuilder::for(AdCampaign::class)
+            ->select([
+                'id',
+                'uuid',
+                'status',
+                'name',
+                'priority',
+                'pacing_mode',
+                'starts_at',
+                'ends_at',
+                'created_at',
+                'deleted_at',
+                'advertiser_name',
+                'total_budget',
+                'daily_budget',
+            ])
             ->withCount('creatives')
             ->allowedFilters(
                 AllowedFilter::exact('status'),

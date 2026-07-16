@@ -40,7 +40,15 @@ class ListPublicLiveUpdatesAction
         $article = Article::query()
             ->published()
             ->forLocale($locale)
-            ->where('slug', $slug)
+            ->where(function ($query) use ($slug) {
+                if (is_numeric($slug)) {
+                    $query->where('id', (int) $slug);
+                } elseif (preg_match('/^(\d+)-(.*)$/', $slug, $matches)) {
+                    $query->where('id', (int) $matches[1]);
+                } else {
+                    $query->where('slug', $slug);
+                }
+            })
             ->first(['id', 'slug', 'locale', 'type']);
 
         if ($article === null) {

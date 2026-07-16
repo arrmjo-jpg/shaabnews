@@ -20,6 +20,7 @@ import {
   useUpdateReel,
 } from '../reels.hooks';
 import { ReelVideoUploader } from '../components/reels/ReelVideoUploader';
+import { EntityTagsInput } from '../components/EntityTagsInput';
 import { SeoPanel } from '../components/SeoPanel';
 import { HeadlineSuggestions } from '../components/ai/HeadlineSuggestions';
 import { ExcerptGenerate } from '../components/ai/ExcerptGenerate';
@@ -300,6 +301,10 @@ export default function ReelFormPage() {
               onChange={(assetId) => patch({ media_asset_id: assetId })}
               onStatusChange={setMediaStatus}
             />
+          </Section>
+
+          <Section title={t('entities.title')}>
+            <EntityTagsInput contentType="reel" contentId={reel?.id} />
           </Section>
 
           {canUseAi ? (

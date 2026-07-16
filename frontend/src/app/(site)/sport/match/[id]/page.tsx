@@ -18,6 +18,7 @@ import { MatchTrendsView } from '@/components/sport/match-trends';
 import { SportNews } from '@/components/sport/sport-news';
 import { StandingsTable } from '@/components/sport/standings-table';
 import { getCompetitionMatchList, getGameDetail, getGameStats, getH2H, getMatchTrends, getPreGameStats, getShotMap } from '@/lib/sport/games';
+import { buildMetadata } from '@/lib/seo';
 import { getCompetitionMeta, getStandings } from '@/lib/sport/stats';
 
 // صفحة تفاصيل المباراة (نمط 365 game-center) — عمودان: يمين شريط مباريات الدوري (`CompetitionMatchesSidebar` نفسه،
@@ -37,9 +38,18 @@ const EMPTY_LIST = { today: [], upcoming: [], recent: [], fixtures: [], results:
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const gameId = Number(id);
-  if (!Number.isInteger(gameId) || gameId <= 0) return { title: 'المباراة' };
+  if (!Number.isInteger(gameId) || gameId <= 0) {
+    return buildMetadata({ title: 'المباراة', path: `/sport/match/${id}` });
+  }
   const d = await getGameDetail(gameId);
-  return { title: d ? `${d.home.name} ضد ${d.away.name}` : 'المباراة' };
+  if (!d) return buildMetadata({ title: 'المباراة', path: `/sport/match/${id}` });
+
+  return buildMetadata({
+    title: `${d.home.name} ضد ${d.away.name}`,
+    description: `نتيجة وتفاصيل مباراة ${d.home.name} ضد ${d.away.name}`,
+    path: `/sport/match/${gameId}`,
+    type: 'website',
+  });
 }
 
 export default async function MatchPage({

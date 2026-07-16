@@ -36,19 +36,24 @@ final class ArticleCacheTags
     /** وسم المجاميع العامة للّغة (الرئيسية + latest + القوائم + العاجل). */
     public static function feed(string $locale): string
     {
-        return 'articles:feed:'.$locale;
+        return self::scheme()->feed($locale);
     }
 
     /** وسم تفاصيل مقال واحد (locale+slug — مطابق لمفتاح الكاش). */
     public static function detail(string $locale, string $slug): string
     {
-        return 'articles:detail:'.$locale.':'.$slug;
+        return self::scheme()->detail($locale, $slug);
     }
 
     /** وسم صفحة/قائمة تصنيف (locale+category-slug). */
     public static function category(string $locale, string $categorySlug): string
     {
-        return 'articles:category:'.$locale.':'.$categorySlug;
+        return self::scheme()->category($locale, $categorySlug);
+    }
+
+    private static function scheme(): CacheTagScheme
+    {
+        return new CacheTagScheme(self::ALL, self::SITEMAP);
     }
 
     /**
@@ -58,7 +63,7 @@ final class ArticleCacheTags
      */
     public static function feedTags(string $locale): array
     {
-        return [self::ALL, self::feed($locale)];
+        return self::scheme()->feedTags($locale);
     }
 
     /**
@@ -70,7 +75,7 @@ final class ArticleCacheTags
      */
     public static function detailTags(string $locale, string $slug): array
     {
-        return [self::ALL, self::detail($locale, $slug)];
+        return self::scheme()->detailTags($locale, $slug);
     }
 
     /**
@@ -82,7 +87,7 @@ final class ArticleCacheTags
      */
     public static function categoryTags(string $locale, string $categorySlug): array
     {
-        return [self::ALL, self::category($locale, $categorySlug)];
+        return self::scheme()->categoryTags($locale, $categorySlug);
     }
 
     /**
@@ -120,28 +125,13 @@ final class ArticleCacheTags
         array $categorySlugs = [],
         array $oldCategorySlugs = [],
     ): array {
-        $locale = $article->locale;
-        $slug = (string) $article->slug;
-
-        // SITEMAP دائماً: أي كتابة قد تغيّر مجموعة/طوابع المقالات في الخرائط.
-        $tags = [self::SITEMAP, self::feed($locale), self::detail($locale, $slug)];
-        foreach ($categorySlugs as $c) {
-            $tags[] = self::category($locale, $c);
-        }
-
-        $oldLocale ??= $locale;
-        $oldSlug ??= $slug;
-
-        if ($oldLocale !== $locale) {
-            $tags[] = self::feed($oldLocale);
-        }
-        if ($oldLocale !== $locale || $oldSlug !== $slug) {
-            $tags[] = self::detail($oldLocale, $oldSlug);
-        }
-        foreach ($oldCategorySlugs as $c) {
-            $tags[] = self::category($oldLocale, $c);
-        }
-
-        return array_values(array_unique($tags));
+        return self::scheme()->invalidationTags(
+            dimension: $article->locale,
+            slug: (string) $article->slug,
+            categorySlugs: $categorySlugs,
+            oldDimension: $oldLocale,
+            oldSlug: $oldSlug,
+            oldCategorySlugs: $oldCategorySlugs,
+        );
     }
 }

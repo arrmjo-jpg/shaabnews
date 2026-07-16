@@ -28,6 +28,9 @@ function buildParams(p: ArticlesListParams): Record<string, string | number> {
   if (p.category !== '') {
     params['filter[category]'] = p.category;
   }
+  if (p.author_id) {
+    params['filter[author_id]'] = p.author_id;
+  }
   // فلتر نوع العرض: مثبّت/عاجل/سلايدر/الهيدر → filter[is_pinned|is_breaking|…]=1
   if (p.placement) params[`filter[${p.placement}]`] = 1;
   if (p.sort) params['sort'] = p.sort;
@@ -36,9 +39,10 @@ function buildParams(p: ArticlesListParams): Record<string, string | number> {
 }
 
 export const articlesService = {
-  async list(p: ArticlesListParams): Promise<ArticlesListResult> {
+  async list(p: ArticlesListParams, signal?: AbortSignal): Promise<ArticlesListResult> {
     const { data } = await http.get<ApiSuccess<ArticleData[]>>('/admin/articles', {
       params: buildParams(p),
+      signal,
     });
     const pagination = (data.meta as { pagination: PaginationMeta }).pagination;
     return { data: data.data, pagination };

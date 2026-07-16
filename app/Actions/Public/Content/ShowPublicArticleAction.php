@@ -33,18 +33,56 @@ class ShowPublicArticleAction
             CacheKeys::publicArticleDetail($locale, $slug),
             CacheTtl::MEDIUM,
             function () use ($locale, $slug): ?array {
-                $article = Article::query()
-                    ->published()
-                    ->forLocale($locale)
-                    ->where('slug', $slug)
-                    ->with([
-                        'author:id,name,bio,avatar,is_writer',
-                        'primaryCategory:id,name,slug',
-                        'categories:id,name,slug',
-                        'tags',
-                        'mediaAssets',
-                    ])
-                    ->first();
+                if (preg_match('/^(\d+)-(.*)$/', $slug, $matches)) {
+                    $id = (int) $matches[1];
+                    $article = Article::query()
+                        ->published()
+                        ->forLocale($locale)
+                        ->where('id', $id)
+                        ->with([
+                            'author' => function ($query) {
+                                $query->select('id', 'name', 'bio', 'avatar', 'is_writer')
+                                    ->withCount(['articles as articles_count' => fn ($q) => $q->published()]);
+                            },
+                            'primaryCategory:id,name,slug',
+                            'categories:id,name,slug',
+                            'tags',
+                            'mediaAssets',
+                        ])
+                        ->first();
+                } elseif (is_numeric($slug)) {
+                    $article = Article::query()
+                        ->published()
+                        ->forLocale($locale)
+                        ->where('id', (int) $slug)
+                        ->with([
+                            'author' => function ($query) {
+                                $query->select('id', 'name', 'bio', 'avatar', 'is_writer')
+                                    ->withCount(['articles as articles_count' => fn ($q) => $q->published()]);
+                            },
+                            'primaryCategory:id,name,slug',
+                            'categories:id,name,slug',
+                            'tags',
+                            'mediaAssets',
+                        ])
+                        ->first();
+                } else {
+                    $article = Article::query()
+                        ->published()
+                        ->forLocale($locale)
+                        ->where('slug', $slug)
+                        ->with([
+                            'author' => function ($query) {
+                                $query->select('id', 'name', 'bio', 'avatar', 'is_writer')
+                                    ->withCount(['articles as articles_count' => fn ($q) => $q->published()]);
+                            },
+                            'primaryCategory:id,name,slug',
+                            'categories:id,name,slug',
+                            'tags',
+                            'mediaAssets',
+                        ])
+                        ->first();
+                }
 
                 if ($article === null) {
                     return null;

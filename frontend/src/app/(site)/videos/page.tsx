@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { Container } from '@/components/layout/container';
+import { buildMetadata } from '@/lib/seo';
 import { CategoryRail } from '@/components/videos/category-rail';
 import { HeroVideo } from '@/components/videos/hero-video';
 import { PlaylistRail } from '@/components/videos/playlist-rail';
@@ -31,7 +32,14 @@ import {
 // ISR = سقف أمان (6 ساعات)؛ التحديث الفعليّ حدثيّ عبر video-feed:{locale} من كلّ أكشن فيديو/قائمة.
 export const revalidate = 21600;
 
-export const metadata: Metadata = { title: 'فيديو' };
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({
+    title: 'فيديو',
+    description: 'أحدث الفيديوهات ومقاطع الأخبار والتقارير المصوّرة',
+    path: '/videos',
+    type: 'website',
+  });
+}
 
 const MAX_CATEGORY_RAILS = 8;
 

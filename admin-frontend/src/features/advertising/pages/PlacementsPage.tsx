@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Check, Link2, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -53,14 +54,16 @@ export default function PlacementsPage() {
   const canEdit = hasPermission('ads.edit');
   const canDelete = hasPermission('ads.delete');
 
-  const [params, setParams] = useState<AdPlacementsListParams>({
-    page: 1,
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const params = useMemo<AdPlacementsListParams>(() => ({
+    page: Number(searchParams.get('page')) || 1,
     per_page: PER_PAGE,
-    ad_zone_id: '',
-    ad_creative_id: '',
-    is_active: '',
-    sort: '-created_at',
-  });
+    ad_zone_id: searchParams.get('ad_zone_id') || '',
+    ad_creative_id: searchParams.get('ad_creative_id') || '',
+    is_active: (searchParams.get('is_active') as AdPlacementsListParams['is_active']) || '',
+    sort: searchParams.get('sort') || '-created_at',
+  }), [searchParams]);
   const [attach, setAttach] = useState<AttachForm | null>(null);
   const [editing, setEditing] = useState<AdPlacementData | null>(null);
   const [editForm, setEditForm] = useState<{ weight: string; is_active: boolean; device_targets: string[] }>({
@@ -79,7 +82,15 @@ export default function PlacementsPage() {
   const rows = q.data?.data ?? [];
   const zones = zonesQ.data ?? [];
   const creatives = creativesQ.data?.data ?? [];
-  const patch = (p: Partial<AdPlacementsListParams>) => setParams((prev) => ({ ...prev, ...p, page: p.page ?? 1 }));
+  const patch = (p: Partial<AdPlacementsListParams>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(p).forEach(([k, v]) => {
+      if (v === '' || v == null) next.delete(k);
+      else next.set(k, String(v));
+    });
+    if (p.page === undefined) next.set('page', '1');
+    setSearchParams(next);
+  };
 
   // ─── Attach modal compatibility (مرآة AdPlacementCompatibility) ───────────
   const attachCreative = useMemo(
@@ -274,7 +285,7 @@ export default function PlacementsPage() {
           </Button>
         </div>
       ) : (
-        <>
+        <div className={cn('transition-opacity duration-200', q.isFetching && 'opacity-70')}>
           <DataTable
             columns={columns}
             rows={rows}
@@ -284,7 +295,7 @@ export default function PlacementsPage() {
             emptyDescription={t('placements.empty.description')}
           />
           {q.data ? <Pagination meta={q.data.pagination} onPage={(page) => patch({ page })} /> : null}
-        </>
+        </div>
       )}
 
       {/* Attach modal */}

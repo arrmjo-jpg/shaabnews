@@ -28,6 +28,7 @@ import { ExcerptGenerate } from '@/features/content/components/ai/ExcerptGenerat
 import { ContentAnalysisCard } from '@/features/content/components/ai/ContentAnalysisCard';
 import { SeoAnalysisCard } from '@/features/content/components/ai/SeoAnalysisCard';
 import { EngagementMetricsButton } from '@/features/content/components/EngagementMetricsButton';
+import { EntityTagsInput } from '@/features/content/components/EntityTagsInput';
 import { VideoSourceManager } from '../components/VideoSourceManager';
 import { useCreateVideo, useTransitionVideo, useUpdateVideo, useVideo, useVideoCategoryTree } from '../hooks';
 import type { AiEditorialContext, ContentLocale } from '@/types/content.types';
@@ -345,6 +346,10 @@ export default function VideoFormPage() {
               }}
               onStatusChange={setMediaStatus}
             />
+          </Section>
+
+          <Section title={t('entities.title', { ns: 'content' })}>
+            <EntityTagsInput contentType="video" contentId={video?.id} />
           </Section>
 
           {canUseAi ? (

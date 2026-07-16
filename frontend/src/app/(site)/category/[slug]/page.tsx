@@ -6,6 +6,7 @@ import { Container } from '@/components/layout/container';
 import { ReadingSidebar } from '@/components/reading/reading-sidebar';
 import { Pagination } from '@/components/ui/pagination';
 import { getCategoryBySlug, getCategoryPage } from '@/lib/feed';
+import { buildMetadata } from '@/lib/seo';
 
 // صفحة قسم /category/[slug] — قائمة مقالات القسم **مُرقَّمة** (شبكة FeedCard + ترقيم احترافيّ).
 // تعيد استخدام getCategoryPage (filter[category] + page) + getCategoryBySlug لحلّ الاسم والتحقّق.
@@ -28,13 +29,26 @@ async function resolveName(decoded: string): Promise<string | null> {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string | string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const name = await resolveName(decodeURIComponent(slug));
+  const decoded = decodeURIComponent(slug);
+  const name = await resolveName(decoded);
+  if (!name) return { title: 'القسم غير موجود', robots: { index: false, follow: false } };
 
-  return { title: name ?? 'القسم غير موجود' };
+  const sp = await searchParams;
+  const page = Math.max(1, Number(typeof sp.page === 'string' ? sp.page : '1') || 1);
+  const path = `/category/${encodeURIComponent(decoded)}${page > 1 ? `?page=${page}` : ''}`;
+
+  return buildMetadata({
+    title: name,
+    description: `أحدث الأخبار والمقالات في قسم ${name}`,
+    path,
+    type: 'website',
+  });
 }
 
 export default async function CategoryPage({

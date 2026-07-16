@@ -26,35 +26,40 @@ final class BroadcastCacheTags
 
     public static function feed(string $kind): string
     {
-        return 'broadcasts:feed:'.$kind;
+        return self::scheme()->feed($kind);
     }
 
     public static function detail(string $slug): string
     {
-        return 'broadcasts:detail:'.$slug;
+        return self::scheme()->detail('', $slug);
     }
 
     public static function category(string $categorySlug): string
     {
-        return 'broadcasts:category:'.$categorySlug;
+        return self::scheme()->category('', $categorySlug);
+    }
+
+    private static function scheme(): CacheTagScheme
+    {
+        return new CacheTagScheme(self::ALL, self::SITEMAP, detailDimensioned: false, categoryDimensioned: false);
     }
 
     /** @return array<int,string> وسوم إدخال خلاصة نوع. */
     public static function feedTags(string $kind): array
     {
-        return [self::ALL, self::feed($kind)];
+        return self::scheme()->feedTags($kind);
     }
 
     /** @return array<int,string> وسوم إدخال تفاصيل بثّ (مظلّة + تفاصيله فقط). */
     public static function detailTags(string $slug): array
     {
-        return [self::ALL, self::detail($slug)];
+        return self::scheme()->detailTags('', $slug);
     }
 
     /** @return array<int,string> وسوم صفحة/قائمة تصنيف. */
     public static function categoryTags(string $categorySlug): array
     {
-        return [self::ALL, self::category($categorySlug)];
+        return self::scheme()->categoryTags('', $categorySlug);
     }
 
     /**
@@ -70,27 +75,13 @@ final class BroadcastCacheTags
         ?string $categorySlug = null,
         ?string $oldCategorySlug = null,
     ): array {
-        $kind = $broadcast->kind->value;
-        $slug = (string) $broadcast->slug;
-
-        $tags = [self::SITEMAP, self::feed($kind), self::detail($slug)];
-        if ($categorySlug !== null && $categorySlug !== '') {
-            $tags[] = self::category($categorySlug);
-        }
-
-        $oldKind ??= $kind;
-        $oldSlug ??= $slug;
-
-        if ($oldKind !== $kind) {
-            $tags[] = self::feed($oldKind);
-        }
-        if ($oldKind !== $kind || $oldSlug !== $slug) {
-            $tags[] = self::detail($oldSlug);
-        }
-        if ($oldCategorySlug !== null && $oldCategorySlug !== '') {
-            $tags[] = self::category($oldCategorySlug);
-        }
-
-        return array_values(array_unique($tags));
+        return self::scheme()->invalidationTags(
+            dimension: $broadcast->kind->value,
+            slug: (string) $broadcast->slug,
+            categorySlugs: ($categorySlug !== null && $categorySlug !== '') ? [$categorySlug] : [],
+            oldDimension: $oldKind,
+            oldSlug: $oldSlug,
+            oldCategorySlugs: ($oldCategorySlug !== null && $oldCategorySlug !== '') ? [$oldCategorySlug] : [],
+        );
     }
 }

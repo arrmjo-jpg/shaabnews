@@ -1,0 +1,58 @@
+﻿worker-media-1  | 
+worker-media-1  |    INFO  The [public/storage] link has been connected to [storage/app/public].  
+worker-media-1  | 
+worker-media-1  |   2026-07-15 23:36:32 App\Jobs\GenerateMediaAssetConversionsJob ...... RUNNING
+worker-media-1  |   2026-07-15 23:36:32 App\Jobs\GenerateMediaAssetConversionsJob  646.77ms DONE
+worker-media-1  |   2026-07-15 23:37:02 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:37:02 Spatie\Health\Jobs\HealthQueueJob .......... 2.00ms DONE
+worker-media-1  |   2026-07-15 23:38:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:38:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.80ms DONE
+worker-media-1  |   2026-07-15 23:39:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:39:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.84ms DONE
+worker-media-1  |   2026-07-15 23:40:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:40:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.60ms DONE
+worker-media-1  |   2026-07-15 23:41:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:41:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.78ms DONE
+worker-media-1  |   2026-07-15 23:42:04 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:42:04 Spatie\Health\Jobs\HealthQueueJob .......... 1.69ms DONE
+worker-media-1  |   2026-07-15 23:43:02 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:43:02 Spatie\Health\Jobs\HealthQueueJob .......... 1.87ms DONE
+worker-media-1  |   2026-07-15 23:44:02 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:44:02 Spatie\Health\Jobs\HealthQueueJob .......... 1.50ms DONE
+worker-media-1  |   2026-07-15 23:45:02 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:45:02 Spatie\Health\Jobs\HealthQueueJob .......... 5.06ms DONE
+worker-media-1  |   2026-07-15 23:46:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:46:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.50ms DONE
+worker-media-1  |   2026-07-15 23:47:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:47:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.89ms DONE
+worker-media-1  |   2026-07-15 23:48:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:48:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.87ms DONE
+worker-media-1  |   2026-07-15 23:49:01 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:49:01 Spatie\Health\Jobs\HealthQueueJob .......... 2.41ms DONE
+worker-media-1  |   2026-07-15 23:50:04 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:50:04 Spatie\Health\Jobs\HealthQueueJob .......... 2.16ms DONE
+worker-media-1  |   2026-07-15 23:51:02 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:51:02 Spatie\Health\Jobs\HealthQueueJob .......... 1.89ms DONE
+worker-media-1  |   2026-07-15 23:52:02 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:52:02 Spatie\Health\Jobs\HealthQueueJob .......... 2.83ms DONE
+worker-media-1  |   2026-07-15 23:53:06 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:53:06 Spatie\Health\Jobs\HealthQueueJob .......... 1.87ms DONE
+worker-media-1  |   2026-07-15 23:54:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:54:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.93ms DONE
+worker-media-1  |   2026-07-15 23:55:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:55:03 Spatie\Health\Jobs\HealthQueueJob .......... 2.01ms DONE
+worker-media-1  |   2026-07-15 23:56:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:56:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.87ms DONE
+worker-media-1  |   2026-07-15 23:57:05 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:57:05 Spatie\Health\Jobs\HealthQueueJob .......... 2.99ms DONE
+worker-media-1  |   2026-07-15 23:58:03 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:58:03 Spatie\Health\Jobs\HealthQueueJob .......... 1.96ms DONE
+worker-media-1  |   2026-07-15 23:59:04 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-15 23:59:04 Spatie\Health\Jobs\HealthQueueJob .......... 2.15ms DONE
+worker-media-1  |   2026-07-16 00:00:04 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-16 00:00:04 Spatie\Health\Jobs\HealthQueueJob .......... 3.23ms DONE
+worker-media-1  |   2026-07-16 00:01:04 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-16 00:01:04 Spatie\Health\Jobs\HealthQueueJob .......... 2.62ms DONE
+worker-media-1  |   2026-07-16 00:02:04 Spatie\Health\Jobs\HealthQueueJob .............. RUNNING
+worker-media-1  |   2026-07-16 00:02:04 Spatie\Health\Jobs\HealthQueueJob .......... 9.02ms DONE
+

@@ -26,6 +26,8 @@ export const paths = {
   settingsAnalytics: '/settings/analytics',
   settingsMediaStorage: '/settings/media-storage',
   settingsNewspaper: '/settings/newspaper',
+  settingsMatchBar: '/settings/match-bar',
+  competitions: '/competitions',
   thirdParty: '/third-party',
   tpSocialLogin: '/third-party/social-login',
   tpRecaptcha: '/third-party/recaptcha',

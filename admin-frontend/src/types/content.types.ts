@@ -77,6 +77,7 @@ export interface ArticleData {
   is_pinned: boolean;
   is_header: boolean;
   is_editor_pick: boolean;
+  is_squares: boolean;
   event_status?: LiveEventStatus | null;
   og_image_id?: number | null;
   og_image?: string | null;
@@ -120,8 +121,9 @@ export interface ArticlesListParams {
   locale: '' | ContentLocale;
   /** Matches primary OR secondary (pivot) category. */
   category: number | '';
-  /** فلتر نوع العرض: مثبّت/عاجل/سلايدر/الهيدر — يُرسَل كـ filter[<flag>]=1. */
-  placement: '' | 'is_pinned' | 'is_breaking' | 'is_featured' | 'is_header';
+  author_id?: number | '';
+  /** فلتر نوع العرض: مثبّت/عاجل/سلايدر/الهيدر/تريندنغ/مربعات — يُرسَل كـ filter[<flag>]=1. */
+  placement: '' | 'is_pinned' | 'is_breaking' | 'is_featured' | 'is_header' | 'is_editor_pick' | 'is_squares';
   sort: '' | '-created_at' | '-published_at' | 'title' | 'id';
   trashed?: '' | 'only';
 }
@@ -361,6 +363,7 @@ export interface ArticleUpsertPayload {
   is_pinned?: boolean;
   is_header?: boolean;
   is_editor_pick?: boolean;
+  is_squares?: boolean;
   comments_enabled?: boolean;
   views_count?: number;
   /** Attach-on-save: full set of media attachments (omit to leave untouched). */

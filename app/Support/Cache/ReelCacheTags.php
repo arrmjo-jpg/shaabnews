@@ -32,13 +32,18 @@ final class ReelCacheTags
     /** وسم قوائم/خلاصات لغة (list + featured + trending). */
     public static function feed(string $locale): string
     {
-        return 'reels:feed:'.$locale;
+        return self::scheme()->feed($locale);
     }
 
     /** وسم تفاصيل ريل واحد (بالـ locale+slug — مطابق لمفتاح الكاش). */
     public static function detail(string $locale, string $slug): string
     {
-        return 'reels:detail:'.$locale.':'.$slug;
+        return self::scheme()->detail($locale, $slug);
+    }
+
+    private static function scheme(): CacheTagScheme
+    {
+        return new CacheTagScheme(self::ALL);
     }
 
     /**
@@ -48,7 +53,7 @@ final class ReelCacheTags
      */
     public static function feedTags(string $locale): array
     {
-        return [self::ALL, self::feed($locale)];
+        return self::scheme()->feedTags($locale);
     }
 
     /**
@@ -62,7 +67,7 @@ final class ReelCacheTags
      */
     public static function detailTags(string $locale, string $slug): array
     {
-        return [self::ALL, self::detail($locale, $slug)];
+        return self::scheme()->detailTags($locale, $slug);
     }
 
     /**
@@ -73,18 +78,11 @@ final class ReelCacheTags
      */
     public static function invalidationTags(Reel $reel, ?string $oldLocale = null, ?string $oldSlug = null): array
     {
-        $tags = [self::feed($reel->locale), self::detail($reel->locale, (string) $reel->slug)];
-
-        $oldLocale ??= $reel->locale;
-        $oldSlug ??= (string) $reel->slug;
-
-        if ($oldLocale !== $reel->locale) {
-            $tags[] = self::feed($oldLocale);
-        }
-        if ($oldLocale !== $reel->locale || $oldSlug !== (string) $reel->slug) {
-            $tags[] = self::detail($oldLocale, $oldSlug);
-        }
-
-        return array_values(array_unique($tags));
+        return self::scheme()->invalidationTags(
+            dimension: $reel->locale,
+            slug: (string) $reel->slug,
+            oldDimension: $oldLocale,
+            oldSlug: $oldSlug,
+        );
     }
 }

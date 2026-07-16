@@ -20,6 +20,21 @@ class ListVideoPlaylistsAction
         $perPage = max(1, min((int) request()->integer('per_page', $default), $max));
 
         $query = QueryBuilder::for(VideoPlaylist::class)
+            ->select([
+                'id',
+                'status',
+                'visibility',
+                'locale',
+                'title',
+                'slug',
+                'is_featured',
+                'published_at',
+                'created_at',
+                'deleted_at',
+                'author_id',
+                'cover_media_id',
+                'sort_order',
+            ])
             ->with(['author:id,name', 'cover'])
             ->withCount('videos')
             ->allowedFilters(

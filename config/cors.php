@@ -26,6 +26,10 @@ if ($origins === []) {
         'http://127.0.0.1:5173',
         'http://localhost:8000',
         'http://127.0.0.1:8000',
+        // admin عبر Docker Compose المحلي (docker-compose.override.yml: "8081:80") — منفذ مختلف
+        // عن Vite dev server (5173) أعلاه. localhost و127.0.0.1 أصلان مختلفان للمتصفح، فكلاهما لازم.
+        'http://localhost:8081',
+        'http://127.0.0.1:8081',
     ]));
 }
 

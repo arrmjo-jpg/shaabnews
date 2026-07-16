@@ -57,11 +57,12 @@ docker compose build            # builds backend + frontend (CLIENT baked)
 docker compose --profile search up -d meilisearch   # if search enabled
 docker compose run --rm backend php artisan key:generate      # first time only
 docker compose run --rm backend php artisan migrate --force   # ONCE per deploy
+docker compose run --rm backend php artisan scout:sync-index-settings # Sync search settings
 docker compose run --rm backend php artisan scout:import "App\Models\Article"  # + Reel/Video
 docker compose up -d
 ```
 
-Redeploy: `git pull && docker compose build && docker compose run --rm backend php artisan migrate --force && docker compose up -d`.
+Redeploy: `git pull && docker compose build && docker compose run --rm backend php artisan migrate --force && docker compose run --rm backend php artisan scout:sync-index-settings && docker compose up -d`.
 The entrypoint re-caches config/routes/views from runtime env on every container start.
 
 ---

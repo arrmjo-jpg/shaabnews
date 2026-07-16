@@ -800,6 +800,7 @@
     "by": "By",
     "clearBreaking": "Clear all breaking",
     "clearPinned": "Clear all pinned",
+    "pagination_out_of_range": "The requested page doesn't exist — moved to page 1",
     "stats": {
       "total": "Total articles",
       "published": "Published",
@@ -844,6 +845,7 @@
       "typeAll": "All types",
       "localeAll": "All locales",
       "categoryAll": "All categories",
+      "authorAll": "All authors",
       "trashedNone": "Active",
       "trashedOnly": "Deleted only"
     },
@@ -1005,11 +1007,13 @@
       "isPinned": "Pin article",
       "isHeader": "Latest updates",
       "isEditorPick": "Editor's pick",
+      "isSquares": "Squares",
       "isPinnedHint": "Pins the article to the top of its category and feeds (hero/latest) — it shows first, ahead of newer stories.",
       "isBreakingHint": "Shows in the breaking-news ticker (fast lane). Use sparingly for urgent stories.",
       "isFeaturedHint": "Promotes the article into the homepage slider.",
       "isHeaderHint": "Surfaces the article in the latest-updates header strip.",
       "isEditorPickHint": "Marks the article as an editor's pick for curated zones.",
+      "isSquaresHint": "Places the article in the homepage \"Squares\" section.",
       "seoTitle": "SEO title",
       "seoTitlePlaceholder": "Falls back to the article title if left blank",
       "seoTitleHint": "Optimal length between {{min}} and {{max}} characters.",
@@ -1133,6 +1137,21 @@
           "text": "The article will be hidden from public listings."
         }
       }
+    }
+  },
+  "entities": {
+    "title": "Entities",
+    "placeholder": "Search an entity (person/organization/place/topic)…",
+    "help": "Canonical tagging — links to a stable-identity registry, not free keywords.",
+    "searching": "Searching…",
+    "createAs": "No entity matches «{{name}}» — create it as:",
+    "remove": "Remove entity",
+    "saveFirst": "Save the content first to link entities.",
+    "type": {
+      "person": "Person",
+      "organization": "Organization",
+      "place": "Place",
+      "topic": "Topic"
     }
   },
   "categories": {

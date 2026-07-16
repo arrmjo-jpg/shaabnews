@@ -148,16 +148,30 @@ return [
             // فهرس المقالات — بحث عربي/إنجليزي بترتيب صلة + تصفية + ترتيب.
             'articles_index' => [
                 'searchableAttributes' => ['title', 'subtitle', 'excerpt', 'body', 'category', 'tags'],
-                'filterableAttributes' => ['locale', 'type'],
-                'sortableAttributes' => ['published_at'],
+                'filterableAttributes' => ['locale', 'type', 'status', 'author_id', 'category_ids', 'tag_names'],
+                'sortableAttributes' => ['published_at', 'created_at'],
                 // تسامح الأخطاء الإملائية مفعّل افتراضياً في Meilisearch.
                 'rankingRules' => ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
             ],
             // فهرس مكتبة الفيديو — بحث متن (عنوان/وصف/مقتطف) بترتيب صلة + حقول تصفية.
             'videos_index' => [
                 'searchableAttributes' => ['title', 'description', 'excerpt'],
-                'filterableAttributes' => ['locale', 'source_type', 'video_category_id', 'is_featured'],
+                'filterableAttributes' => ['locale', 'source_type', 'video_category_id', 'is_featured', 'status', 'visibility', 'author_id'],
                 'sortableAttributes' => ['published_at'],
+                'rankingRules' => ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
+            ],
+            // فهرس الريلز — مرآة videos_index دون تصنيف/visibility (الريل نطاق مستقلّ).
+            'reels_index' => [
+                'searchableAttributes' => ['title', 'description'],
+                'filterableAttributes' => ['locale', 'is_featured', 'status', 'author_id'],
+                'sortableAttributes' => ['published_at'],
+                'rankingRules' => ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
+            ],
+            // فهرس البثّ — بُعد kind (live|tv|radio) بدل locale (البثّ غير مقسَّم لغوياً).
+            'broadcasts_index' => [
+                'searchableAttributes' => ['title', 'description', 'excerpt'],
+                'filterableAttributes' => ['kind', 'status', 'is_featured', 'is_public', 'category_id'],
+                'sortableAttributes' => ['started_at', 'scheduled_at'],
                 'rankingRules' => ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
             ],
             // فهرس صفحات الجريدة (بحث الأرشيف العابر — Enterprise). وثيقة لكل صفحة

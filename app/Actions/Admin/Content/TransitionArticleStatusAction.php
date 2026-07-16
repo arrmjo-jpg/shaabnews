@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace App\Actions\Admin\Content;
 
 use App\Enums\ArticleStatus;
+use App\Events\Content\ArticleStatusChanged;
 use App\Http\Resources\Admin\Content\ArticleResource;
 use App\Models\Article;
 use App\Models\User;
-use App\Support\Cache\ArticleCacheTags;
-use App\Support\Content\ArticleCdnPurge;
 use App\Support\Content\ArticleRevisionRecorder;
 use App\Support\Content\ArticleWorkflowGuard;
-use App\Support\Notifications\WriterNotifier;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -36,6 +33,8 @@ class TransitionArticleStatusAction
             return $denied;
         }
 
+        $from = $article->status;
+
         $article = DB::transaction(function () use ($article, $actor, $target, $scheduledAt): Article {
             $article->status = $target->value;
 
@@ -53,12 +52,9 @@ class TransitionArticleStatusAction
             return $article;
         });
 
-        // إبطال حبيبي (دخول/خروج المقال من حالة منشور يؤثّر على feed لغته+تفاصيله)
-        Cache::tags(ArticleCacheTags::writeTags($article))->flush();
-        ArticleCdnPurge::purge($article);
-
-        // إشعار الكاتب (نشر/رفض فقط) — بعد commit وخارج أي transaction (best-effort).
-        WriterNotifier::contentStatusChanged($article, 'article', $target->value);
+        // حدث نطاقيّ (ADR-E2): يستبدل 3 نداءات أمريّة (كاش/CDN/إشعار) بمستمعين متزامنين
+        // — نفس التوقيت والتسلسل والسلوك تماماً، بعد commit وخارج أي transaction.
+        event(new ArticleStatusChanged($article, $from, $target, $actor));
 
         return ApiResponse::success(
             __('article.status_changed'),

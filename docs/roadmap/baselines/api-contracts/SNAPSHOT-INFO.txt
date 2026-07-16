@@ -1,0 +1,2 @@
+2026-07-10 commit=a3f3fb479
+No broadcast records exist in this dev DB (Broadcast::first() returned null) - detail endpoint (/{kind}/{slug}) not captured, list endpoint captured with empty result. Should be re-captured once real broadcast data exists.

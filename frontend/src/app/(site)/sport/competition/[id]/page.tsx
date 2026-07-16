@@ -13,6 +13,7 @@ import { CompetitionStatsView } from '@/components/sport/competition-stats';
 import { SportNews } from '@/components/sport/sport-news';
 import { StandingsView } from '@/components/sport/standings-view';
 import { getCompetitionGames, getCompetitionInsights, getCompetitionMatchList, getGameDetail, getGameTrends } from '@/lib/sport/games';
+import { buildMetadata } from '@/lib/seo';
 import {
   getCompetitionBrackets,
   getCompetitionHistory,
@@ -27,9 +28,18 @@ import {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const cid = Number(id);
-  if (!Number.isInteger(cid) || cid <= 0) return { title: 'البطولة' };
+  if (!Number.isInteger(cid) || cid <= 0) {
+    return buildMetadata({ title: 'البطولة', path: `/sport/competition/${id}` });
+  }
   const meta = await getCompetitionMeta(cid);
-  return { title: meta ? meta.name : 'البطولة' };
+  if (!meta) return buildMetadata({ title: 'البطولة', path: `/sport/competition/${cid}` });
+
+  return buildMetadata({
+    title: meta.name,
+    description: `جدول ونتائج وترتيب بطولة ${meta.name}`,
+    path: `/sport/competition/${cid}`,
+    type: 'website',
+  });
 }
 
 export default async function CompetitionPage({

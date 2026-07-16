@@ -23,9 +23,10 @@ function buildParams(p: PlaylistsListParams): Record<string, string | number> {
  * (drag) عبر pivot.position. نفس عقد الـ API ومعايير الخدمات.
  */
 export const videoPlaylistsService = {
-  async list(p: PlaylistsListParams): Promise<PlaylistsListResult> {
+  async list(p: PlaylistsListParams, signal?: AbortSignal): Promise<PlaylistsListResult> {
     const { data } = await http.get<ApiSuccess<VideoPlaylistData[]>>('/admin/video-playlists', {
       params: buildParams(p),
+      signal,
     });
     const pagination = (data.meta as { pagination: PaginationMeta }).pagination;
     return { data: data.data, pagination };

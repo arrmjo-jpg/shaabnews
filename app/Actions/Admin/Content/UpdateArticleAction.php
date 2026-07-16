@@ -56,6 +56,9 @@ class UpdateArticleAction
         $oldPath = $article->canonicalPath();
         $oldLocale = $article->locale;
         $oldSlug = (string) $article->slug;
+        $oldAuthorId = $article->author_id;
+        $oldTags = $article->tags->pluck('name')->all();
+
         // slugs التصنيفات قبل التعديل — للإبطال الحبيبي الدقيق عند تغيّر العضوية.
         $oldCategorySlugs = collect([$article->primaryCategory])
             ->merge($article->categories)
@@ -68,7 +71,7 @@ class UpdateArticleAction
                 'type', 'event_status', 'locale', 'title', 'subtitle', 'short_url', 'excerpt',
                 'seo_title', 'seo_description', 'seo_keywords',
                 'canonical_url', 'robots', 'og_image_id', 'is_featured', 'is_breaking',
-                'is_pinned', 'is_header', 'is_editor_pick', 'comments_enabled',
+                'is_pinned', 'is_header', 'is_editor_pick', 'is_squares', 'comments_enabled',
             ] as $field) {
                 if (array_key_exists($field, $validated)) {
                     $article->{$field} = $validated[$field];
@@ -122,6 +125,9 @@ class UpdateArticleAction
 
             ArticleRevisionRecorder::snapshot($article, $actor->id);
 
+            // تحديث الفهرس فوراً بعد إسناد العلاقات (categories/tags/media) للوقاية من تأخر مزامنة Pivot
+            $article->searchable();
+
             return $article;
         });
 
@@ -129,7 +135,7 @@ class UpdateArticleAction
         Cache::tags(
             ArticleCacheTags::writeTags($article->fresh(), $oldLocale, $oldSlug, $oldCategorySlugs)
         )->flush();
-        ArticleCdnPurge::purge($article, $oldPath);
+        ArticleCdnPurge::purge($article, $oldPath, $oldCategorySlugs, $oldTags, $oldAuthorId);
 
         return ApiResponse::success(
             __('article.updated'),

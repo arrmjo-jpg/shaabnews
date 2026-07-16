@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   MoreHorizontal,
@@ -22,6 +22,7 @@ import {
 import { DataTable, type Column } from '@/components/data/DataTable';
 import { Pagination } from '@/components/data/Pagination';
 import { SearchInput } from '@/components/data/SearchInput';
+import { cn } from '@/lib/utils';
 import { ErrorState } from '@/components/feedback';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -56,14 +57,16 @@ export default function UsersPage() {
   const canEdit = hasPermission('users.edit');
   const canDelete = hasPermission('users.delete');
 
-  const [params, setParams] = useState<UsersListParams>({
-    page: 1,
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const params = useMemo<UsersListParams>(() => ({
+    page: Number(searchParams.get('page')) || 1,
     per_page: PER_PAGE,
-    search: '',
-    status: '',
-    role: '',
-    trashed: 'none',
-  });
+    search: searchParams.get('search') || '',
+    status: (searchParams.get('status') as UsersListParams['status']) || '',
+    role: searchParams.get('role') || '',
+    trashed: (searchParams.get('trashed') as UsersListParams['trashed']) || 'none',
+  }), [searchParams]);
   const [accountType, setAccountType] = useState<UserAccountType>('all');
 
   const q = useUsers(params);
@@ -73,8 +76,15 @@ export default function UsersPage() {
   const resetPwd = useSendPasswordReset();
   const verifyEmail = useSetEmailVerified();
 
-  const patch = (p: Partial<UsersListParams>) =>
-    setParams((prev) => ({ ...prev, ...p, page: p.page ?? 1 }));
+  const patch = (p: Partial<UsersListParams>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(p).forEach(([k, v]) => {
+      if (v === '' || v == null) next.delete(k);
+      else next.set(k, String(v));
+    });
+    if (p.page === undefined) next.set('page', '1');
+    setSearchParams(next);
+  };
 
   const fmtDate = (v: string | null) =>
     v ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(v)) : '—';
@@ -341,14 +351,16 @@ export default function UsersPage() {
         </select>
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(u) => u.id}
-        loading={q.isLoading}
-      />
+      <div className={cn('transition-opacity duration-200', q.isFetching && 'opacity-70')}>
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(u) => u.id}
+          loading={q.isLoading}
+        />
 
-      {q.data ? <Pagination meta={q.data.pagination} onPage={(page) => patch({ page })} /> : null}
+        {q.data ? <Pagination meta={q.data.pagination} onPage={(page) => patch({ page })} /> : null}
+      </div>
     </div>
   );
 }

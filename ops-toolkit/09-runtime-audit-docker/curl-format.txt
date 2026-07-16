@@ -1,0 +1,7 @@
+
+    dns_lookup:  %{time_namelookup}s
+    tcp_connect: %{time_connect}s
+    ttfb:        %{time_starttransfer}s
+    total:       %{time_total}s
+    http_code:   %{http_code}
+    size_bytes:  %{size_download}

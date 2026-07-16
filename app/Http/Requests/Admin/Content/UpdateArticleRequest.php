@@ -66,6 +66,7 @@ class UpdateArticleRequest extends BaseFormRequest
             'is_pinned' => ['sometimes', 'boolean'],
             'is_header' => ['sometimes', 'boolean'],
             'is_editor_pick' => ['sometimes', 'boolean'],
+            'is_squares' => ['sometimes', 'boolean'],
             'comments_enabled' => ['sometimes', 'boolean'],
             // عدّاد المشاهدات — قابل للتعديل تحريرياً (يُفرَض الدور في الـ Action).
             'views_count' => ['sometimes', 'integer', 'min:0'],

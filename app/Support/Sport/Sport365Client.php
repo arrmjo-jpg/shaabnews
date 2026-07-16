@@ -21,6 +21,36 @@ final class Sport365Client
         return $this->fixturesFrom($this->get('games/fixtures/', ['competitions' => $competitionId]));
     }
 
+    /**
+     * أرشيف نتائج بطولة كاملًا (لا آخر صفحة فقط) — `web/games/results/` ثمّ يمشي رجوعًا عبر
+     * `paging.previousPage` (aftergame/direction=-1) حتى نفاد الصفحات أو بلوغ $maxPages (سقف أمان
+     * يمنع حلقة لا نهائيّة ضدّ خدمة خارجيّة؛ 8×25≈200 مباراة يفوق أكبر بطولة واقعيّة).
+     */
+    public function resultsByCompetition(int $competitionId, int $maxPages = 8): array
+    {
+        $page = $this->get('games/results/', ['competitions' => $competitionId]);
+        $all = $this->fixturesFrom($page);
+
+        $previousPage = $this->pagingUrl($page, 'previousPage');
+        for ($i = 1; $i < $maxPages && $previousPage !== null; $i++) {
+            $afterGame = $this->queryParam($previousPage, 'aftergame');
+            if ($afterGame === null) {
+                break;
+            }
+
+            $page = $this->get('games/', ['competitions' => $competitionId, 'aftergame' => $afterGame, 'direction' => -1]);
+            $games = $this->fixturesFrom($page);
+            if ($games === []) {
+                break;
+            }
+
+            $all = [...$all, ...$games];
+            $previousPage = $this->pagingUrl($page, 'previousPage');
+        }
+
+        return $all;
+    }
+
     /** مواعيد فريق — `web/games/fixtures/?competitors={teamId}`. */
     public function fixturesByTeam(int $teamId): array
     {
@@ -137,6 +167,24 @@ final class Sport365Client
         return $parsed;
     }
 
+    /** رابط تنقّل من `paging.{key}` إن وُجد سلسلة نصّيّة. */
+    private function pagingUrl(array $json, string $key): ?string
+    {
+        $paging = is_array($json['paging'] ?? null) ? $json['paging'] : [];
+        $url = $paging[$key] ?? null;
+
+        return is_string($url) && $url !== '' ? $url : null;
+    }
+
+    /** يستخرج معامل استعلام من رابط تنقّل نسبيّ (مثل `aftergame` من previousPage). */
+    private function queryParam(string $url, string $name): ?int
+    {
+        $query = (string) (parse_url($url, PHP_URL_QUERY) ?? '');
+        parse_str($query, $parsed);
+
+        return isset($parsed[$name]) && is_numeric($parsed[$name]) ? (int) $parsed[$name] : null;
+    }
+
     /** يطبّع مصفوفة `games` إلى مواعيد موحَّدة (يتجاهل ما لا معرّف له). */
     private function fixturesFrom(array $json): array
     {
@@ -171,11 +219,40 @@ final class Sport365Client
             'season_num' => isset($g['seasonNum']) ? (int) $g['seasonNum'] : null,
             'home_team_id' => isset($home['id']) ? (int) $home['id'] : null,
             'home_name' => isset($home['name']) ? (string) $home['name'] : null,
+            'home_logo' => $this->competitorLogo($home),
+            'home_score' => $this->competitorScore($home),
             'away_team_id' => isset($away['id']) ? (int) $away['id'] : null,
             'away_name' => isset($away['name']) ? (string) $away['name'] : null,
+            'away_logo' => $this->competitorLogo($away),
+            'away_score' => $this->competitorScore($away),
             'start_at' => $this->parseTime($g['startTime'] ?? null),
             'status' => $this->normalizeStatus(isset($g['statusGroup']) ? (int) $g['statusGroup'] : 0),
+            'status_text' => isset($g['statusText']) ? (string) $g['statusText'] : null,
         ];
+    }
+
+    /** شعار متنافس (فريق/منتخب) — نمط 365 الموحَّد لكلّ صور الكيانات. null بلا imageVersion. */
+    private function competitorLogo(array $competitor): ?string
+    {
+        $id = isset($competitor['id']) ? (int) $competitor['id'] : 0;
+        $version = $competitor['imageVersion'] ?? null;
+        if ($id <= 0 || $version === null) {
+            return null;
+        }
+
+        return sprintf(
+            'https://imagecache.365scores.com/image/upload/f_png,w_64,h_64,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v%d/Competitors/%d',
+            (int) $version,
+            $id,
+        );
+    }
+
+    /** نتيجة متنافس — سالب/غائب يُطبَّع إلى null (لم تبدأ المباراة بعد). */
+    private function competitorScore(array $competitor): ?int
+    {
+        $score = $competitor['score'] ?? null;
+
+        return is_numeric($score) && (int) $score >= 0 ? (int) $score : null;
     }
 
     private function parseTime(mixed $iso): ?Carbon

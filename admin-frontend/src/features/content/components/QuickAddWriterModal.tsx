@@ -67,8 +67,7 @@ export function QuickAddWriterModal({ open, onClose, onCreated }: Props) {
       toastError(t('articles.form.author.quickAdd.nameRequired'));
       return;
     }
-    // Minimal client-side email shape guard. Backend re-validates.
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (email.trim() !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       toastError(t('articles.form.author.quickAdd.emailInvalid'));
       return;
     }
@@ -157,6 +156,9 @@ export function QuickAddWriterModal({ open, onClose, onCreated }: Props) {
             maxLength={255}
             placeholder="writer@example.com"
           />
+          <p className="text-[11px] text-muted-foreground">
+            اتركه فارغاً ليتم توليد بريد مؤسسي تلقائياً من الاسم
+          </p>
         </div>
 
         <div className="space-y-1.5">

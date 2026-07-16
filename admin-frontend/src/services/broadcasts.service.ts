@@ -33,9 +33,10 @@ function buildParams(p: BroadcastsListParams): Record<string, string | number> {
  * (ApiResponse + pagination meta) وأنماط بقية الخدمات (videos). لا بنية موازية.
  */
 export const broadcastsService = {
-  async list(p: BroadcastsListParams): Promise<BroadcastsListResult> {
+  async list(p: BroadcastsListParams, signal?: AbortSignal): Promise<BroadcastsListResult> {
     const { data } = await http.get<ApiSuccess<BroadcastData[]>>('/admin/broadcasts', {
       params: buildParams(p),
+      signal,
     });
     const pagination = (data.meta as { pagination: PaginationMeta }).pagination;
     return { data: data.data, pagination };

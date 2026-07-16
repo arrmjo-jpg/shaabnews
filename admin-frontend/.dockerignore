@@ -1,0 +1,27 @@
+# ── admin-frontend build context — was MISSING entirely before this audit. ─────────────────────
+# Consequence of the gap: this repo has a real, locally-installed node_modules/ inside
+# admin-frontend/ (confirmed: 169 top-level packages on disk at audit time). Without this file,
+# the Dockerfile's `COPY . .` in the `builder` stage (Dockerfile line 17) copies that local
+# node_modules on top of the one the image had just built two lines earlier via `npm ci`
+# (line 10) — the freshly installed Linux-native modules get overwritten by whatever the
+# developer's host last had installed. On a Windows dev machine this can inject Windows-only
+# native binaries (e.g. platform-specific @rollup/@swc/lightningcss packages) into what is
+# supposed to be a linux/amd64 build, silently breaking or corrupting the build. This is a
+# correctness bug, not just a context-size one — this file is the fix.
+
+.git
+.gitignore
+node_modules
+dist
+build
+.env
+.env.*
+*.log
+.vscode
+.idea
+.cursor
+.DS_Store
+Thumbs.db
+coverage
+.turbo
+*.tsbuildinfo

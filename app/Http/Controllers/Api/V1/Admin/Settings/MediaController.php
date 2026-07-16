@@ -18,7 +18,7 @@ class MediaController extends Controller
     public function uploadBranding(UploadBrandingMediaRequest $request): JsonResponse
     {
         $files = [];
-        foreach (['logo_light', 'logo_dark', 'favicon', 'watermark_image'] as $field) {
+        foreach (['logo_light', 'logo_dark', 'logo_light_en', 'logo_dark_en', 'favicon', 'watermark_image'] as $field) {
             if ($request->hasFile($field)) {
                 $files[$field] = $request->file($field);
             }

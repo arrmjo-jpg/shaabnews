@@ -27,7 +27,7 @@ function useBcInvalidate() {
 export function useBroadcasts(params: BroadcastsListParams) {
   return useQuery({
     queryKey: [...BC, 'list', params],
-    queryFn: () => broadcastsService.list(params),
+    queryFn: ({ signal }) => broadcastsService.list(params, signal),
   });
 }
 

@@ -11,6 +11,11 @@ import { StandingsBlock } from '@/components/sport/standings-block';
 import { TopScorers } from '@/components/sport/top-scorers';
 import { getCompetitions, getFeaturedMatches, getMatchesByCountry, getPopularTeams } from '@/lib/sport/games';
 import { sportHref, type SportDef } from '@/lib/sport/sports';
+
+// بطولة كأس العالم — يُستخدم لتصدير الهيرو (طلب المستخدم سابقاً). شريط نتائج كأس العالم نفسه
+// (LeagueMatchesTicker) يظهر الآن في (site)/layout.tsx تحت الهيدر الرئيسيّ، على كلّ صفحات الموقع
+// — لا يُكرَّر هنا.
+const WORLD_CUP_COMPETITION_ID = 5930;
 import { getTopScorers, TOP_SCORER_COMPETITIONS } from '@/lib/sport/stats';
 
 // جسم قسم /sport المشترك (DRY) — يقوده sportId واحد؛ يُستعمل من `/sport` (كرة القدم) و`/sport/[sport]`.
@@ -39,7 +44,7 @@ export async function SportSection({
   // ويدجت الأهداف لكرة القدم فقط (هدّافون = بيانات كرة قدم)؛ غيرها ⇒ لا طلب (قائمة فارغة).
   const scorerIds = sid === 1 ? TOP_SCORER_COMPETITIONS : [];
   // الهيرو: مباريات كأس العالم (5930) في الصدارة لكرة القدم (طلب المستخدم).
-  const featuredPriority = sid === 1 ? [5930] : [];
+  const featuredPriority = sid === 1 ? [WORLD_CUP_COMPETITION_ID] : [];
   const [featured, competitions, teams, countries, scorers] = await Promise.all([
     getFeaturedMatches(sid, date, 8, featuredPriority),
     getCompetitions(sid),

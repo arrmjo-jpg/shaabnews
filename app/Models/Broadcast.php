@@ -12,6 +12,7 @@ use App\Support\Broadcast\BroadcastNotifier;
 use App\Support\Content\PublicSeoBuilder;
 use App\Support\Content\SlugGenerator;
 use App\Support\Engagement\HasEngagement;
+use App\Support\Search\ResilientSearchable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,6 +32,7 @@ class Broadcast extends Model
     use AuditsChanges;
     use HasEngagement;
     use HasFactory;
+    use ResilientSearchable;
     use Sluggable;
     use SoftDeletes;
 
@@ -230,5 +232,42 @@ class Broadcast extends Model
         return str_starts_with($image, 'http://') || str_starts_with($image, 'https://')
             ? $image
             : PublicSeoBuilder::absoluteUrl($image);
+    }
+
+    // ─── Scout (فهرسة فاشلة-آمنة عبر ResilientSearchable — Task 10) ──
+
+    /** فهرس مستقلّ (إعداداته في config/scout.php → meilisearch.index-settings). */
+    public function searchableAs(): string
+    {
+        return 'broadcasts_index';
+    }
+
+    /**
+     * يُفهرَس البثّ العامّ المباشر أو المنتهي (VOD) فقط — لا مسودّة/مجدوَل/غير
+     * متّصل/فاشل/مؤرشف (حالات غير عامّة أو انتقاليّة).
+     */
+    public function shouldBeSearchable(): bool
+    {
+        return $this->deleted_at === null
+            && $this->is_public === true
+            && in_array($this->status, [BroadcastStatus::Live, BroadcastStatus::Ended], true);
+    }
+
+    /** @return array<string,mixed> */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'description' => (string) $this->description,
+            'excerpt' => (string) $this->excerpt,
+            'kind' => $this->kind->value,
+            'status' => $this->status->value,
+            'is_featured' => $this->is_featured,
+            'is_public' => $this->is_public,
+            'category_id' => $this->category_id,
+            'started_at' => $this->started_at?->getTimestamp(),
+            'scheduled_at' => $this->scheduled_at?->getTimestamp(),
+        ];
     }
 }

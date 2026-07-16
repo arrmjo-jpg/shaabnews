@@ -83,6 +83,23 @@ it('default list still uses offset pagination (total present)', function (): voi
     expect($res->json('meta.pagination.total'))->toBe(1);
 });
 
+// ─── Production review: COUNT(*) cache TTL extended (medium, not short) ────
+
+it('the cached total survives past the short list TTL but still refreshes eventually', function (): void {
+    w2Article();
+    $this->getJson('/api/v1/ar/articles')->assertOk()->assertJsonPath('meta.pagination.total', 1);
+
+    // مقال ثانٍ يُنشأ مباشرة (لا عبر TransitionArticleStatusAction) فلا يُطلق حدث
+    // إبطال بالوسم — يعزل الاختبار لتأثير الـTTL وحده، لا مسار الإبطال الآخر.
+    w2Article();
+
+    $this->travel(6)->minutes();
+    $this->getJson('/api/v1/ar/articles')->assertOk()->assertJsonPath('meta.pagination.total', 1);
+
+    $this->travel(25)->minutes(); // مجموع ٣١ دقيقة — تجاوز MEDIUM (٣٠ دقيقة)
+    $this->getJson('/api/v1/ar/articles')->assertOk()->assertJsonPath('meta.pagination.total', 2);
+});
+
 // ─── TASK 9: differentiated CDN TTL on detail ───────────────────────────────
 
 it('recent article detail gets the medium-long detail TTL', function (): void {

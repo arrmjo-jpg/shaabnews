@@ -111,8 +111,7 @@ class RssController extends Controller
     /** @param array<int,array<string,string>> $items */
     private function render(string $routeName, string $label, array $items): string
     {
-        // Match PublicSeoBuilder's publisher-name source (falls back to app.name).
-        $siteName = (string) (config('seo.publisher.name') ?: config('app.name', 'AlphaCMS'));
+        $siteName = PublicSeoBuilder::getPublisherName();
 
         $channel = [
             'title' => trim("{$siteName} — {$label}"),

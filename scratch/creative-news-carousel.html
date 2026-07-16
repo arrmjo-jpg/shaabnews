@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شريط الأخبار الإبداعي</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Owl Carousel CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 50px 0;
+        }
+
+        /* حاوية شريط الأخبار بالخلفية الحمراء المتدرجة */
+        .news-section-wrapper {
+            background: linear-gradient(135deg, #8b0000 0%, #dc143c 50%, #ff4500 100%);
+            padding: 30px 0;
+            border-bottom: 4px solid #ffb347;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(220, 20, 60, 0.3);
+        }
+
+        /* تأثير إضاءة خفيف في الخلفية */
+        .news-section-wrapper::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%);
+            animation: rotateLight 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotateLight {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .section-title {
+            color: #ffffff;
+            font-weight: 800;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: #ffcc00;
+        }
+
+        /* تصميم الكارت الخاص بكل خبر */
+        .top-news {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            height: 220px;
+            cursor: pointer;
+            margin: 10px; /* المسافة بين العناصر */
+        }
+
+        .top-news:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.4);
+        }
+
+        .top-news img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .top-news:hover img {
+            transform: scale(1.1);
+        }
+
+        /* التدرج اللوني فوق الصورة لظهور النص بشكل واضح */
+        .top-news .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+            display: flex;
+            align-items: flex-end;
+            padding: 15px;
+            transition: height 0.3s ease;
+        }
+
+        .top-news:hover .overlay {
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(220, 20, 60, 0.6) 100%);
+        }
+
+        .top-news .title {
+            width: 100%;
+        }
+
+        .top-news .title a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            transition: color 0.2s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .top-news:hover .title a {
+            color: #ffcc00;
+        }
+
+        /* أزرار التنقل (الأسهم) */
+        .owl-nav {
+            position: absolute;
+            top: -55px;
+            left: 0;
+            display: flex;
+            gap: 10px;
+            margin-top: 0 !important;
+        }
+
+        .owl-nav button {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+            width: 35px;
+            height: 35px;
+            border-radius: 50% !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease !important;
+            border: 1px solid rgba(255,255,255,0.4) !important;
+        }
+
+        .owl-nav button:hover {
+            background: #ffcc00 !important;
+            color: #8b0000 !important;
+            transform: scale(1.1);
+        }
+
+        .owl-nav button span {
+            font-size: 20px;
+            line-height: 1;
+        }
+        
+        .owl-dots {
+            display: none !important;
+        }
+        
+    </style>
+</head>
+<body>
+
+<section class="news-section">
+    <div class="news-section-wrapper">
+        <div class="container">
+            <div class="row position-relative">
+                <div class="col-12">
+                    <h3 class="section-title">
+                        <i class="fas fa-bolt"></i> أحدث الأخبار
+                    </h3>
+                </div>
+                <div class="col-lg-12">
+                    <div class="owl-carousel owl-theme owl-rtl" id="creative-top-news">
+                        
+                        <!-- خبر 1 -->
+                        <div class="item">
+                            <div class="top-news">
+                                <img src="https://cdn.alwakaai.com/2026-07-10/images/5_news_1783688326.webp" alt="وكالة الطاقة">
+                                <div class="overlay">
+                                    <div class="title">
+                                        <a href="#">وكالة الطاقة: التصعيد بين واشنطن وطهران قد يقوّض توقعاتها بشأن النفط</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- خبر 2 -->
+                        <div class="item">
+                            <div class="top-news">
+                                <img src="https://cdn.alwakaai.com/2026-07-10/images/5_news_1783688239.webp" alt="الأمم المتحدة">
+                                <div class="overlay">
+                                    <div class="title">
+                                        <a href="#">الأمم المتحدة تعتمد معهد تدريب عمليات حفظ السلام مركزًا دوليًا للتدريب</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- خبر 3 -->
+                        <div class="item">
+                            <div class="top-news">
+                                <img src="https://cdn.alwakaai.com/2026-07-10/images/5_news_1783687918.webp" alt="مفاوضون قطريون">
+                                <div class="overlay">
+                                    <div class="title">
+                                        <a href="#">رويترز: مفاوضون قطريون في إيران سعيًا لخفض التصعيد</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- خبر 4 -->
+                        <div class="item">
+                            <div class="top-news">
+                                <img src="https://cdn.alwakaai.com/2026-07-10/images/5_news_1783687140.webp" alt="بريطانيا">
+                                <div class="overlay">
+                                    <div class="title">
+                                        <a href="#">بريطانيا تفرض رقابة تنظيمية مباشرة على شركات الحوسبة السحابية العالمية</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- خبر 5 -->
+                        <div class="item">
+                            <div class="top-news">
+                                <img src="https://cdn.alwakaai.com/2026-07-10/images/4_news_1783695612.webp" alt="ترامب">
+                                <div class="overlay">
+                                    <div class="title">
+                                        <a href="#">ترامب: إيران طلبت مواصلة المحادثات.. ووقف إطلاق النار انتهى</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- خبر 6 -->
+                        <div class="item">
+                            <div class="top-news">
+                                <img src="https://cdn.alwakaai.com/2026-07-10/images/4_news_1783694286.webp" alt="أطعمة احرص عليها">
+                                <div class="overlay">
+                                    <div class="title">
+                                        <a href="#">أطعمة احرص عليها فى الحر.. ترطب جسمك وغنية بالماء</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- خبر 7 -->
+                        <div class="item">
+                            <div class="top-news">
+                                <img src="https://cdn.alwakaai.com/2026-07-10/images/4_news_1783692380.webp" alt="ريال مدريد">
+                                <div class="overlay">
+                                    <div class="title">
+                                        <a href="#">لاعبو ريال مدريد يستهدفون تحطيم رقم تاريخي فى كأس العالم</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- jQuery (Required for Owl Carousel) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Owl Carousel JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+
+<script>
+    $(document).ready(function(){
+        $("#creative-top-news").owlCarousel({
+            rtl: true, // ضروري لدعم اللغة العربية من اليمين لليسار
+            loop: true,
+            margin: 10,
+            nav: true,
+            navText: [
+                '<i class="fas fa-chevron-right"></i>', // زر السابق (لأنه RTL)
+                '<i class="fas fa-chevron-left"></i>'   // زر التالي
+            ],
+            autoplay: true,
+            autoplayTimeout: 3000,
+            autoplayHoverPause: true,
+            slideBy: 1, // التقليب خبر واحد في كل مرة
+            responsive:{
+                0:{
+                    items: 1, // في الموبايل يعرض خبر واحد
+                    slideBy: 1
+                },
+                768:{
+                    items: 2, // في التابلت يعرض خبرين
+                    slideBy: 1
+                },
+                992:{
+                    items: 3, // شاشات متوسطة
+                    slideBy: 1
+                },
+                1200:{
+                    items: 4, // في الديسكتوب يعرض 4 أخبار
+                    slideBy: 1
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

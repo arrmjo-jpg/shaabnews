@@ -1,0 +1,17 @@
+--- /sessions/clever-pensive-sagan/mnt/shaabjo/admin-frontend/src/layouts/AuthLayout.tsx	2026-05-16 22:32:50.228757400 +0300
++++ /tmp/bench/admin-frontend/src/layouts/AuthLayout.tsx	2026-07-15 18:46:22.854858100 +0300
+@@ -1,4 +1,5 @@
+ import { Navigate, Outlet } from 'react-router-dom';
++import { Suspense } from 'react';
+ import { useAuth } from '@/hooks/useAuth';
+ import { paths } from '@/router/paths';
+ import { LoadingState } from '@/components/feedback';
+@@ -25,7 +26,7 @@
+       <AuthCover />
+       <div className="flex items-center justify-center p-6 sm:p-10">
+         <div className="w-full max-w-sm animate-fade-in">
+-          <Outlet />
++          <Suspense fallback={<LoadingState />}><Outlet /></Suspense>
+         </div>
+       </div>
+     </div>

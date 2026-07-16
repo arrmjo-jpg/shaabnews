@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace App\Actions\Admin\Content;
 
 use App\Enums\ReelStatus;
+use App\Events\Content\ReelStatusChanged;
 use App\Http\Resources\Admin\Content\ReelResource;
 use App\Models\Reel;
 use App\Models\User;
-use App\Support\Cache\ReelCacheTags;
-use App\Support\Content\ReelCdnPurge;
 use App\Support\Content\ReelRevisionRecorder;
 use App\Support\Content\ReelWorkflowGuard;
-use App\Support\Notifications\WriterNotifier;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -47,6 +44,8 @@ class TransitionReelStatusAction
             return ApiResponse::error(__('reel.media_not_ready'), [], 422);
         }
 
+        $from = $reel->status;
+
         $reel = DB::transaction(function () use ($reel, $actor, $target, $scheduledAt): Reel {
             $reel->status = $target->value;
 
@@ -64,11 +63,9 @@ class TransitionReelStatusAction
             return $reel;
         });
 
-        Cache::tags(ReelCacheTags::invalidationTags($reel))->flush();
-        ReelCdnPurge::purge($reel);
-
-        // إشعار الكاتب (نشر/رفض فقط) — بعد commit وخارج أي transaction (best-effort).
-        WriterNotifier::contentStatusChanged($reel, 'reel', $target->value);
+        // حدث نطاقيّ (Task 6b، مرآة ADR-E2): يستبدل النداءات الأمريّة القائمة
+        // (كاش/CDN/إشعار) بمستمعين متزامنين — نفس التوقيت والتسلسل تماماً.
+        event(new ReelStatusChanged($reel, $from, $target, $actor));
 
         return ApiResponse::success(
             __('reel.status_changed'),

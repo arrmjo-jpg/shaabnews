@@ -99,6 +99,7 @@ export interface VideosListParams {
   visibility: '' | VideoVisibility;
   source_type: '' | VideoSourceType;
   locale: '' | ContentLocale;
+  video_category_id?: '' | number;
   sort: '' | '-created_at' | '-published_at' | 'title' | '-views_count' | 'sort_order';
   trashed?: '' | 'only';
 }

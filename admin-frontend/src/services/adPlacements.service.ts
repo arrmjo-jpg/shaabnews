@@ -23,9 +23,10 @@ function buildParams(p: AdPlacementsListParams): Record<string, string | number>
  * backend (يُعيد 422 يُعرَض عبر toast). فصل (detach) حذف صلب — لا حذف ناعم على الروابط.
  */
 export const adPlacementsService = {
-  async list(p: AdPlacementsListParams): Promise<AdPlacementsListResult> {
+  async list(p: AdPlacementsListParams, signal?: AbortSignal): Promise<AdPlacementsListResult> {
     const { data } = await http.get<ApiSuccess<AdPlacementData[]>>('/admin/ad-placements', {
       params: buildParams(p),
+      signal,
     });
     const pagination = (data.meta as { pagination: PaginationMeta }).pagination;
     return { data: data.data, pagination };

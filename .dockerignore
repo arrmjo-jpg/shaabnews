@@ -1,17 +1,112 @@
+# ── AlphaCMS backend build context — root .dockerignore ────────────────────────
+# Applies ONLY to the backend image (docker-compose.yml: backend/worker/worker-media/scheduler
+# all build with context: "." + dockerfile: docker/php/Dockerfile). frontend/ and admin-frontend/
+# build with their OWN context (./frontend, ./admin-frontend) and their OWN .dockerignore -
+# this file has zero effect on those two builds.
+#
+# ROOT CAUSE this file fixes: the previous version excluded a directory named "public-frontend",
+# which does not exist anywhere in this repo (the real directory is "frontend"). That typo meant
+# the exclusion was a silent no-op - the entire frontend/ tree (its own node_modules + .next build
+# cache) was being read into the backend's build context on every single backend build. Combined
+# with zero exclusion for public/uploads and storage/app/public (100k+ uploaded media files, both
+# already served at runtime via bind/named volumes - see docker-compose.yml - making any copy of
+# them into the image dead weight), this is what produced the multi-GB context and the COPY . .
+# hang. Every pattern below is either an explicit fix for one of those two causes, or closes an
+# equivalent gap (scratch/dev files, generated build output, docs, VCS, IDE folders) found in the
+# same audit.
+
+# -- Version control / CI --
 .git
 .gitignore
-**/node_modules
-**/dist
-**/.next
-public-frontend
+.gitattributes
+.github
+
+# -- Sibling app builds (built by their own Dockerfile/context, never needed by the backend) --
+frontend
 admin-frontend
+mobile-app
+
+# -- PHP dependencies - reinstalled by `composer install` in the Dockerfile itself --
 vendor
+
+# -- Node dependencies - the backend image never runs npm/node --
+node_modules
+
+# -- Uploaded media (THE root cause: 100k+ files). Both paths are mounted at container runtime
+#    (docker-compose.yml: `media` volume -> storage/app/public, bind mount -> public/uploads),
+#    so anything copied here is immediately shadowed and was pure wasted context/layer size. --
+public/uploads
+public/storage
+storage/app/public
+storage/app/private
+
+# -- Raw SQL dumps/backups under database/ (e.g. database/shaab.sql). The Dockerfile does
+#    `COPY database ./database` for migrations/seeders/factories, which are small .php files -
+#    but a multi-GB *.sql backup sitting at the root of that folder would otherwise get copied
+#    straight into the runtime image on every build. These are imported into a dedicated Docker
+#    volume via docker-compose.override.yml instead, never baked into the image. --
+database/*.sql
+
+# -- Laravel runtime-generated state - recreated by the app itself, never meant to ship in the image --
+storage/logs
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/framework/testing
+storage/*.key
+storage/pail
+bootstrap/cache/*.php
+public/hot
+public/fonts-manifest.dev.json
+
+# NOTE: public/build is intentionally NOT excluded, even though it is git-ignored and looks like
+# a generated artifact. epaper/layout.blade.php, broadcast/layout.blade.php and welcome.blade.php
+# all call @vite(...), which reads public/build/manifest.json at request time. Nothing in this
+# Docker build compiles it (no Node.js in the backend image) -- it must already exist on the host
+# (built by the root-level `npm run build` / vite.config.js pipeline, outside Docker) at the
+# moment `docker build` runs, so COPY public ./public in docker/php/Dockerfile can pick it up.
+# Excluding it would silently break (missing manifest -> Vite helper exception) all three pages.
+
+# -- Secrets / local env - must come from the deployment platform, never baked into the image --
 .env
 .env.*
-storage/logs/*
-storage/framework/cache/*
-storage/framework/sessions/*
-storage/framework/views/*
+!.env.example
+auth.json
+
+# -- Editors / IDE --
+.vscode
+.idea
+.cursor
+.nova
+.zed
+.codex
+.phpactor.json
+.DS_Store
+Thumbs.db
+
+# -- Tests, docs, and generated reports - irrelevant to a production runtime image --
 tests
-*.md
+docs
 .ai
+.agents
+.claude
+ops-toolkit
+*.md
+*.docx
+*.pdf
+
+# -- One-off local scratch/debug scripts observed at repo root - never intended for the image --
+scratch
+scratch_test_*.php
+publish_test*.php
+redis_test*.php
+*.log
+liked.html
+saved.html
+
+# -- Misc caches --
+.phpunit.cache
+.phpunit.result.cache
+_ide_helper.php
+Homestead.json
+Homestead.yaml

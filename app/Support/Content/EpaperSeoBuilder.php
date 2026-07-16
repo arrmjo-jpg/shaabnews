@@ -19,7 +19,7 @@ final class EpaperSeoBuilder
         $absoluteUrl = PublicSeoBuilder::absoluteUrl($epaper->canonicalPath());
         $title = $epaper->title;
         $description = $epaper->summary ?? $epaper->subtitle;
-        $siteName = (string) config('app.name', 'AlphaCMS');
+        $siteName = PublicSeoBuilder::getSiteName($epaper->locale);
         $ogLocale = $epaper->locale === 'en' ? 'en_US' : 'ar_AR';
         $twitterHandle = (string) config('seo.twitter.@username', '') ?: null;
 

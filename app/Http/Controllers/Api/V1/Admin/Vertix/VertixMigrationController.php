@@ -114,8 +114,10 @@ class VertixMigrationController extends Controller
             'news' => [
                 'status' => $newsRun->status->value,
                 'source_total' => $newsSourceTotal,
-                'imported' => $newsImported,
-                'remaining' => max(0, $newsSourceTotal - $newsImported),
+                // الردم مكتمل ⇒ كلّ خبر مؤهَّل إمّا مُستورَد أو فاشل، فالمُستورَد = الإجمالي − الفاشل
+                // (لا عدّاد التشغيل الذي يُسقِط المتخطَّى/المُستورَد في تشغيلٍ سابق فيُظهر «متبقٍّ» وهميّاً).
+                'imported' => $newsRun->backfill_done ? max(0, $newsSourceTotal - $newsRun->failed) : $newsImported,
+                'remaining' => $newsRun->backfill_done ? 0 : max(0, $newsSourceTotal - $newsImported),
                 'failed' => $newsRun->failed,
             ],
             'errors' => array_values($errors),

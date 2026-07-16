@@ -1,0 +1,11 @@
+﻿
+  2026-06-17 21:48:37 e8480403-4ac7-4526-97c6-1a77fed10f71  redis@default App\Jobs\ApplyArticleCoverWatermarkJob  
+  2026-06-17 21:48:37 e05f8676-059e-4a30-8ecd-caac39f4cbbc  redis@default App\Jobs\ApplyArticleCoverWatermarkJob  
+  2026-06-14 22:45:25 e8272fb9-ba7c-438e-84bb-3910a99cafc9  database@search App\Jobs\SyncEpaperSearchIndexJob  
+  2026-06-14 22:45:23 cf44433d-11f9-4f33-8bf5-5c6421cf067e  database@search App\Jobs\SyncEpaperSearchIndexJob  
+  2026-06-14 22:40:17 5f7c14c6-2382-4d9b-932f-3ef8baa153b5  database@search App\Jobs\SyncEpaperSearchIndexJob  
+  2026-06-14 22:40:15 5abe4589-dffe-415b-b21b-956d54319d27  database@search App\Jobs\SyncEpaperSearchIndexJob  
+  2026-06-14 22:40:13 3ded7352-6020-4782-8da5-6cbabcffb33a  database@search App\Jobs\SyncEpaperSearchIndexJob  
+  2026-06-14 22:40:12 95a270bd-acc9-41f9-9828-d99fccb70bec  database@search App\Jobs\SyncEpaperSearchIndexJob  
+
+

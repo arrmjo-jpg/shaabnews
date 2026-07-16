@@ -1,0 +1,50 @@
+﻿--- sample 1 @ 2026-07-16T00:01:38.4100932+03:00 ---
+NAME                     CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+shaabjo-frontend-1       0.00%     114.9MiB / 7.717GiB   1.45%     1.4MB / 880kB     40.3MB / 987kB    11
+shaabjo-backend-1        0.01%     87.65MiB / 7.717GiB   1.11%     3.52MB / 1.83MB   19.1MB / 98.3kB   18
+shaabjo-scheduler-1      0.08%     59.92MiB / 7.717GiB   0.76%     54.4MB / 9.2MB    6.16MB / 94.2kB   415
+shaabjo-worker-1         0.28%     52.02MiB / 7.717GiB   0.66%     5.93MB / 31.2MB   1.98MB / 36.9kB   1
+shaabjo-worker-media-1   0.00%     52.19MiB / 7.717GiB   0.66%     670kB / 2.62MB    7.56MB / 36.9kB   1
+shaabjo-meilisearch-1    0.18%     79.05MiB / 7.717GiB   1.00%     9.12kB / 2.01kB   8.11MB / 168kB    22
+shaabjo-admin-1          0.00%     10.8MiB / 7.717GiB    0.14%     15kB / 126B       9.53MB / 8.19kB   13
+
+--- sample 2 @ 2026-07-16T00:01:43.5953684+03:00 ---
+NAME                     CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+shaabjo-frontend-1       0.00%     114.9MiB / 7.717GiB   1.45%     1.4MB / 880kB     40.3MB / 987kB    11
+shaabjo-backend-1        0.02%     87.65MiB / 7.717GiB   1.11%     3.52MB / 1.83MB   19.1MB / 98.3kB   18
+shaabjo-scheduler-1      0.09%     59.92MiB / 7.717GiB   0.76%     54.4MB / 9.2MB    6.16MB / 94.2kB   415
+shaabjo-worker-1         0.37%     52.02MiB / 7.717GiB   0.66%     5.94MB / 31.3MB   1.98MB / 36.9kB   1
+shaabjo-worker-media-1   0.10%     52.19MiB / 7.717GiB   0.66%     672kB / 2.63MB    7.56MB / 36.9kB   1
+shaabjo-meilisearch-1    0.20%     79.05MiB / 7.717GiB   1.00%     9.12kB / 2.01kB   8.11MB / 168kB    22
+shaabjo-admin-1          0.00%     10.8MiB / 7.717GiB    0.14%     15kB / 126B       9.53MB / 8.19kB   13
+
+--- sample 3 @ 2026-07-16T00:01:48.2158824+03:00 ---
+NAME                     CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+shaabjo-frontend-1       2.77%     116.1MiB / 7.717GiB   1.47%     1.41MB / 882kB    40.3MB / 987kB    11
+shaabjo-backend-1        0.01%     87.65MiB / 7.717GiB   1.11%     3.52MB / 1.83MB   19.1MB / 98.3kB   18
+shaabjo-scheduler-1      0.09%     59.92MiB / 7.717GiB   0.76%     54.4MB / 9.2MB    6.16MB / 94.2kB   415
+shaabjo-worker-1         0.33%     51.76MiB / 7.717GiB   0.65%     5.96MB / 31.4MB   1.98MB / 36.9kB   1
+shaabjo-worker-media-1   0.00%     52.19MiB / 7.717GiB   0.66%     673kB / 2.64MB    7.56MB / 36.9kB   1
+shaabjo-meilisearch-1    0.21%     79.05MiB / 7.717GiB   1.00%     9.12kB / 2.01kB   8.11MB / 168kB    22
+shaabjo-admin-1          0.00%     10.8MiB / 7.717GiB    0.14%     15kB / 126B       9.53MB / 8.19kB   13
+
+--- sample 4 @ 2026-07-16T00:01:53.3966282+03:00 ---
+NAME                     CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+shaabjo-frontend-1       0.00%     116MiB / 7.717GiB     1.47%     1.41MB / 882kB    40.3MB / 987kB    11
+shaabjo-backend-1        0.02%     87.65MiB / 7.717GiB   1.11%     3.52MB / 1.83MB   19.1MB / 98.3kB   18
+shaabjo-scheduler-1      0.08%     59.92MiB / 7.717GiB   0.76%     54.4MB / 9.2MB    6.16MB / 94.2kB   415
+shaabjo-worker-1         0.39%     51.76MiB / 7.717GiB   0.65%     5.98MB / 31.5MB   1.98MB / 36.9kB   1
+shaabjo-worker-media-1   0.10%     52.19MiB / 7.717GiB   0.66%     675kB / 2.65MB    7.56MB / 36.9kB   1
+shaabjo-meilisearch-1    0.22%     79.05MiB / 7.717GiB   1.00%     9.12kB / 2.01kB   8.11MB / 168kB    22
+shaabjo-admin-1          0.00%     10.8MiB / 7.717GiB    0.14%     15kB / 126B       9.53MB / 8.19kB   13
+
+--- sample 5 @ 2026-07-16T00:01:58.2473441+03:00 ---
+NAME                     CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+shaabjo-frontend-1       0.00%     116MiB / 7.717GiB     1.47%     1.41MB / 882kB    40.3MB / 987kB    11
+shaabjo-backend-1        0.02%     87.65MiB / 7.717GiB   1.11%     3.52MB / 1.83MB   19.1MB / 98.3kB   18
+shaabjo-scheduler-1      0.14%     59.92MiB / 7.717GiB   0.76%     54.4MB / 9.2MB    6.16MB / 94.2kB   415
+shaabjo-worker-1         0.49%     51.76MiB / 7.717GiB   0.65%     5.99MB / 31.6MB   1.98MB / 36.9kB   1
+shaabjo-worker-media-1   0.00%     52.19MiB / 7.717GiB   0.66%     677kB / 2.66MB    7.56MB / 36.9kB   1
+shaabjo-meilisearch-1    0.28%     79.05MiB / 7.717GiB   1.00%     9.12kB / 2.01kB   8.11MB / 168kB    22
+shaabjo-admin-1          0.00%     10.8MiB / 7.717GiB    0.14%     15kB / 126B       9.53MB / 8.19kB   13
+

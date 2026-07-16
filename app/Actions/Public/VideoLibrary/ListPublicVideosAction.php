@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\Public\VideoLibrary;
 
+use App\Enums\VideoStatus;
+use App\Enums\VideoVisibility;
 use App\Http\Resources\Public\VideoLibrary\PublicVideoCardResource;
 use App\Models\Video;
+use App\Models\VideoCategory;
 use App\Support\Cache\CachedRead;
 use App\Support\Cache\CacheKeys;
 use App\Support\Cache\CacheTtl;
@@ -58,6 +61,71 @@ class ListPublicVideosAction
     /** @return array<string,mixed> */
     private function build(string $locale, Request $request, string $effectiveQ, int $perPage, bool $cursorMode): array
     {
+        $isCollection = config('scout.driver') === 'collection';
+        $categoryFilter = (string) ($request->query('filter')['category'] ?? '');
+        $sourceTypeFilter = (string) ($request->query('filter')['source_type'] ?? '');
+
+        // إذا كان هناك نص بحث، نستخدم Meilisearch ونمطه الأصلي في الترقيم والفرز بالصلة
+        if ($effectiveQ !== '' && ! $cursorMode) {
+            try {
+                $search = Video::search($effectiveQ)
+                    ->where('status', VideoStatus::Published->value)
+                    ->where('visibility', VideoVisibility::Public->value)
+                    ->where('locale', $locale);
+
+                // تطبيق مرشحات التصفية الخاصة بمكتبة الفيديوهات داخل Meilisearch
+                $categoryId = null;
+                if ($categoryFilter !== '') {
+                    $category = VideoCategory::where('slug', $categoryFilter)->first();
+                    if ($category) {
+                        $categoryId = $category->id;
+                        if (! $isCollection) {
+                            $search->where('video_category_id', $category->id);
+                        }
+                    } else {
+                        $categoryId = -1;
+                        if (! $isCollection) {
+                            $search->where('video_category_id', -1);
+                        }
+                    }
+                }
+
+                if ($sourceTypeFilter !== '' && ! $isCollection) {
+                    $search->where('source_type', $sourceTypeFilter);
+                }
+
+                // الحماية المزدوجة (Double Security): نقيد تحميل النماذج بقوانين النشر وسرية البيانات والأقسام من MySQL
+                $search->query(fn ($q) => $q->public()
+                    ->playable()
+                    ->forLocale($locale)
+                    ->with(['mediaAsset', 'category', 'engagementCounter'])
+                    ->when($categoryId !== null, function ($q) use ($categoryId) {
+                        $q->where('video_category_id', $categoryId);
+                    })
+                    ->when($sourceTypeFilter !== '', function ($q) use ($sourceTypeFilter) {
+                        $q->where('source_type', $sourceTypeFilter);
+                    })
+                );
+
+                $paginator = $search->paginate($perPage)->appends($request->query());
+
+                return [
+                    'data' => PublicVideoCardResource::collection($paginator)->resolve(),
+                    'pagination' => [
+                        'total' => $paginator->total(),
+                        'count' => $paginator->count(),
+                        'per_page' => $paginator->perPage(),
+                        'current_page' => $paginator->currentPage(),
+                        'total_pages' => $paginator->lastPage(),
+                    ],
+                ];
+            } catch (\Throwable $e) {
+                // تدهور رشيق: نرجع للبحث عبر قاعدة البيانات مباشرة في حال تعطل محرك البحث
+                report($e);
+            }
+        }
+
+        // المسار الافتراضي بدون بحث (أو كحالة تراجع في حال تعطل Meilisearch)
         $query = QueryBuilder::for(
             Video::query()
                 ->public()
@@ -73,8 +141,7 @@ class ListPublicVideosAction
                     if ($effectiveQ === '') {
                         return;
                     }
-                    $ids = Video::search($effectiveQ)->take(self::SEARCH_LIMIT)->keys()->all();
-                    $q->whereIn($q->getModel()->getQualifiedKeyName(), $ids ?: [-1]);
+                    $q->where('title', 'like', '%'.$effectiveQ.'%');
                 }),
                 AllowedFilter::callback('category', function ($q, $value): void {
                     $q->whereHas('category', fn ($c) => $c->where('slug', $value));

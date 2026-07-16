@@ -78,7 +78,7 @@ export function useDeleteAdZone() {
 export function useAdCampaigns(params: AdCampaignsListParams) {
   return useQuery({
     queryKey: [...ADV, 'campaigns', params],
-    queryFn: () => adCampaignsService.list(params),
+    queryFn: ({ signal }) => adCampaignsService.list(params, signal),
   });
 }
 
@@ -245,7 +245,7 @@ export function useForceDeleteAdCreative() {
 export function useAdPlacements(params: AdPlacementsListParams) {
   return useQuery({
     queryKey: [...ADV, 'placements', params],
-    queryFn: () => adPlacementsService.list(params),
+    queryFn: ({ signal }) => adPlacementsService.list(params, signal),
   });
 }
 

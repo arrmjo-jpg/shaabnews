@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
@@ -35,10 +35,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
+import { Input } from '@/components/ui/input';
 import { DataTable, type Column } from '@/components/data/DataTable';
 import { Pagination } from '@/components/data/Pagination';
+import { SearchInput } from '@/components/data/SearchInput';
 import { cn } from '@/lib/utils';
 import { paths } from '@/router/paths';
 import { useAuth } from '@/hooks/useAuth';
@@ -133,19 +134,24 @@ export default function BroadcastsPage() {
   const canKick = hasPermission('broadcasts.viewer_control');
   const canBan = hasPermission('broadcasts.viewer_ban');
 
-  const [params, setParams] = useState<BroadcastsListParams>({
-    page: 1,
-    per_page: PER_PAGE,
-    search: '',
-    status: '',
-    kind: '',
-    source_type: '',
-    category_id: '',
-    is_featured: '',
-    is_public: '',
-    sort: '-created_at',
-    trashed: '',
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const params = useMemo<BroadcastsListParams>(() => {
+    const catRaw = searchParams.get('category_id');
+    return {
+      page: Number(searchParams.get('page')) || 1,
+      per_page: PER_PAGE,
+      search: searchParams.get('search') || '',
+      status: (searchParams.get('status') as BroadcastsListParams['status']) || '',
+      kind: (searchParams.get('kind') as BroadcastsListParams['kind']) || '',
+      source_type: (searchParams.get('source_type') as BroadcastsListParams['source_type']) || '',
+      category_id: catRaw ? Number(catRaw) : '',
+      is_featured: (searchParams.get('is_featured') as BroadcastsListParams['is_featured']) || '',
+      is_public: (searchParams.get('is_public') as BroadcastsListParams['is_public']) || '',
+      sort: (searchParams.get('sort') as BroadcastsListParams['sort']) || '-created_at',
+      trashed: (searchParams.get('trashed') as BroadcastsListParams['trashed']) || '',
+    };
+  }, [searchParams]);
 
   const [scheduling, setScheduling] = useState<BroadcastData | null>(null);
   const [scheduleAt, setScheduleAt] = useState('');
@@ -163,7 +169,20 @@ export default function BroadcastsPage() {
   const rows = q.data?.data ?? [];
   const categories = catQ.data ?? [];
 
-  const patch = (p: Partial<BroadcastsListParams>) => setParams((prev) => ({ ...prev, ...p, page: p.page ?? 1 }));
+  const patch = (p: Partial<BroadcastsListParams>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(p).forEach(([k, v]) => {
+      if (v === '' || v == null) {
+        next.delete(k);
+      } else {
+        next.set(k, String(v));
+      }
+    });
+    if (p.page === undefined) {
+      next.set('page', '1');
+    }
+    setSearchParams(next);
+  };
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   // ─── Lifecycle handlers ───────────────────────────────────────────────────
@@ -461,11 +480,10 @@ export default function BroadcastsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 border border-border bg-background p-3">
-        <Input
+        <SearchInput
           value={params.search}
-          onChange={(e) => patch({ search: e.target.value })}
+          onDebouncedChange={(v) => patch({ search: v })}
           placeholder={t('filter.search')}
-          className="min-w-[200px] flex-1"
         />
         <select className={selectCls} value={params.status} onChange={(e) => patch({ status: e.target.value as BroadcastsListParams['status'] })}>
           <option value="">{t('filter.statusAll')}</option>
@@ -560,7 +578,7 @@ export default function BroadcastsPage() {
           </Button>
         </div>
       ) : (
-        <>
+        <div className={cn('transition-opacity duration-200', q.isFetching && 'opacity-70')}>
           <DataTable
             columns={columns}
             rows={rows}
@@ -570,7 +588,7 @@ export default function BroadcastsPage() {
             emptyDescription={inTrash ? t('empty.trashDescription') : t('empty.description')}
           />
           {q.data ? <Pagination meta={q.data.pagination} onPage={(page) => patch({ page })} /> : null}
-        </>
+        </div>
       )}
 
       {/* Schedule modal */}

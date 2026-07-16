@@ -41,7 +41,11 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            // أصل روابط الوسائط العامّة (شعارات/أيقونات/فافيكون/صور الكُتّاب…): يُخدَم /storage من **الأصل
+            // العامّ** (دومين الواجهة) — الواجهة تُمرّر /storage إلى الـAPI (next.config rewrites)، تمامًا كما
+            // تُخدَم مكتبة الوسائط عبر /uploads. الأولويّة: MEDIA_PUBLIC_URL (دومين CDN عامّ مخصّص إن وُجد) ←
+            // FRONTEND_URL (الأصل العامّ) ← APP_URL (تطوير محلّيّ). **لا يُشتقّ من دومين الـAPI (api.*)**.
+            'url' => rtrim(env('MEDIA_PUBLIC_URL') ?: env('FRONTEND_URL') ?: env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

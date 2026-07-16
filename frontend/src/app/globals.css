@@ -276,6 +276,37 @@
 [data-reels-theme='light'] .reels-logo-dark { display: none; }
 [data-reels-theme='light'] .reels-logo-light { display: inline-block; }
 
+/* ══ تخطيط تعويم صورة الهيرو يسارًا في صفحة المقال (article-detail/blocks/hero-image.tsx) ══
+   منقول بصريًّا من المشروع المرجعي — يُفعَّل فقط على الشاشات الكبيرة (سطح المكتب)؛ على الجوال
+   الصورة تبقى بعرض كامل ضمن التدفّق العادي (لا float). صنف جديد إضافي، لا يمسّ أي قاعدة موجودة. */
+@media (min-width: 1024px) {
+  .editorial-float-left {
+    float: left;
+    margin-inline-start: 2.5rem !important;
+    margin-inline-end: 0 !important;
+    margin-block-end: 1.5rem !important;
+    width: 500px !important;
+    height: auto !important;
+    clear: both;
+  }
+}
+
+/* الفقرة الافتتاحية (Lead) في متن المقال — نص مسطّر الجانبين، يطابق محاذاة فقرات .tiptap-content. */
+.editorial-lead {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+/* ══ دخول شريط المشغّل الصوتيّ المصغّر اللاصق أسفل الشاشة (components/reading/audio-reader.tsx) ══ */
+@keyframes audio-bar-rise {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.audio-bar-rise { animation: audio-bar-rise 0.28s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .audio-bar-rise { animation: none; }
+}
+
 /* ══ تقليب صفحات قارئ الصحيفة (Two-page spread) — دوران 3D حول الكعب، GPU عبر transform،
    60fps (transform/opacity فقط)، يحترم تقليل الحركة. ليس مكتبة flipbook — CSS خالص. ══ */
 @keyframes ep-flip-next {

@@ -28,7 +28,10 @@ class PublicArticleListItemResource extends JsonResource
             'excerpt' => $this->excerpt,
             'published_at' => $this->published_at?->toISOString(),
             // أعلام شارة كرت الهيرو (مصدر حقيقيّ، لا تلفيق) — مطابقة مورد التفصيل: عاجل + مباشر.
+            // is_featured/is_header عمداً غائبان هنا (أعلام تحرير داخليّة) — المسار الصحيح
+            // للمحتوى المميَّز/الهيدر هو /feed/hero و/feed/header المخصَّصان (DEC-001).
             'is_breaking' => (bool) $this->is_breaking,
+            'is_squares' => (bool) $this->is_squares,
             'is_live' => $this->type->value === 'live'
                 && $this->event_status?->value === 'live',
             'canonical_path' => $this->canonicalPath(),

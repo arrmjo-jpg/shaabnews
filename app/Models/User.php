@@ -9,6 +9,7 @@ use App\Notifications\QueuedResetPassword;
 use App\Support\Audit\AuditsChanges;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -131,5 +132,10 @@ class User extends Authenticatable implements HasMedia
             ->fit(Fit::Contain, 256, 256)
             ->format('webp')
             ->performOnCollections('avatar');
+    }
+
+    public function articles(): HasMany
+    {
+        return $this->hasMany(Article::class, 'author_id');
     }
 }

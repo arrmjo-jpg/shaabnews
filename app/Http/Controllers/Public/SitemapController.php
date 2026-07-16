@@ -186,7 +186,7 @@ class SitemapController extends Controller
             "public:sitemap:news:{$locale}",
             CacheTtl::SHORT,
             function () use ($locale): string {
-                $siteName = (string) config('app.name', 'AlphaCMS');
+                $siteName = PublicSeoBuilder::getSiteName();
                 $sitemap = Sitemap::create();
 
                 $articles = Article::query()

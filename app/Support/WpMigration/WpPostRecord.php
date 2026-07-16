@@ -27,6 +27,7 @@ final class WpPostRecord
         public readonly array $categoryTtids,
         public readonly ?int $primaryCategoryTtid,
         public readonly ?string $featuredUrl,
+        public readonly ?int $featuredWpAttachmentId,
         public readonly array $seo,
         public readonly ?string $permalink,
     ) {}

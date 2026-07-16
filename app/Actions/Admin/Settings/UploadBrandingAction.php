@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Cache;
 
 class UploadBrandingAction
 {
-    private const FIELDS = ['logo_light', 'logo_dark', 'favicon', 'watermark_image'];
+    private const FIELDS = ['logo_light', 'logo_dark', 'logo_light_en', 'logo_dark_en', 'favicon', 'watermark_image'];
 
     /**
      * @param  array<string, UploadedFile>  $files

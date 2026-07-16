@@ -32,7 +32,7 @@ final class BroadcastSeoBuilder
         $image = $broadcast->shareImageUrl();
         $isRadio = $broadcast->kind === BroadcastKind::Radio;
 
-        $siteName = (string) config('app.name', 'AlphaCMS');
+        $siteName = PublicSeoBuilder::getSiteName();
         $twitterHandle = (string) config('seo.twitter.@username', '') ?: null;
 
         return [
@@ -97,7 +97,7 @@ final class BroadcastSeoBuilder
         string $siteName,
     ): array {
         $type = $broadcast->kind === BroadcastKind::Radio ? 'AudioObject' : 'VideoObject';
-        $logo = (string) config('seo.publisher.logo', '');
+        $logo = PublicSeoBuilder::getPublisherLogo();
         $start = $broadcast->started_at ?? $broadcast->scheduled_at;
 
         $publication = $start !== null ? array_filter([
@@ -119,7 +119,7 @@ final class BroadcastSeoBuilder
             'publication' => $publication,
             'publisher' => array_filter([
                 '@type' => 'Organization',
-                'name' => (string) (config('seo.publisher.name') ?: $siteName),
+                'name' => PublicSeoBuilder::getPublisherName(),
                 'logo' => $logo !== '' ? ['@type' => 'ImageObject', 'url' => $logo] : null,
             ], fn ($v): bool => $v !== null),
         ], fn ($v): bool => $v !== null);
