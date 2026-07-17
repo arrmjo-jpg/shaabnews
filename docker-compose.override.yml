@@ -188,11 +188,18 @@ services:
     <<: *dev-container-network
     volumes:
       - ./storage/app/public:/var/www/html/storage/app/public:rw
+      - uploads_data:/var/www/html/public/uploads:rw
 
   worker-media:
     <<: *dev-container-network
+    # ROOT CAUSE FIX: this service's own `volumes:` here used to omit uploads_data, so it never
+    # saw public/uploads at all despite backend having it - GenerateMediaAssetConversionsJob
+    # (queue=media, runs here) silently early-returned in MediaConversions::generate() on
+    # Storage::disk('uploads')->exists()===false, marking 91.4% of the library 'failed' with no
+    # exception ever thrown. Same class of bug as the production docker-compose.yml anchor gap.
     volumes:
       - ./storage/app/public:/var/www/html/storage/app/public:rw
+      - uploads_data:/var/www/html/public/uploads:rw
 
   # ── Local-dev-only worker for the WP Migration queue ───────────────────────────────────────────
   # ROOT CAUSE FIX (discovered running the full migration): DispatchMigrationChunkJob and
@@ -225,8 +232,14 @@ services:
 
   scheduler:
     <<: *dev-container-network
+    # ROOT CAUSE FIX: same gap as worker-media above - media:prune-orphans (runs here) calls
+    # MediaFileCleaner::purge() -> deleteDirectory() on the uploads disk, which silently no-ops
+    # (caught, logged as a warning, job still "succeeds") when public/uploads isn't mounted, so
+    # orphaned local files were never actually being cleaned up despite the DB row deletion
+    # succeeding. media:sync:remote (also scheduled here) needs local file read access too.
     volumes:
       - ./storage/app/public:/var/www/html/storage/app/public:rw
+      - uploads_data:/var/www/html/public/uploads:rw
 
   frontend:
     ports:

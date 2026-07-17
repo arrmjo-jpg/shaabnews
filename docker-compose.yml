@@ -31,8 +31,21 @@ x-backend-common: &backend-common
   # from this anchor now actually receives .env at runtime.
   env_file:
     - .env
+  # ROOT CAUSE FIX 2: both media mounts belong in the shared anchor, not repeated (or
+  # forgotten) per service. Before this, only `backend` redeclared its own `volumes:` with
+  # BOTH mounts — YAML `<<: *anchor` merge semantics make a service's own `volumes:` key
+  # REPLACE the anchor's, not merge with it, so worker/worker-media/scheduler (which never
+  # redeclared `volumes:`) silently inherited only `storage/app/public`, never `public/uploads`.
+  # Confirmed live via `docker inspect`: worker-media had zero visibility into `public/uploads`,
+  # so every `GenerateMediaAssetConversionsJob` (queue=media, runs in worker-media) hit the
+  # silent `Storage::disk('uploads')->exists()===false` early-return in
+  # MediaConversions::generate() and marked the asset 'failed' with no exception, ever
+  # (measured: 91.4% of the media library in this exact silent-failure state). Same gap also
+  # affects the scheduler container's media:prune-orphans (local file deletion silently no-ops)
+  # and media:sync:remote. Any future service built off this anchor gets both mounts for free.
   volumes:
     - ${STORAGE_PUBLIC_HOST_PATH:-/data/storage-public}:/var/www/html/storage/app/public:rw
+    - ${UPLOADS_HOST_PATH:-/data/uploads}:/var/www/html/public/uploads:rw
 
 services:
 
@@ -75,9 +88,10 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
-    volumes:
-      - ${STORAGE_PUBLIC_HOST_PATH:-/data/storage-public}:/var/www/html/storage/app/public:rw
-      - ${UPLOADS_HOST_PATH:-/data/uploads}:/var/www/html/public/uploads:rw
+    # volumes: now inherited entirely from the backend-common anchor (both mounts) — this
+    # service-level override used to exist here and was the ONLY reason `backend` had correct
+    # media visibility while worker/worker-media/scheduler silently didn't. Removed since it's
+    # now redundant with the anchor.
     # -- Public media on the SITE domain, served directly by the backend web server --------------
     # Route `<public-site>/storage/*` to the backend nginx (-> public/storage, static + Cache-Control).
     # So branding/media resolve on the public origin and Cloudflare caches them:
