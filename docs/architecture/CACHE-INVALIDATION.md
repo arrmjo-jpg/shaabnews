@@ -280,7 +280,7 @@ These tags are produced by the backend but have no frontend consumer today. **Do
 
 | Tag | Why it might exist |
 |---|---|
-| `homepage` | Its own doc-comment states intent to cover Hero/Latest/Breaking/Editors Pick as a single umbrella; superseded in practice by the four specific `feed:*` tags, but costs nothing to keep emitting |
+| `homepage` | **Not a future feature — a superseded past one** (found during the Phase 3 cleanup pass, §10). `docs/roadmap/FRONTEND-ARCHITECTURE-VALIDATION.md` (a historical snapshot, not a living spec) documents a `getHomepageFeed()` function that called a single aggregated `/homepage` endpoint; the frontend has since been refactored to the separate `getHeroFeed`/`getHeaderFeed`/`getBreakingFeed`/`getLatestFeed`/`getMostReadFeed` calls seen today, each with its own tag. The backend `/homepage` endpoint (`routes/api/v1/public.php:105` → `BuildPublicHomepageAction`) is **still registered and still CDN-purged on every article write** (`ArticleCdnPurge.php:103`) despite no confirmed caller in this codebase (checked both `frontend/src` and `admin-frontend/src`). Separate, out-of-scope finding — confirm with the team whether an external consumer still hits that URL before touching it |
 | `feed:editors_pick` | Implies an "Editor's Pick" homepage section is planned but not yet built |
 | `author_articles:{id}` | Implies an author-article-listing page (e.g. `/writer/{id}/articles`) is planned but not yet built |
 | `tag:{name}` | Implies a tag-filtered article listing page is planned but not yet built |
@@ -294,3 +294,40 @@ If a future feature adds the missing frontend consumer for any of these, the bac
 - **`broadcast-feed:{kind}`/`broadcast:{kind}:{slug}`** — Broadcast (live/tv/radio) admin mutations were not audited for `FrontendRevalidate` calls in the P0/P1 passes. Needs a follow-up check before relying on immediate invalidation for that content type.
 - **`epaper-feed:{locale}`** — only newspaper *settings* mutations (`UpdateNewspaperSettingsAction` → `site-settings`) were confirmed; epaper *issue* upload/publish was not traced to a `FrontendRevalidate` call in this audit.
 - **Polls** — six admin Actions exist with zero invalidation and (per this audit) zero frontend consumer. Per the 2026-07-17 review: do not add invalidation before confirming the feature is actually surfaced anywhere in the frontend — adding cache-invalidation plumbing for a feature nobody can see would be complexity with no payoff.
+
+---
+
+## 10. Phase 3 — Cleanup audit results (2026-07-17, safe mode)
+
+A dedicated pass to find genuinely dead tags for removal, run after P0/P1 shipped. Every tag in `FrontendCacheTags.php` was checked against six conditions (no `fetch()` uses it, no frontend component depends on it, no backend invalidates it, no documentation references it, no test references it, no future architecture doc reserves it) — a tag had to fail **all six** to be eligible for removal.
+
+### Dead Tags
+**None found.** Every tag with zero frontend consumers (`homepage`, `feed:editors_pick`, `author_articles:{id}`, `tag:{name}`) already fails the "no documentation references it" condition — §8 above documents all four as intentionally reserved. None were removed.
+
+### Removed Tags
+**None.** No code, `fetch()`, `revalidate` value, or API contract was changed in this pass.
+
+### Duplicate tags found (reported, not merged)
+Two tag pairs currently produce identical invalidation scope because each pair has exactly one consuming `fetch()` that requires both tags simultaneously:
+
+| Umbrella tag | Specific tag | Sole consumer today |
+|---|---|---|
+| `comments` | `comments:{slug}` | `lib/comments.ts: getComments(slug)` |
+| `live_updates` | `live:{slug}` | `lib/articles.ts: getLiveUpdates(slug)` |
+
+Not merged deliberately — each umbrella tag would become independently meaningful the moment a site-wide "recent comments" or "all live coverage" listing page is built, mirroring why `categories`/`articles` stay separate from their `*:{slug}` counterparts today.
+
+### Orphan invalidations (backend produces, frontend never consumes)
+Identical to the Reserved list in §8 — `homepage`, `feed:editors_pick`, `author_articles:{id}`, `tag:{name}`. See §8 for the reasoning behind keeping each.
+
+### Orphan fetch tags (frontend uses, backend never invalidates)
+**None found**, confirmed after P0/P1 closed the three that existed (`feed:breaking`, `search`, `live_updates`/`live:{slug}`). The only frontend tags without a backend producer are the intentional external-API-passthrough family (weather, ASE market, gold, sport, broadcast) — see §7/§9, not a gap.
+
+### Notable aside discovered during this pass (out of scope, flagged not fixed)
+The backend `/homepage` REST endpoint (`BuildPublicHomepageAction`, still routed, still CDN-purged on every article write) has no confirmed caller anywhere in this repository — see the corrected `homepage` row in §8. This is a Laravel API surface question, not a Next.js cache tag question, and was not investigated further here.
+
+### Regression check
+No source file changed in this pass, so no new tests were needed; the existing suite's state is unchanged from the P0/P1 commits (`b8e734cc2b`, `baf2314c60`).
+
+### Git diff summary
+This documentation update only. Zero application code changed.
