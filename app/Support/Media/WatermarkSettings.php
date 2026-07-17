@@ -34,4 +34,26 @@ final class WatermarkSettings
             'margin' => (int) $s->watermark_margin,
         ];
     }
+
+    /**
+     * يحلّ مسار ملفّ شعار العلامة الفعلي على القرص، أو null إن كانت معطّلة أو
+     * الملف غير موجود في أيّ من المرشّحات. مشتركة بين MediaConversions (توليد
+     * المشتقّ) وMediaProcessingHealthCheck (كشف "مفعّلة لكن الملف مفقود" بدل
+     * فشل صامت لا أثر له في أي سجلّ).
+     */
+    public static function resolveLogoPath(): ?string
+    {
+        $cfg = self::current();
+        if ($cfg === null) {
+            return null;
+        }
+
+        foreach ([public_path($cfg['path']), storage_path('app/public/'.$cfg['path']), $cfg['path']] as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
 }

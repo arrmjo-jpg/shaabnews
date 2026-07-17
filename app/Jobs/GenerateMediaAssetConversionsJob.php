@@ -60,7 +60,7 @@ class GenerateMediaAssetConversionsJob implements ShouldQueue
             }
         } catch (Throwable $e) {
             $asset->forceFill(['processing_status' => 'failed'])->save();
-            throw $e; // TEMP DIAGNOSTIC — surface real error, revert before done
+            throw $e;
         }
     }
 

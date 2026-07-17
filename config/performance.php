@@ -34,6 +34,18 @@ return [
         // Ø³Ù‚Ù Ø­Ø¬Ù… Ø§Ù„ØµÙˆØ±Ø© (KB) + Ø£Ù‚ØµÙ‰ Ø¨ÙØ¹Ø¯ Ø¨ÙƒØ³Ù„ (Ø­Ø§Ø±Ø³ ØµÙˆØ± Ø¹Ù…Ù„Ø§Ù‚Ø©).
         'image_max_kb' => (int) env('MEDIA_IMAGE_MAX_KB', 5120),
         'image_max_dimension' => (int) env('MEDIA_IMAGE_MAX_DIMENSION', 8000),
+        // Working-copy ceiling for conversion/watermark generation (Media Pipeline Hardening).
+        // The uploaded original is NEVER touched or resized on disk; only the temporary working
+        // copy used to build thumb/medium/watermarked derivatives is bounded to this size when
+        // the source exceeds it. Kept separate from image_max_dimension (an upload-time rejection
+        // threshold for a few endpoints) since this must apply unconditionally to every source
+        // regardless of when/how it entered the library (including pre-existing assets).
+        'working_max_dimension' => (int) env('MEDIA_WORKING_MAX_DIMENSION', 8000),
+        // Bounded fallback memory_limit for the conversion process, used ONLY when the Imagick
+        // extension isn't available and a source exceeds working_max_dimension (GD cannot shrink
+        // on load, so there is no app-level way to avoid a full-resolution decode). Still finite —
+        // not a substitute for Imagick, which is the primary fix.
+        'fallback_memory_limit' => env('MEDIA_FALLBACK_MEMORY_LIMIT', '1536M'),
         // Ø­Ø¯ÙˆØ¯ Ù…Ø§ Ø¨Ø¹Ø¯ Ø§Ù„Ù€ probe (ØªÙÙØ±ÙŽØ¶ ÙÙŠ ÙˆØ¸ÙŠÙØ© Ø§Ù„ØªØ±Ù…ÙŠØ²): Ù…Ø¯Ù‘Ø© ÙˆØ£Ø¨Ø¹Ø§Ø¯ Ø§Ù„ÙÙŠØ¯ÙŠÙˆ.
         'video_max_duration' => (int) env('MEDIA_VIDEO_MAX_DURATION', 600),  // 10 Ø¯Ù‚Ø§Ø¦Ù‚
         'reel_max_duration' => (int) env('MEDIA_REEL_MAX_DURATION', 180),    // 3 Ø¯Ù‚Ø§Ø¦Ù‚

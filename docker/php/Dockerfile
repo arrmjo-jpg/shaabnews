@@ -36,12 +36,23 @@ FROM php:8.4-fpm AS runtime
 # `vendor` stage above). ffmpeg/ffprobe → video HLS/MP4 transcode; the optimizer binaries are
 # auto-detected by spatie/laravel-image-optimizer. unzip is kept (tiny, ~200KB) as a safety net
 # for any runtime archive handling; git is intentionally NOT installed here (build-only need).
+#
+# libmagickwand-dev + imagick: spatie/image auto-selects ImagickDriver over GdDriver when the
+# Imagick class exists (Image.php: `class_exists(Imagick::class) ? new ImagickDriver : new GdDriver`).
+# Only ImagickDriver supports shrink-on-load (decoding a large source directly at a reduced
+# resolution) — GD must always fully decode the original into an uncompressed bitmap before it can
+# resize, so a single extreme-dimension camera/scan upload (~89MP observed in production) can
+# exhaust PHP's memory_limit and crash the whole queue worker process. Installed in this one shared
+# image (all four roles) rather than a worker-media-only image to avoid image sprawl — only the
+# media queue worker actually exercises Spatie Image today, so other roles are unaffected in
+# practice despite the extension being present.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       unzip libicu-dev libzip-dev libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev \
+      libmagickwand-dev \
       ffmpeg jpegoptim optipng pngquant gifsicle webp nginx supervisor procps \
     && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql gd intl zip bcmath exif pcntl opcache \
-    && pecl install redis && docker-php-ext-enable redis \
+    && pecl install redis imagick && docker-php-ext-enable redis imagick \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-alphacms.ini

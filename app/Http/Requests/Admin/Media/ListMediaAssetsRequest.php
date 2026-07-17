@@ -19,7 +19,7 @@ class ListMediaAssetsRequest extends BaseFormRequest
         return [
             'type' => ['sometimes', 'nullable', Rule::in(['image', 'video', 'external'])],
             // تشخيص المشغّل (Phase 5): تصفية حسب حالة المعالجة (متعثّرة/جارية).
-            'processing_status' => ['sometimes', 'nullable', Rule::in(['queued', 'processing', 'ready', 'failed'])],
+            'processing_status' => ['sometimes', 'nullable', Rule::in(['queued', 'normalizing', 'processing', 'ready', 'failed'])],
             'provider' => ['sometimes', 'nullable', 'string', 'max:20'],
             'search' => ['sometimes', 'nullable', 'string', 'max:200'],
             'page' => ['sometimes', 'integer', 'min:1'],
