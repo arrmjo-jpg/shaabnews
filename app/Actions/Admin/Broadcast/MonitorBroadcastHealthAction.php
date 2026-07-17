@@ -11,6 +11,8 @@ use App\Models\BroadcastHealthCheck;
 use App\Support\Broadcast\BroadcastProbeResult;
 use App\Support\Broadcast\BroadcastSourceProbe;
 use App\Support\Cache\BroadcastCacheTags;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -153,5 +155,6 @@ final class MonitorBroadcastHealthAction
     {
         $broadcast->loadMissing('category');
         Cache::tags(BroadcastCacheTags::invalidationTags($broadcast, categorySlug: $broadcast->category?->slug))->flush();
+        FrontendRevalidate::tags(FrontendCacheTags::broadcast($broadcast));
     }
 }

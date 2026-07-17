@@ -5,8 +5,9 @@ import { Container } from '@/components/layout/container';
 import { buildMetadata } from '@/lib/seo';
 
 // صفحة «البث المباشر» — الوجهة المستقلّة (لا شيء في الرئيسية، مدخلها شريط الخدمات تحت الناف بار).
-// تعرض البثّ الحيّ الآن + أقرب مجدوَل (عدّاد) + القنوات/المحطّات (حالة فارغة صادقة). ISR قصير.
-export const revalidate = 30;
+// تعرض البثّ الحيّ الآن + أقرب مجدوَل (عدّاد) + القنوات/المحطّات (حالة فارغة صادقة).
+// ISR = سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر broadcast-feed:{kind} في كلّ انتقال حالة بثّ.
+export const revalidate = 36000;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({ title: 'البث المباشر', path: '/live' });

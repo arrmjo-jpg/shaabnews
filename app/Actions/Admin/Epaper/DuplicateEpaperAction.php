@@ -9,6 +9,8 @@ use App\Http\Resources\Admin\Epaper\EpaperResource;
 use App\Models\Epaper;
 use App\Models\EpaperVersion;
 use App\Models\User;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +56,8 @@ class DuplicateEpaperAction
 
             return $copy;
         });
+
+        FrontendRevalidate::tags(FrontendCacheTags::epaper($copy));
 
         return ApiResponse::success(
             __('epaper.duplicated'),

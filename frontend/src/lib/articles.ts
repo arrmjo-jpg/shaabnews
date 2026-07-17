@@ -10,7 +10,7 @@ import { env } from './env';
 // (news/live/opinion) — العارض يبدّل حسب `type`. الـ`seo` يُمرَّر **كما هو** (PublicSeoBuilder مصدر الحقيقة:
 // structured_data/breadcrumbs/og/twitter/canonical/hreflang) — لا باني SEO جديد. فشل/غياب ⇒ null (لا تلفيق).
 
-const REVALIDATE = 1800; // news-domain-skill §B: تفاصيل المقال الحديثة s-maxage 1800s.
+const REVALIDATE = 36000; // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر FrontendRevalidate::tags().
 const enc = encodeURIComponent;
 
 export type ArticleType = 'news' | 'opinion' | 'live';

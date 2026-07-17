@@ -19,7 +19,7 @@ export const getSocialAuthConfig = cache(async (): Promise<SocialProvider[]> => 
   if (!env.apiBaseUrl) return [];
   try {
     const res = await fetch(`${env.apiBaseUrl}/api/v1/auth/social/config`, {
-      next: { revalidate: 300, tags: ['social-config'] },
+      next: { revalidate: 36000, tags: ['social-config'] }, // ISR — سقف أمان فقط؛ إبطال حدثيّ عبر UpdateThirdPartySettingsAction.
     });
     if (!res.ok) return [];
     const parsed = EnvelopeSchema.safeParse(await res.json());

@@ -82,7 +82,7 @@ export const getSiteSettings = cache(async (locale = 'ar'): Promise<SiteSettings
   if (!env.apiBaseUrl) return null;
   try {
     const res = await fetch(`${env.apiBaseUrl}/api/v1/site?locale=${encodeURIComponent(locale)}`, {
-      next: { revalidate: 300, tags: ['site-settings'] },
+      next: { revalidate: 36000, tags: ['site-settings'] }, // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ.
     });
     if (!res.ok) return null;
     const parsed = EnvelopeSchema.safeParse(await res.json());

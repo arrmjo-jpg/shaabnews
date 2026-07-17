@@ -12,6 +12,8 @@ use App\Support\Audit\BroadcastModerationAudit;
 use App\Support\Broadcast\BroadcastPresence;
 use App\Support\Broadcast\BroadcastPresenceControl;
 use App\Support\Cache\BroadcastCacheTags;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -42,6 +44,7 @@ class EmergencyShutdownAction
             $broadcast->save();
             $broadcast->loadMissing('category');
             Cache::tags(BroadcastCacheTags::invalidationTags($broadcast, categorySlug: $broadcast->category?->slug))->flush();
+            FrontendRevalidate::tags(FrontendCacheTags::broadcast($broadcast));
             $tookOffline = true;
         }
 

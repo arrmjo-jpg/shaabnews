@@ -13,6 +13,8 @@ use App\Jobs\GenerateEpaperCoverJob;
 use App\Models\Epaper;
 use App\Models\EpaperVersion;
 use App\Models\User;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
@@ -68,6 +70,8 @@ class CreateEpaperAction
 
         // توليد غلاف العدد من الصفحة الأولى (مشتقّ conversions['cover']) — خارج دورة الطلب.
         GenerateEpaperCoverJob::enqueue($epaper);
+
+        FrontendRevalidate::tags(FrontendCacheTags::epaper($epaper));
 
         return ApiResponse::success(
             __('epaper.created'),

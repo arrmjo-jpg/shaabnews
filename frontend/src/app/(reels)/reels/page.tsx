@@ -8,8 +8,8 @@ import { getReelsFeed } from '@/lib/reels';
 import { REELS_PRIMARY, REELS_SERVICES } from '@/lib/reels-nav';
 import { getSiteSettings } from '@/lib/site-settings';
 
-// خلاصة الريلز الغامرة. ISR = سقف أمان (6 ساعات)؛ التحديث حدثيّ عبر reel-feed:{locale}؛ التفاعل عميل.
-export const revalidate = 21600;
+// خلاصة الريلز الغامرة. ISR = سقف أمان فقط؛ التحديث حدثيّ عبر reel-feed:{locale}؛ التفاعل عميل.
+export const revalidate = 36000;
 
 export const metadata: Metadata = { title: 'الريلز' };
 

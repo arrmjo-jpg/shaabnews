@@ -29,8 +29,8 @@ import {
 // sort_order)، لا تختفي عند غياب المميّز** · رفوف تصنيف من التصنيفات الموجودة (مُشتقّة) · رفوف ذكيّة (أحدث/رائج/الأكثر مشاهدة)
 // بمشاهدات حقيقيّة. الترويسة فوريّة والمحتوى يبثّ عبر `<Suspense>` داخليّ (لا `loading.tsx` على المسار). صفر hardcoding/بيانات
 // وهمية؛ قسم بلا بيانات حقيقيّة يُخفى؛ لا محتوى إطلاقاً ⇒ EmptyState.
-// ISR = سقف أمان (6 ساعات)؛ التحديث الفعليّ حدثيّ عبر video-feed:{locale} من كلّ أكشن فيديو/قائمة.
-export const revalidate = 21600;
+// ISR = سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر video-feed:{locale} من كلّ أكشن فيديو/قائمة.
+export const revalidate = 36000;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({

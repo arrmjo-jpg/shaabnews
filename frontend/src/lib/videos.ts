@@ -19,7 +19,7 @@ import { env } from './env';
 //   GET /{locale}/playlists/{slug}                                  (تفاصيل؛ أعضاء مرتّبون بالـ position)
 // المظروف القياسيّ: { success, message, data, meta }.
 
-const REVALIDATE = 120; // ISR — سقف أمان؛ التحديث الفعليّ حدثيّ عبر وسوم القاموس الموحَّد أدناه.
+const REVALIDATE = 36000; // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر وسوم القاموس الموحَّد أدناه.
 // القاموس الموحَّد (يطابق FrontendCacheTags::fromVideoTags حرفيًّا): القوائم على وسم الخلاصة،
 // والتفاصيل على وسم العنصر وحده (فلا يبطل تعديلُ فيديو كلَّ صفحات التفاصيل).
 const videoFeedTag = (locale: string) => `video-feed:${locale}`;

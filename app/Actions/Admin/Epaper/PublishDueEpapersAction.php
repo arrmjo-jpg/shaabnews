@@ -7,6 +7,8 @@ namespace App\Actions\Admin\Epaper;
 use App\Enums\EpaperStatus;
 use App\Models\Epaper;
 use App\Support\Epaper\EpaperSearchIndexer;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -28,15 +30,18 @@ final class PublishDueEpapersAction
 
         $published = 0;
 
+        /** @var array<int, Epaper> $purgeQueue */
+        $purgeQueue = [];
+
         try {
             Epaper::query()
                 ->where('status', EpaperStatus::Scheduled->value)
                 ->whereNotNull('published_at')
                 ->where('published_at', '<=', now())
                 ->orderBy('id')
-                ->chunkById(100, function ($chunk) use (&$published): void {
+                ->chunkById(100, function ($chunk) use (&$published, &$purgeQueue): void {
                     foreach ($chunk as $epaper) {
-                        $ok = DB::transaction(function () use ($epaper): bool {
+                        $fresh = DB::transaction(function () use ($epaper): ?Epaper {
                             $fresh = Epaper::query()->whereKey($epaper->id)->lockForUpdate()->first();
 
                             if ($fresh === null
@@ -44,23 +49,32 @@ final class PublishDueEpapersAction
                                 || $fresh->published_at === null
                                 || $fresh->published_at->isFuture()
                                 || $fresh->media_asset_id === null) {
-                                return false;
+                                return null;
                             }
 
                             $fresh->status = EpaperStatus::Published->value;
                             $fresh->save();
 
-                            return true;
+                            return $fresh;
                         });
 
-                        if ($ok) {
+                        if ($fresh !== null) {
                             $published++;
-                            EpaperSearchIndexer::queueSync($epaper->id); // نُشِر آلياً ⇒ فهرسة
+                            $purgeQueue[] = $fresh;
+                            EpaperSearchIndexer::queueSync($fresh->id); // نُشِر آلياً ⇒ فهرسة
                         }
                     }
                 });
         } finally {
             $lock->release();
+        }
+
+        if ($published > 0) {
+            $frontendTags = [];
+            foreach ($purgeQueue as $epaper) {
+                $frontendTags = array_merge($frontendTags, FrontendCacheTags::epaper($epaper));
+            }
+            FrontendRevalidate::tags(array_values(array_unique($frontendTags)));
         }
 
         return $published;

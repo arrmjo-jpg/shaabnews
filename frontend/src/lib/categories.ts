@@ -44,7 +44,7 @@ export const getCategories = cache(async (locale = 'ar'): Promise<CategoryOption
   if (!env.apiBaseUrl) return [];
   try {
     const res = await fetch(`${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/categories`, {
-      next: { revalidate: 600, tags: ['categories'] },
+      next: { revalidate: 36000, tags: ['categories'] }, // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ.
     });
     if (!res.ok) return [];
     const parsed = EnvelopeSchema.safeParse(await res.json());

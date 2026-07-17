@@ -116,7 +116,7 @@ export async function getReelsFeed(cursor: string | null = null, locale = 'ar'):
     const res = await fetch(`${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/reels?${qs.toString()}`, {
       headers: env.internalHeaders,
       // وسم القاموس الموحَّد (يطابق FrontendCacheTags::reel) — إبطال حدثيّ من الباك إند.
-      next: { revalidate: 60, tags: [`reel-feed:${locale}`] },
+      next: { revalidate: 36000, tags: [`reel-feed:${locale}`] }, // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ.
     });
     if (!res.ok) return { items: [], nextCursor: null };
     const parsed = FeedEnvelope.safeParse(await res.json());
@@ -147,7 +147,7 @@ export async function getReelByIdSlug(idSlug: string, locale = 'ar'): Promise<Re
     const res = await fetch(
       `${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/reels/${encodeURIComponent(slug)}`,
       // وسم تفاصيل الريل (قاموس موحَّد) — تعديل الريل يبطل صفحته + الخلاصة (يرسلهما الباك إند معًا).
-      { headers: env.internalHeaders, next: { revalidate: 60, tags: [`reel:${locale}:${slug}`] } },
+      { headers: env.internalHeaders, next: { revalidate: 36000, tags: [`reel:${locale}:${slug}`] } }, // ISR — سقف أمان فقط.
     );
     if (!res.ok) return null;
     const parsed = DetailEnvelope.safeParse(await res.json());

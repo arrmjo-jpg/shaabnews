@@ -119,17 +119,18 @@ const fetchFeed = cache(
   },
 );
 
-// كتلة الهيرو: الأخبار المميّزة (is_featured) — حدّ 5 (= hero(source:featured,limit:5))، ISR 300s.
-export const getHeroFeed = (locale = 'ar') => fetchFeed('hero', 5, locale, 300);
+// كتلة الهيرو: الأخبار المميّزة (is_featured) — حدّ 5 (= hero(source:featured,limit:5)).
+// ISR 36000s — سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر feed:hero (FrontendCacheTags::article).
+export const getHeroFeed = (locale = 'ar') => fetchFeed('hero', 5, locale, 36000);
 
-// كتلة «آخر المستجدات»: أخبار الهيدر (is_header) — حدّ 9 (كرت رئيسيّ + شبكة 8)، ISR 300s.
-export const getHeaderFeed = (locale = 'ar') => fetchFeed('header', 9, locale, 300);
+// كتلة «آخر المستجدات»: أخبار الهيدر (is_header) — حدّ 9 (كرت رئيسيّ + شبكة 8). ISR سقف أمان فقط.
+export const getHeaderFeed = (locale = 'ar') => fetchFeed('header', 9, locale, 36000);
 
-// شريط الأخبار العاجلة (is_breaking) — حدّ 10، ISR 60s (عاجل = تحديث أسرع).
-export const getBreakingFeed = (locale = 'ar') => fetchFeed('breaking', 10, locale, 60);
+// شريط الأخبار العاجلة (is_breaking) — حدّ 10. ISR سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر feed:breaking.
+export const getBreakingFeed = (locale = 'ar') => fetchFeed('breaking', 10, locale, 36000);
 
-// صفحة «آخر المستجدات» /latest: أحدث الأخبار المنشورة — حدّ 30، ISR 60s (أحدث = تحديث أسرع).
-export const getLatestFeed = (locale = 'ar') => fetchFeed('latest', 30, locale, 60);
+// صفحة «آخر المستجدات» /latest: أحدث الأخبار المنشورة — حدّ 30. ISR سقف أمان فقط؛ إبطال حدثيّ عبر feed:latest.
+export const getLatestFeed = (locale = 'ar') => fetchFeed('latest', 30, locale, 36000);
 
 // كتلة «الأكثر شيوعا»: الأكثر قراءة (مشاهدات مُتتبَّعة، بلا نافذة 7 أيام الضيّقة) — المطابق الدلاليّ
 // لـ«الأكثر شيوعا/الأكثر قراءة». endpoint مستقلّ بمُعامل per_page (ليس /feed/{kind})، لكنّه يعيد نفس
@@ -140,7 +141,7 @@ export const getMostReadFeed = cache(async (locale = 'ar', limit = 6): Promise<F
   try {
     const res = await fetch(
       `${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/articles/most-read?per_page=${limit}`,
-      { headers: env.internalHeaders, next: { revalidate: 300, tags: ['articles', 'feed:most_read'] } },
+      { headers: env.internalHeaders, next: { revalidate: 36000, tags: ['articles', 'feed:most_read'] } }, // ISR — سقف أمان فقط.
     );
     if (!res.ok) return [];
     const parsed = EnvelopeSchema.safeParse(await res.json());
@@ -155,39 +156,120 @@ export const getMostReadFeed = cache(async (locale = 'ar', limit = 6): Promise<F
 // الإدارة ⇒ مرجعة الأقسام بالـID تمنع كسر الرئيسيّة (نبض الشارع→نبض البلد). الباك إند لا يدعم
 // `/categories/{id}` ولا `filter[category_id]` (slug فقط)، فنفهرس شجرة `/categories` مرّةً (مُكاش، ISR
 // 300s) بالـID ونحلّ منها الـslug/الاسم الحاليّين لتمريرهما لـ`getCategoryFeed`/العنوان.
+// نظام تصميم الأقسام (Section Design System) — يقرأه SectionRenderer لاختيار
+// مكوّن التخطيط المناسب. غياب appearance بالكامل ⇒ التصميم الافتراضي القديم
+// (توافق خلفي مع أقسام لم تُهيَّأ بعد).
+export interface CategoryAppearance {
+  layout: 'default' | 'hero' | 'magazine' | 'featured';
+  show_title: boolean;
+  banner: { url: string | null; height: string; overlay: boolean; position: string };
+  border: { enabled: boolean; width: number; radius: number; color: string };
+}
+
 export interface CategoryRef {
+  id: number;
+  name: string;
+  slug: string;
+  appearance?: CategoryAppearance;
+}
+
+function readAppearance(raw: unknown): CategoryAppearance | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const a = raw as Record<string, unknown>;
+  const banner = (a.banner ?? {}) as Record<string, unknown>;
+  const border = (a.border ?? {}) as Record<string, unknown>;
+  return {
+    layout: typeof a.layout === 'string' ? (a.layout as CategoryAppearance['layout']) : 'default',
+    show_title: typeof a.show_title === 'boolean' ? a.show_title : true,
+    banner: {
+      url: typeof banner.url === 'string' ? banner.url : null,
+      height: typeof banner.height === 'string' ? banner.height : 'md',
+      overlay: typeof banner.overlay === 'boolean' ? banner.overlay : true,
+      position: typeof banner.position === 'string' ? banner.position : 'center',
+    },
+    border: {
+      enabled: typeof border.enabled === 'boolean' ? border.enabled : false,
+      width: typeof border.width === 'number' ? border.width : 2,
+      radius: typeof border.radius === 'number' ? border.radius : 0,
+      color: typeof border.color === 'string' ? border.color : '#E5E7EB',
+    },
+  };
+}
+
+interface RawCategoryNode {
+  id?: unknown;
+  name?: unknown;
+  slug?: unknown;
+  appearance?: unknown;
+  children?: unknown;
+}
+
+// طبقة جلب/تحليل خام واحدة مُكاشة (React cache()) — يشترك فيها fetchCategoryIndex (فهرسة
+// مسطّحة بالـID) وgetCategoryAncestry (سلسلة الأسلاف)، فيبقى طلب الشبكة واحداً لكل locale/عرض
+// بدل تكراره لكل مستهلك (cache() يُميّز بهوية الدالة لا الرابط، فدالتان منفصلتان لنفس الرابط
+// لن تتشاركا الكاش).
+const fetchCategoryTree = cache(async (locale: string): Promise<RawCategoryNode[]> => {
+  if (!env.apiBaseUrl) return [];
+  try {
+    const res = await fetch(`${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/categories`, {
+      headers: env.internalHeaders,
+      next: { revalidate: 36000, tags: ['categories'] }, // ISR — سقف أمان فقط.
+    });
+    if (!res.ok) return [];
+    const json: unknown = await res.json();
+    const root = (json as { data?: unknown }).data;
+    return Array.isArray(root) ? (root as RawCategoryNode[]) : [];
+  } catch {
+    return [];
+  }
+});
+
+const fetchCategoryIndex = cache(async (locale: string): Promise<Map<number, CategoryRef>> => {
+  const index = new Map<number, CategoryRef>();
+  const walk = (nodes: RawCategoryNode[]): void => {
+    for (const n of nodes) {
+      if (typeof n.id === 'number' && typeof n.slug === 'string' && n.slug) {
+        index.set(n.id, {
+          id: n.id,
+          name: typeof n.name === 'string' ? n.name : '',
+          slug: n.slug,
+          appearance: readAppearance(n.appearance),
+        });
+      }
+      if (Array.isArray(n.children)) walk(n.children as RawCategoryNode[]);
+    }
+  };
+  walk(await fetchCategoryTree(locale));
+  return index;
+});
+
+// سلسلة أسلاف قسم بالـslug (جذر ⇐ ... ⇐ الأب المباشر ⇐ القسم نفسه) — DFS بمكدّس مسار على
+// نفس الشجرة المُكاشة أعلاه (لا طلب إضافي). قسم خارج شجرة /categories (له مقالات لكن غير
+// مُصنَّف فيها) ⇐ null — المستهلك يتراجع لعرض مسار من مستوى واحد بدل الفشل الكامل.
+export interface CategoryAncestor {
   id: number;
   name: string;
   slug: string;
 }
 
-const fetchCategoryIndex = cache(async (locale: string): Promise<Map<number, CategoryRef>> => {
-  const index = new Map<number, CategoryRef>();
-  if (!env.apiBaseUrl) return index;
-  try {
-    const res = await fetch(`${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/categories`, {
-      headers: env.internalHeaders,
-      next: { revalidate: 300, tags: ['categories'] },
-    });
-    if (!res.ok) return index;
-    const json: unknown = await res.json();
-    const root = (json as { data?: unknown }).data;
-    if (!Array.isArray(root)) return index;
-    const walk = (nodes: unknown[]): void => {
-      for (const raw of nodes) {
-        const n = raw as { id?: unknown; name?: unknown; slug?: unknown; children?: unknown };
-        if (typeof n.id === 'number' && typeof n.slug === 'string' && n.slug) {
-          index.set(n.id, { id: n.id, name: typeof n.name === 'string' ? n.name : '', slug: n.slug });
+export const getCategoryAncestry = cache(
+  async (slug: string, locale = 'ar'): Promise<CategoryAncestor[] | null> => {
+    const tree = await fetchCategoryTree(locale);
+    const find = (nodes: RawCategoryNode[], path: CategoryAncestor[]): CategoryAncestor[] | null => {
+      for (const n of nodes) {
+        if (typeof n.id !== 'number' || typeof n.slug !== 'string' || !n.slug) continue;
+        const next = [...path, { id: n.id, name: typeof n.name === 'string' ? n.name : '', slug: n.slug }];
+        if (n.slug === slug) return next;
+        if (Array.isArray(n.children)) {
+          const found = find(n.children as RawCategoryNode[], next);
+          if (found) return found;
         }
-        if (Array.isArray(n.children)) walk(n.children);
       }
+      return null;
     };
-    walk(root);
-    return index;
-  } catch {
-    return index;
-  }
-});
+    return find(tree, []);
+  },
+);
 
 // تصنيف بالـID (مقاوم لإعادة التسمية). غير موجود/محذوف ⇒ null.
 export const getCategoryById = cache(
@@ -214,7 +296,31 @@ export const getCategoryFeed = cache(
       qs.set('filter[category]', slug);
       const res = await fetch(
         `${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/articles?${qs.toString()}`,
-        { headers: env.internalHeaders, next: { revalidate: 300, tags: ['articles', `category:${slug}`] } },
+        { headers: env.internalHeaders, next: { revalidate: 36000, tags: ['articles', `category:${slug}`] } }, // ISR — سقف أمان فقط.
+      );
+      if (!res.ok) return [];
+      const parsed = EnvelopeSchema.safeParse(await res.json());
+      if (!parsed.success) return [];
+      return (parsed.data.data ?? []).map(mapItem);
+    } catch {
+      return [];
+    }
+  },
+);
+
+// شبكة المقالات المميّزة (is_featured) داخل قسم محدّد — كرت رئيسي + شبكة صغيرة أعلى صفحة
+// القسم، مستقلة عن التغذية الزمنية أدناه (CategoryFeaturedGrid). نفس مغلّف {data:[…]}/mapItem؛
+// فشل/فراغ ⇒ [] (عزل الكتلة، لا محتوى ملفَّق).
+export const getCategoryFeaturedGrid = cache(
+  async (slug: string, limit = 5, locale = 'ar'): Promise<FeedItem[]> => {
+    if (!env.apiBaseUrl) return [];
+    try {
+      const qs = new URLSearchParams({ per_page: String(limit), sort: '-published_at' });
+      qs.set('filter[category]', slug);
+      qs.set('filter[is_featured]', '1');
+      const res = await fetch(
+        `${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/articles?${qs.toString()}`,
+        { headers: env.internalHeaders, next: { revalidate: 36000, tags: ['articles', `category:${slug}`] } }, // ISR — سقف أمان فقط.
       );
       if (!res.ok) return [];
       const parsed = EnvelopeSchema.safeParse(await res.json());
@@ -265,7 +371,7 @@ export const getCategoryPage = cache(
       qs.set('filter[category]', slug);
       const res = await fetch(
         `${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/articles?${qs.toString()}`,
-        { headers: env.internalHeaders, next: { revalidate: 300, tags: ['articles', `category:${slug}`] } },
+        { headers: env.internalHeaders, next: { revalidate: 36000, tags: ['articles', `category:${slug}`] } }, // ISR — سقف أمان فقط.
       );
       if (!res.ok) return empty;
       const parsed = PaginatedEnvelope.safeParse(await res.json());

@@ -10,7 +10,7 @@ import { REELS_PRIMARY, REELS_SERVICES } from '@/lib/reels-nav';
 import { getSiteSettings } from '@/lib/site-settings';
 
 // رابط عميق لريل محدّد — يفتح الـfeed مبتدئاً به. ISR = سقف أمان؛ التحديث حدثيّ عبر reel:{locale}:{slug}.
-export const revalidate = 21600;
+export const revalidate = 36000;
 
 // بدون هذه (حتى فارغة)، Next.js يُعامل مسارات dynamic params كـdynamic بالكامل دومًا (no-store)
 // بصرف النظر عن revalidate أعلاه — تأكَّد تجريبيًا أثناء ISR Restoration (راجع articles/[idslug]).

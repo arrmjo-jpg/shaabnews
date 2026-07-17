@@ -17,7 +17,7 @@ export const getTtsConfig = cache(async (): Promise<TtsConfig | null> => {
   if (!env.apiBaseUrl) return null;
   try {
     const res = await fetch(`${env.apiBaseUrl}/api/v1/tts/config`, {
-      next: { revalidate: 300, tags: ['tts-config'] },
+      next: { revalidate: 36000, tags: ['tts-config'] }, // ISR — سقف أمان فقط؛ إبطال حدثيّ عبر UpdateThirdPartySettingsAction.
     });
     if (!res.ok) return null;
     const parsed = EnvelopeSchema.safeParse(await res.json());

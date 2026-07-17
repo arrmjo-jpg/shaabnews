@@ -20,8 +20,8 @@ import { getLatestVideos, getPlaylist, getRelatedVideos, getVideo, type VideoIte
 // `notFound()` = **404 حقيقيّ** (لذا لا `loading.tsx` على المسار: بثّ القشرة المبكّر يثبّت 200؛ نُبقي القائمة الجانبيّة
 // تبثّ عبر `<Suspense>` بهيكل). ذات صلة حقيقيّة، وعند غيابها الأحدث (fallback مسموح صريح). القائمة عبر سياق
 // `?playlist=` (لا تلفيق عضويّة). SEO: metadata+OG+canonical+JSON-LD VideoObject من حقول حقيقيّة (تُحذَف الفارغة).
-// RSC؛ ISR = سقف أمان (6 ساعات) والتحديث حدثيّ عبر video:{locale}:{slug}؛ منارة المشاهدة مؤجَّلة.
-export const revalidate = 21600;
+// RSC؛ ISR = سقف أمان فقط والتحديث حدثيّ عبر video:{locale}:{slug}؛ منارة المشاهدة مؤجَّلة.
+export const revalidate = 36000;
 
 // فكّ ترميز المقطع (عربيّ مُرمَّز %D9..) ثمّ إزالة بادئة المعرّف (أوّل مقطع رقميّ فقط؛ آمن مع سلَغ يبدأ برقم).
 const bareSlug = (idslug: string): string => {

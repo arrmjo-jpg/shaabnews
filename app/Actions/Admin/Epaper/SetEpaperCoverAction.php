@@ -6,6 +6,8 @@ namespace App\Actions\Admin\Epaper;
 
 use App\Http\Resources\Admin\Epaper\EpaperResource;
 use App\Models\Epaper;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
@@ -35,6 +37,8 @@ class SetEpaperCoverAction
         $conversions = $asset->conversions ?? [];
         $conversions['cover'] = ['path' => $coverPath, 'mime' => (string) $image->getMimeType()];
         $asset->forceFill(['conversions' => $conversions])->save();
+
+        FrontendRevalidate::tags(FrontendCacheTags::epaper($epaper));
 
         return ApiResponse::success(
             __('epaper.cover_set'),

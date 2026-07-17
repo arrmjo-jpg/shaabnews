@@ -1,18 +1,26 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { FeedCard } from '@/components/feed/feed-card';
+import { AdZone } from '@/components/ads/ad-zone';
+import { CategoryFeaturedGrid } from '@/components/category/category-featured-grid';
+import { CategoryLoadMoreFeed } from '@/components/category/category-load-more-feed';
 import { Container } from '@/components/layout/container';
+import { CategoryBreadcrumb } from '@/components/navigation/category-breadcrumb';
+import { SubscribeBox } from '@/components/public-forms/subscribe-box';
 import { ReadingSidebar } from '@/components/reading/reading-sidebar';
-import { Pagination } from '@/components/ui/pagination';
-import { getCategoryBySlug, getCategoryPage } from '@/lib/feed';
+import { SectionRenderer } from '@/components/sections/SectionRenderer';
+import { getCategoryAncestry, getCategoryBySlug, getCategoryFeaturedGrid, getCategoryPage } from '@/lib/feed';
 import { buildMetadata } from '@/lib/seo';
 
-// صفحة قسم /category/[slug] — قائمة مقالات القسم **مُرقَّمة** (شبكة FeedCard + ترقيم احترافيّ).
-// تعيد استخدام getCategoryPage (filter[category] + page) + getCategoryBySlug لحلّ الاسم والتحقّق.
-// قسم مجهول بلا مقالات ⇒ notFound (لا soft-404). تعتمد ?page= (ديناميكيّة)؛ بيانات القسم مُكاشة
-// داخل الجالب (ISR 300s + tag category:{slug}؛ التحديث حدثيّ عند كلّ كتابة مقال في القسم).
-export const revalidate = 21600;
+// صفحة قسم /category/[slug] — القالب الأساسي الموحَّد لكل الأقسام: مسار تنقّل + شبكة "مميّزة"
+// (is_featured) + إعلان فاصل + تغذية زمنية بزرّ "تحميل المزيد" + شريط جانبي (ودجت + إعلان +
+// اشتراك واتساب). الواجهة (بانر/عنوان/حدّ) تبقى SectionRenderer دون تغيير — هذا القالب يضيف
+// ما فوقه وتحته فقط. قسم مجهول بلا مقالات ⇒ notFound (لا soft-404). ?page= لا يزال يحدّد
+// الدفعة الأولى SSR (رابط عميق يعمل)؛ "تحميل المزيد" يكمل من هناك فصاعداً عبر BFF.
+// ISR = سقف أمان فقط (36000)؛ التحديث الفعليّ حدثيّ عبر category:{slug}/articles.
+export const revalidate = 36000;
+
+const FEATURED_LIMIT = 9;
 
 const PER_PAGE = 18;
 
@@ -63,52 +71,49 @@ export default async function CategoryPage({
   const decoded = decodeURIComponent(slug);
   const page = Math.max(1, Number(typeof sp.page === 'string' ? sp.page : '1') || 1);
 
-  const [category, result] = await Promise.all([
+  const [category, result, featured, ancestry] = await Promise.all([
     getCategoryBySlug(decoded),
     getCategoryPage(decoded, page, PER_PAGE),
+    getCategoryFeaturedGrid(decoded, FEATURED_LIMIT),
+    getCategoryAncestry(decoded),
   ]);
   const name = category?.name ?? result.items[0]?.category ?? null;
   if (!name) notFound();
 
-  // slug من params مُرمَّز أصلاً ⇒ نرمّز **decoded** (العربيّة الفعليّة) مرّةً واحدةً (لا ترميز مزدوج).
-  const hrefFor = (p: number) => `/category/${encodeURIComponent(decoded)}${p > 1 ? `?page=${p}` : ''}`;
-
   return (
     <Container className="py-8 sm:py-10">
-      {/* ترويسة الصفحة: شارة حمراء عموديّة + اسم القسم */}
-      <div className="mb-6 flex items-center gap-3 border-b border-border pb-4">
-        <span className="h-8 w-1 shrink-0 bg-primary" style={{ borderRadius: '9999px' }} aria-hidden />
-        <h1 className="font-heading text-2xl font-extrabold text-fg sm:text-3xl">{name}</h1>
-      </div>
+      <CategoryBreadcrumb chain={ancestry} name={name} />
+      <SectionRenderer category={category} name={name}>
+        <CategoryFeaturedGrid items={featured} />
+        <AdZone zone="aalan_fasl_alaqsam_b" className="mb-6" />
 
-      {/* نفس شبكة المقال: محتوى 8 + ودجت الأخبار في الجانب الأيسر (4 أعمدة). */}
-      <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
-        <main className="min-w-0 lg:col-span-8">
-          {result.total === 0 ? (
-            <div
-              className="flex flex-col items-center justify-center gap-2 border border-dashed border-border bg-surface-2 px-6 py-20 text-center"
-              style={{ borderRadius: '12px' }}
-            >
-              <h2 className="font-heading text-h3 font-bold text-fg">لا توجد مقالات في هذا القسم بعد</h2>
-              <p className="max-w-md text-sm text-muted">ستظهر هنا مقالات «{name}» فور نشرها.</p>
-            </div>
-          ) : (
-            <>
-              <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {result.items.map((item) => (
-                  <li key={item.id}>
-                    <FeedCard item={item} />
-                  </li>
-                ))}
-              </ul>
-              <Pagination currentPage={result.page} totalPages={result.totalPages} hrefFor={hrefFor} />
-            </>
-          )}
-        </main>
-        <aside className="hidden lg:col-span-4 lg:block">
-          <ReadingSidebar />
-        </aside>
-      </div>
+        {/* نفس شبكة المقال: محتوى 8 + ودجت الأخبار في الجانب الأيسر (4 أعمدة). */}
+        <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
+          <main className="min-w-0 lg:col-span-8">
+            {result.total === 0 ? (
+              <div
+                className="flex flex-col items-center justify-center gap-2 border border-dashed border-border bg-surface-2 px-6 py-20 text-center"
+                style={{ borderRadius: '12px' }}
+              >
+                <h2 className="font-heading text-h3 font-bold text-fg">لا توجد مقالات في هذا القسم بعد</h2>
+                <p className="max-w-md text-sm text-muted">ستظهر هنا مقالات «{name}» فور نشرها.</p>
+              </div>
+            ) : (
+              <CategoryLoadMoreFeed
+                slug={decoded}
+                initialItems={result.items}
+                initialPage={result.page}
+                initialTotalPages={result.totalPages}
+              />
+            )}
+          </main>
+          <aside className="hidden lg:col-span-4 lg:block space-y-6">
+            <ReadingSidebar />
+            <AdZone zone="aalan_ala_shmal_alaqsam" />
+            <SubscribeBox variant="card" />
+          </aside>
+        </div>
+      </SectionRenderer>
     </Container>
   );
 }

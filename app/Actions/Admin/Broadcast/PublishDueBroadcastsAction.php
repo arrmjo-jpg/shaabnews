@@ -7,6 +7,8 @@ namespace App\Actions\Admin\Broadcast;
 use App\Enums\BroadcastStatus;
 use App\Models\Broadcast;
 use App\Support\Cache\BroadcastCacheTags;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -80,14 +82,17 @@ final class PublishDueBroadcastsAction
 
         if ($published > 0) {
             $tags = [];
+            $frontendTags = [];
             foreach ($purgeQueue as $broadcast) {
                 $broadcast->loadMissing('category');
                 $tags = array_merge($tags, BroadcastCacheTags::invalidationTags(
                     $broadcast,
                     categorySlug: $broadcast->category?->slug,
                 ));
+                $frontendTags = array_merge($frontendTags, FrontendCacheTags::broadcast($broadcast));
             }
             Cache::tags(array_values(array_unique($tags)))->flush();
+            FrontendRevalidate::tags(array_values(array_unique($frontendTags)));
         }
 
         return $published;

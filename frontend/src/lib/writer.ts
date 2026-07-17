@@ -32,7 +32,7 @@ export const getWriterProfile = cache(async (id: number, locale = 'ar'): Promise
   if (!env.apiBaseUrl || !Number.isFinite(id)) return null;
   try {
     const res = await fetch(`${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/writers/${id}`, {
-      next: { revalidate: 300, tags: ['writers', `writer:${id}`] },
+      next: { revalidate: 36000, tags: ['writers', `writer:${id}`] }, // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ.
     });
     if (!res.ok) return null;
     const parsed = WriterSchema.safeParse(await res.json());

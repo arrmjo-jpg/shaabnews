@@ -48,7 +48,7 @@ export const searchArticles = cache(
       qs.set('filter[q]', q);
       const res = await fetch(
         `${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/articles?${qs.toString()}`,
-        { headers: env.internalHeaders, next: { revalidate: 60, tags: ['articles', 'search'] } },
+        { headers: env.internalHeaders, next: { revalidate: 36000, tags: ['articles', 'search'] } }, // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ.
       );
       if (!res.ok) return empty;
       const parsed = SearchEnvelope.safeParse(await res.json());

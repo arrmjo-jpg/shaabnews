@@ -13,7 +13,7 @@ import { env } from './env';
 // publication_date, page_count, canonical_path, pdf_url }. لا غلاف، ولا «نشرة/أبرز مختارات»
 // منتقاة — تلك مصدرها تحريريّ غير موجود بعد، فتُعرَض بحالة فارغة صادقة (لا محتوى مُلفَّق).
 
-const REVALIDATE = 300; // ISR — سقف أمان؛ التحديث الحدثيّ عبر الوسم عند توفّره.
+const REVALIDATE = 36000; // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر FrontendRevalidate::tags().
 const epaperFeedTag = (locale: string) => `epaper-feed:${locale}`;
 const enc = encodeURIComponent;
 

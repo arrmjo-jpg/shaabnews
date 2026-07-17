@@ -21,7 +21,7 @@ import { getSiteSettings } from '@/lib/site-settings';
 // الصفحة الرئيسية — كتل: الهيرو (is_featured) + آخر المستجدات (is_header) + كروسل الريلز
 // + الأكثر شيوعا (الرائج) مع مكان إعلان. ISR = سقف أمان فقط (ساعة)؛ التحديث الفعليّ حدثيّ
 // عبر وسوم feed:*/category:* (revalidateTag من الباك إند عند كلّ كتابة مؤثّرة).
-export const revalidate = 3600;
+export const revalidate = 36000;
 
 // أقسام التصنيف في الهوم — **مصدر واحد، مرجعة بالـID الثابت** (لا slug؛ الـslug يتغيّر بالإدارة فيكسر القسم).
 // الـID لا يتغيّر؛ يُحلّ وقت التشغيل إلى الـslug/الاسم الحاليّين (getCategoryById). fallbackTitle احتياط نادر.

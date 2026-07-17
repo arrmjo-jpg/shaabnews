@@ -9,6 +9,8 @@ use App\Http\Resources\Admin\Epaper\EpaperResource;
 use App\Models\Epaper;
 use App\Models\User;
 use App\Support\Epaper\EpaperSearchIndexer;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
@@ -63,6 +65,9 @@ class TransitionEpaperStatusAction
 
         // الحالة تحكم الظهور في الأرشيف ⇒ زامِن فهرس البحث (نشر=فهرسة، إلغاء/أرشفة=تطهير).
         EpaperSearchIndexer::queueSync($epaper->id);
+
+        // الحالة تحكم الظهور في الواجهة العامة (Draft/Archived لا يظهران، Published يظهر) ⇒ أبطل كاش الواجهة.
+        FrontendRevalidate::tags(FrontendCacheTags::epaper($epaper));
 
         return ApiResponse::success(
             __('epaper.status_changed'),

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Support\Frontend;
 
 use App\Models\Article;
+use App\Models\Broadcast;
 use App\Models\Category;
+use App\Models\Epaper;
 use App\Models\Page;
 use App\Models\Reel;
 use App\Models\VideoCategory;
@@ -191,6 +193,58 @@ final class FrontendCacheTags
     public static function liveUpdates(Article $article): array
     {
         return ['live_updates', "live:{$article->slug}"];
+    }
+
+    /**
+     * وسوم البثّ — تُبنى مباشرة (وليس بالترجمة من BroadcastCacheTags الخلفي، الذي لا
+     * يُضمِّن kind في وسم التفاصيل بينما الواجهة تحتاجه: lib/broadcast.ts يستهلك
+     * broadcast:{kind}:{slug} — ترجمة ساذجة كانت ستُنتج سلسلة لا تطابق شيئًا).
+     *
+     * @return array<int,string>
+     */
+    public static function broadcast(Broadcast $broadcast, ?string $oldKind = null, ?string $oldSlug = null): array
+    {
+        $kind = $broadcast->kind->value;
+        $slug = (string) $broadcast->slug;
+
+        $tags = ["broadcast-feed:{$kind}", "broadcast:{$kind}:{$slug}"];
+
+        if ($oldKind !== null && $oldKind !== $kind) {
+            $tags[] = "broadcast-feed:{$oldKind}";
+        }
+        if ($oldSlug !== null && $oldSlug !== '' && $oldSlug !== $slug) {
+            $tags[] = 'broadcast:'.($oldKind ?? $kind).":{$oldSlug}";
+        }
+
+        return $tags;
+    }
+
+    /**
+     * وسوم كل خلاصات البثّ الثلاث — تُستخدَم عند تغيير تصنيف بثّ (لا وسم فرونت إند
+     * خاصّ بتصنيف البثّ اليوم، خلافًا للفيديو؛ التصنيفات تُعرَض ضمن نفس خلاصات الأنواع).
+     *
+     * @return array<int,string>
+     */
+    public static function broadcastCategoryChange(): array
+    {
+        return array_map(fn (string $kind): string => "broadcast-feed:{$kind}", \App\Enums\BroadcastKind::values());
+    }
+
+    /**
+     * وسم خلاصة الجريدة الرقمية — الواجهة (lib/epaper.ts) لا تملك وسم تفاصيل عدد
+     * منفصل؛ صفحة القارئ نفسها تقرأ من نفس getEpapers() المُوسَّم بهذا فقط.
+     *
+     * @return array<int,string>
+     */
+    public static function epaper(Epaper $epaper, ?string $oldLocale = null): array
+    {
+        $tags = ["epaper-feed:{$epaper->locale}"];
+
+        if ($oldLocale !== null && $oldLocale !== $epaper->locale) {
+            $tags[] = "epaper-feed:{$oldLocale}";
+        }
+
+        return $tags;
     }
 
     /**

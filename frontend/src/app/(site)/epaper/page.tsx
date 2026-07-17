@@ -9,7 +9,8 @@ import { getSiteSettings } from '@/lib/site-settings';
 
 // «الجريدة الرقمية» — جدار الأعداد (أغلفة + مشاركة + تحميل + بحث برقم/تاريخ). نقر عدد ⇒ يفتح
 // بنمط الرأي (PDF مضمَّن في العارض). بوّابة المنتج newspaper_enabled (معطّل ⇒ 404).
-export const revalidate = 300;
+// ISR = سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر epaper-feed:{locale}.
+export const revalidate = 36000;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({ title: 'الجريدة الرقمية', path: '/epaper' });

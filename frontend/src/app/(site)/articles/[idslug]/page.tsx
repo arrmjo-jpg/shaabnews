@@ -24,8 +24,8 @@ import { getTtsConfig } from '@/lib/tts';
 // إعادة استخدام نقطة التفاصيل + seo (يصدر كما هو) + Engagement المركزي + التعليقات (backend). الرابط القانوني
 // id-slug؛ نفك الترميز ونقشر البادئة الرقمية للسلَغ المجرد الذي تطابقه النقطة (تتبع 301 لسلَغ قديم تلقائيا). غير
 // موجود = notFound() = 404 حقيقي (لذا لا loading.tsx على المسار).
-// ISR = سقف أمان (6 ساعات)؛ التحديث الفعلي حدثي عبر article:{slug}/feed:*.
-export const revalidate = 21600;
+// ISR = سقف أمان فقط؛ التحديث الفعلي حدثي عبر article:{slug}/feed:*.
+export const revalidate = 36000;
 
 // فك الترميز (عربي) ثم إزالة بادئة المعرف (أول مقطع رقمي فقط؛ آمن مع سلَغ يبدأ برقم).
 function bareSlug(idslug: string): string {

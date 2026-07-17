@@ -8,7 +8,14 @@ import { getSiteSettings } from '@/lib/site-settings';
 
 // القارئ الأصليّ (pdf.js) — خارج مجموعة (site) ⇒ صفحة غامرة بلا هيدر/فوتر الموقع. SEO عبر
 // buildMetadata (عنوان/وصف/canonical/OG)، قابلة للفهرسة (العدد عامّ). بوّابة newspaper_enabled.
-export const revalidate = 300;
+// ISR = سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر epaper-feed:{locale}.
+export const revalidate = 36000;
+
+// بدون هذه (حتى فارغة)، Next.js يُعامل مسارات dynamic params كـdynamic بالكامل دومًا (no-store)
+// بصرف النظر عن revalidate أعلاه — تأكَّد تجريبيًا أثناء ISR Restoration (راجع articles/[idslug]).
+export async function generateStaticParams() {
+  return [];
+}
 
 async function resolveIssue(idslug: string): Promise<EpaperIssue | null> {
   const id = Number.parseInt(idslug, 10);

@@ -7,8 +7,9 @@ import type { FeedItem } from '@/lib/feed';
 import { getCategoryFeed } from '@/lib/feed';
 import { formatRelativeTime } from '@/lib/format';
 
-// صفحة «اقتصاد» (هدف «عرض الكل») — أحدث مقالات تصنيف الاقتصاد. ISR 300s.
-export const revalidate = 300;
+// صفحة «اقتصاد» (هدف «عرض الكل») — أحدث مقالات تصنيف الاقتصاد.
+// ISR = سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر category:{slug}/articles (نفس نمط category/[slug]).
+export const revalidate = 36000;
 
 export const metadata: Metadata = { title: 'اقتصاد' };
 

@@ -51,7 +51,7 @@ export const getComments = cache(async (slug: string, locale = 'ar'): Promise<Co
   try {
     const res = await fetch(`${env.apiBaseUrl}/api/v1/${enc(locale)}/articles/${enc(slug)}/comments?per_page=50`, {
       headers: env.internalHeaders,
-      next: { revalidate: 1800, tags: ['comments', `comments:${slug}`] },
+      next: { revalidate: 36000, tags: ['comments', `comments:${slug}`] }, // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ.
     });
     if (!res.ok) return [];
     const parsed = CommentsEnvelope.safeParse(await res.json());

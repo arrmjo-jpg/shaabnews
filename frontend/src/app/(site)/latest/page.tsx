@@ -4,8 +4,8 @@ import { FeedCard } from '@/components/feed/feed-card';
 import { Container } from '@/components/layout/container';
 import { getLatestFeed } from '@/lib/feed';
 
-// صفحة «آخر المستجدات» — أحدث الأخبار المنشورة. ISR 60s (أحدث = تحديث أسرع، حارس الأداء §7).
-export const revalidate = 60;
+// صفحة «آخر المستجدات» — أحدث الأخبار المنشورة. ISR = سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر feed:latest.
+export const revalidate = 36000;
 
 export const metadata: Metadata = { title: 'آخر المستجدات' };
 

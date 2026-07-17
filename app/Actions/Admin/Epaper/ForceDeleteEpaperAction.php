@@ -6,6 +6,8 @@ namespace App\Actions\Admin\Epaper;
 
 use App\Models\Epaper;
 use App\Support\Epaper\EpaperSearchIndexer;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -18,9 +20,11 @@ class ForceDeleteEpaperAction
     public function handle(Epaper $epaper): JsonResponse
     {
         $epaperId = $epaper->id; // التُقِط قبل الحذف؛ الوظيفة لن تجده ⇒ إزالة من الفهرس
+        $tags = FrontendCacheTags::epaper($epaper); // يُلتقَط قبل الحذف — نفس نمط ForceDeleteArticleAction
         $epaper->forceDelete();
 
         EpaperSearchIndexer::queueSync($epaperId);
+        FrontendRevalidate::tags($tags);
 
         return ApiResponse::success(__('epaper.force_deleted'));
     }

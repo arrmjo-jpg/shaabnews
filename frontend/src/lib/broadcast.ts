@@ -18,7 +18,7 @@ import { env } from './env';
 // **بلا بادئة لغة** (نطاق البثّ عربيّ مستقلّ). server-only + cache() + ISR قصير (البثّ متغيّر)
 // + null/[] عند أي فشل (لا تلفيق). أنواع: live (حدث) · tv (قناة) · radio (صوت).
 
-const REVALIDATE = 30; // البثّ لحظيّ نسبيّاً — ISR قصير + إبطال حدثيّ في الباك إند.
+const REVALIDATE = 36000; // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر FrontendRevalidate::tags() في كلّ انتقال حالة.
 const feedTag = (kind: string) => `broadcast-feed:${kind}`;
 const itemTag = (kind: string, slug: string) => `broadcast:${kind}:${slug}`;
 const enc = encodeURIComponent;

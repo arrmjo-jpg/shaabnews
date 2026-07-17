@@ -6,7 +6,14 @@ import { getBroadcast } from '@/lib/broadcast';
 import { buildMetadata } from '@/lib/seo';
 
 // صفحة محطّة راديو — /radio/{slug}. تعيد استخدام GET /api/v1/radio/{slug}.
-export const revalidate = 30;
+// ISR = سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر broadcast:radio:{slug}.
+export const revalidate = 36000;
+
+// بدون هذه (حتى فارغة)، Next.js يُعامل مسارات dynamic params كـdynamic بالكامل دومًا (no-store)
+// بصرف النظر عن revalidate أعلاه — تأكَّد تجريبيًا أثناء ISR Restoration (راجع articles/[idslug]).
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

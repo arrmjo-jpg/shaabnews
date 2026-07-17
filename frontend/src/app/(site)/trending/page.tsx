@@ -7,8 +7,8 @@ import type { FeedItem } from '@/lib/feed';
 import { getMostReadFeed } from '@/lib/feed';
 import { formatRelativeTime } from '@/lib/format';
 
-// صفحة «الأكثر شيوعا» — المقالات الرائجة (تفاعل موزون، نافذة 7 أيام). ISR 300s.
-export const revalidate = 300;
+// صفحة «الأكثر شيوعا» — المقالات الرائجة (تفاعل موزون، نافذة 7 أيام). ISR = سقف أمان فقط؛ إبطال حدثيّ عبر feed:most_read.
+export const revalidate = 36000;
 
 export const metadata: Metadata = { title: 'الأكثر شيوعا' };
 

@@ -21,7 +21,7 @@ export const getRecaptchaConfig = cache(async (): Promise<RecaptchaConfig | null
   if (!env.apiBaseUrl) return null;
   try {
     const res = await fetch(`${env.apiBaseUrl}/api/v1/recaptcha/config`, {
-      next: { revalidate: 300, tags: ['recaptcha-config'] },
+      next: { revalidate: 36000, tags: ['recaptcha-config'] }, // ISR — سقف أمان فقط؛ إبطال حدثيّ عبر UpdateThirdPartySettingsAction.
     });
     if (!res.ok) return null;
     const parsed = EnvelopeSchema.safeParse(await res.json());

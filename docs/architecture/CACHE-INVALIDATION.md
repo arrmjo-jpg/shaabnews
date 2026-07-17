@@ -10,10 +10,18 @@ This document describes the **event-driven invalidation path**
 the separate, related topic of *time-based* revalidate windows and why a
 page's effective ISR interval is rarely the number written at its top.
 
-Snapshot date: 2026-07-17, after the P0/P1 fixes below shipped
-(`b8e734cc2b`, `baf2314c60`). Produced by a full audit of every mutation
-Action and every tagged `fetch()` in the codebase — every claim in this
-document traces to a specific file:line, not inference.
+Snapshot date: 2026-07-18, after the event-driven ISR conversion (§11) shipped
+on top of the P0/P1 fixes (`b8e734cc2b`, `baf2314c60`) and the Phase 3 cleanup
+audit (§10). Produced by a full audit of every mutation Action and every
+tagged `fetch()` in the codebase — every claim in this document traces to a
+specific file:line, not inference.
+
+**Current model: event-driven only.** Every public page now carries a
+10-hour (`36000`s) ISR safety fallback — not a freshness mechanism. Freshness
+comes exclusively from `FrontendRevalidate::tags()` calls fired on every
+content-mutating Action. The only exceptions are external-API-passthrough
+data (weather/ASE market/gold/sport) and high-frequency engagement counters,
+which have no Laravel-owned mutation to hang an invalidation off — see §11.
 
 ---
 
@@ -98,10 +106,12 @@ Every tag string that exists anywhere in the system, where it's produced, where 
 | `tts-config` | `UpdateThirdPartySettingsAction` | `lib/tts.ts: getTtsConfig()` | Text-to-speech feature flag |
 | `social-config` | `UpdateThirdPartySettingsAction` | `lib/auth-config.ts: getSocialAuthConfig()` | Social login providers |
 | `recaptcha-config` | `UpdateThirdPartySettingsAction` | `lib/recaptcha.ts: getRecaptchaConfig()` | reCAPTCHA toggle |
-| `match-bar` | `UpdateMatchBarSettingsAction`, `UpdateCompetitionAction` | `lib/match-bar.ts: getMatchBar()` | Sport match-bar admin config (not live sport data — see §8) |
-| `epaper-feed:{locale}` | *not verified this audit — flagged in §9* | `lib/epaper.ts` | Newspaper issue archive |
+| `match-bar` | `UpdateMatchBarSettingsAction`, `UpdateCompetitionAction` | `lib/match-bar.ts: getMatchBar()` | Sport match-bar admin config (not live sport data — see §8). Time-based only (60s) — see §11, deliberately excluded from the event-driven conversion |
+| `epaper-feed:{locale}` | `FrontendCacheTags::epaper()` — every Epaper action (§11) | `lib/epaper.ts` | Newspaper issue archive |
 | `engagement`, `engagement:article:{id}` | *not applicable — high-frequency counters, time-based by design* | `lib/engagement.ts: getArticleMetrics()` | View/like/favorite counts |
-| `weather`, `ase-ticker`, `ase-summary`, `ase-index`, `ase-movers`, `ase-docs`, `gold`, `sport-games`, `sport-game-{id}`, `sport-competition-{id}`, `sport-stats`, `broadcast-feed:{kind}`, `broadcast:{kind}:{slug}` | *none — external-API passthrough, see §7* | various `lib/*.ts` | Live external data; time-based revalidate is the correct and only mechanism |
+| `weather`, `ase-ticker`, `ase-summary`, `ase-index`, `ase-movers`, `ase-docs`, `gold`, `sport-games`, `sport-game-{id}`, `sport-competition-{id}`, `sport-stats` | *none — external-API passthrough, see §7* | various `lib/*.ts` | Live external data; time-based revalidate is the correct and only mechanism |
+| `broadcast-feed:{kind}` | `FrontendCacheTags::broadcast()` / `broadcastCategoryChange()` — every Broadcast action (§11) | `lib/broadcast.ts: getLiveKindFeed()`, `getChannels()`, `getLiveNow()`, `getNextUpcoming()` (via shared `fetchList()`) | Live/TV/Radio listing per kind |
+| `broadcast:{kind}:{slug}` | `FrontendCacheTags::broadcast()` (current + old kind/slug on change) | `lib/broadcast.ts: getBroadcast()` | Single broadcast watch page |
 | `ase` | *none* | `lib/ase.ts: getAseCompanies()` *(dead — no caller)* | — |
 
 ---
@@ -137,6 +147,14 @@ Every content-mutating Action and exactly what it invalidates. "—" means confi
 | All `app/Actions/Admin/Advertising/*` (15 actions) | **—** by design (ads are always client-side `no-store`, never cached) |
 | All `app/Actions/Admin/Polls/*` (6 actions) | **—** (no frontend feature consumes poll data — see §8) |
 | Gallery-related | n/a — no Gallery model/feature exists |
+| `CreateBroadcastAction`, `UpdateBroadcastAction`, `DeleteBroadcastAction`, `StartBroadcastAction`, `ScheduleBroadcastAction`, `EndBroadcastAction`, `FailBroadcastAction`, `ArchiveBroadcastAction`, `ResumeBroadcastAction`, `MarkBroadcastOfflineAction`, `EmergencyShutdownAction` (offline transition only), `MonitorBroadcastHealthAction` (failed↔live transitions only) | `FrontendCacheTags::broadcast()` — `broadcast-feed:{kind}` (+ old kind on change), `broadcast:{kind}:{slug}` (+ old kind/slug on change) *(closed 2026-07-18, §11)* |
+| `PublishDueBroadcastsAction` (scheduled go-live) | same, batched per broadcast in the cron job, deduplicated union *(closed 2026-07-18, §11)* |
+| `CreateBroadcastCategoryAction`, `UpdateBroadcastCategoryAction`, `DeleteBroadcastCategoryAction` | `FrontendCacheTags::broadcastCategoryChange()` — all three `broadcast-feed:{kind}` *(closed 2026-07-18, §11)* |
+| `BanViewerAction`, `CloseAudienceAction`, `ReopenAudienceAction`, `UnbanViewerAction`, `KickViewerAction` | **—** by design (session/viewer moderation only, no public cached output changes) |
+| `BroadcastDashboardAction`, `BroadcastEntityAnalyticsAction`, `ListBroadcastsAction`, `ListBroadcastCategoriesAction`, `SyncBroadcastViewerCountsAction`, `DispatchBroadcastRemindersAction` | **—** by design (read-only/analytics/high-frequency, no public cached output changes) |
+| `CreateEpaperAction`, `UpdateEpaperAction`, `DeleteEpaperAction`, `RestoreEpaperAction`, `ForceDeleteEpaperAction`, `DuplicateEpaperAction`, `ReplacePdfAction`, `SetEpaperCoverAction`, `TransitionEpaperStatusAction` | `FrontendCacheTags::epaper()` — `epaper-feed:{locale}` (+ old locale on change) *(closed 2026-07-18, §11)* |
+| `PublishDueEpapersAction` (scheduled publish) | same, batched per epaper in the cron job, deduplicated union *(closed 2026-07-18, §11)* |
+| `ExtractEpaperTextAction`, `ReprocessEpaperOcrAction` | **—** by design (OCR text is search-index-only — `EpaperSearchIndexer` — never exposed on any public frontend response, confirmed by grep across `frontend/src`) |
 
 ---
 
@@ -144,38 +162,46 @@ Every content-mutating Action and exactly what it invalidates. "—" means confi
 
 Every `fetch()` in `frontend/src` that carries `next.tags`. Full detail (dead code, per-file line numbers) lives in the audit transcript; this is the canonical quick-reference. Fetches using `cache: 'no-store'` (ads, per-user account/follow/engagement BFFs, RSS/sitemap proxies, auth mutations) carry no tags and are omitted — they are never meant to be tag-invalidated.
 
+All figures below reflect the 2026-07-18 event-driven conversion (§11): every
+fetch backed by a Laravel-owned, tag-invalidated mutation now carries
+`revalidate: 36000` (10h) as a **safety-fallback ceiling only** — freshness
+comes from the tag invalidation, not this number. Fetches with no Laravel
+mutation to hang an invalidation off (external APIs, engagement counters,
+sport match-bar) keep their pre-existing tiered, genuinely time-based values
+— unchanged, and correctly so.
+
 | Fetch (`lib/*.ts`) | Tags | Revalidate (s) |
 |---|---|---|
-| `feed.ts: getHeroFeed` | `articles`, `feed:hero` | 300 |
-| `feed.ts: getHeaderFeed` | `articles`, `feed:header` | 300 |
-| `feed.ts: getBreakingFeed` | `articles`, `feed:breaking` | 60 |
-| `feed.ts: getLatestFeed` | `articles`, `feed:latest` | 60 |
-| `feed.ts: getMostReadFeed` | `articles`, `feed:most_read` | 300 |
-| `feed.ts: getCategoryById/BySlug/Ancestry` | `categories` | 300 |
-| `feed.ts: getCategoryFeed/FeaturedGrid/Page` | `articles`, `category:{slug}` | 300 |
-| `articles.ts: getArticle` | `articles`, `article:{slug}` | 1800 |
-| `articles.ts: getLiveUpdates` | `live_updates`, `live:{slug}` | 1800 |
-| `videos.ts` (latest/featured/trending/most-viewed/related/by-category/playlists index) | `video-feed:{locale}` (+ `video-category:*` where relevant) | 120 |
-| `videos.ts: getVideo` | `video:{locale}:{slug}` | 120 |
-| `videos.ts: getPlaylist` | `playlist:{locale}:{slug}` | 120 |
-| `reels.ts: getReelsFeed` | `reel-feed:{locale}` | 60 |
-| `reels.ts: getReelByIdSlug` | `reel:{locale}:{slug}` | 60 |
-| `match-bar.ts: getMatchBar` | `match-bar` | 60 |
-| `writer.ts: getWriterProfile` | `writers`, `writer:{id}` | 300 |
-| `static-pages.ts: getStaticPages` | `page-feed:{locale}` | 300 |
-| `static-pages.ts: getStaticPage` | `page:{locale}:{slug}` | 300 |
-| `search.ts: searchArticles` | `articles`, `search` | 60 |
-| `site-settings.ts: getSiteSettings` | `site-settings` | 300 |
-| `recaptcha.ts: getRecaptchaConfig` | `recaptcha-config` | 300 |
-| `auth-config.ts: getSocialAuthConfig` | `social-config` | 300 |
-| `tts.ts: getTtsConfig` | `tts-config` | 300 |
-| `comments.ts: getComments` | `comments`, `comments:{slug}` | 1800 |
-| `epaper.ts` | `epaper-feed:{locale}` | 300 |
-| `engagement.ts: getArticleMetrics` | `engagement`, `engagement:article:{id}` | 300 |
-| `weather.ts` | `weather` | 900 / 1800 |
-| `ase-market.ts`, `gold.ts` | `ase-ticker`/`ase-summary`/`ase-index`/`ase-movers`/`ase-docs`/`gold` | 120–300 |
-| `sport/games.ts`, `sport/player.ts`, `sport/stats.ts` | `sport-games`/`sport-game-{id}`/`sport-competition-{id}`/`sport-stats` | 30–86400 (tiered by data volatility) |
-| `broadcast.ts` | `broadcast-feed:{kind}`, `broadcast:{kind}:{slug}` | 30 |
+| `feed.ts: getHeroFeed` | `articles`, `feed:hero` | 36000 |
+| `feed.ts: getHeaderFeed` | `articles`, `feed:header` | 36000 |
+| `feed.ts: getBreakingFeed` | `articles`, `feed:breaking` | 36000 |
+| `feed.ts: getLatestFeed` | `articles`, `feed:latest` | 36000 |
+| `feed.ts: getMostReadFeed` | `articles`, `feed:most_read` | 36000 |
+| `feed.ts: getCategoryById/BySlug/Ancestry` | `categories` | 36000 |
+| `feed.ts: getCategoryFeed/FeaturedGrid/Page` | `articles`, `category:{slug}` | 36000 |
+| `articles.ts: getArticle` | `articles`, `article:{slug}` | 36000 |
+| `articles.ts: getLiveUpdates` | `live_updates`, `live:{slug}` | 36000 |
+| `videos.ts` (latest/featured/trending/most-viewed/related/by-category/playlists index) | `video-feed:{locale}` (+ `video-category:*` where relevant) | 36000 |
+| `videos.ts: getVideo` | `video:{locale}:{slug}` | 36000 |
+| `videos.ts: getPlaylist` | `playlist:{locale}:{slug}` | 36000 |
+| `reels.ts: getReelsFeed` | `reel-feed:{locale}` | 36000 |
+| `reels.ts: getReelByIdSlug` | `reel:{locale}:{slug}` | 36000 |
+| `match-bar.ts: getMatchBar` | `match-bar` | 60 *(deliberately excluded — sport data, no Laravel-owned mutation to invalidate on; see §11)* |
+| `writer.ts: getWriterProfile` | `writers`, `writer:{id}` | 36000 |
+| `static-pages.ts: getStaticPages` | `page-feed:{locale}` | 36000 |
+| `static-pages.ts: getStaticPage` | `page:{locale}:{slug}` | 36000 |
+| `search.ts: searchArticles` | `articles`, `search` | 36000 |
+| `site-settings.ts: getSiteSettings` | `site-settings` | 36000 |
+| `recaptcha.ts: getRecaptchaConfig` | `recaptcha-config` | 36000 |
+| `auth-config.ts: getSocialAuthConfig` | `social-config` | 36000 |
+| `tts.ts: getTtsConfig` | `tts-config` | 36000 |
+| `comments.ts: getComments` | `comments`, `comments:{slug}` | 36000 |
+| `epaper.ts` | `epaper-feed:{locale}` | 36000 |
+| `broadcast.ts` | `broadcast-feed:{kind}`, `broadcast:{kind}:{slug}` | 36000 |
+| `engagement.ts: getArticleMetrics` | `engagement`, `engagement:article:{id}` | 300 *(deliberately excluded — high-frequency counters, time-based by design)* |
+| `weather.ts` | `weather` | 900 / 1800 *(deliberately excluded — external API)* |
+| `ase-market.ts`, `gold.ts` | `ase-ticker`/`ase-summary`/`ase-index`/`ase-movers`/`ase-docs`/`gold` | 120–300 *(deliberately excluded — external API)* |
+| `sport/games.ts`, `sport/player.ts`, `sport/stats.ts` | `sport-games`/`sport-game-{id}`/`sport-competition-{id}`/`sport-stats` | 30–86400 *(deliberately excluded — external API, tiered by data volatility)* |
 
 **Dead code found during the audit (tagged fetch, zero callers)** — harmless, but flag before relying on them: `lib/categories.ts: getCategories()`, `lib/ase.ts: getAseCompanies()`, `lib/sport/games.ts: getTeamGames()`, `lib/sport/stats.ts: getCompetitionTeams()`.
 
@@ -291,9 +317,10 @@ If a future feature adds the missing frontend consumer for any of these, the bac
 
 ## 9. Open items not resolved by this document
 
-- **`broadcast-feed:{kind}`/`broadcast:{kind}:{slug}`** — Broadcast (live/tv/radio) admin mutations were not audited for `FrontendRevalidate` calls in the P0/P1 passes. Needs a follow-up check before relying on immediate invalidation for that content type.
-- **`epaper-feed:{locale}`** — only newspaper *settings* mutations (`UpdateNewspaperSettingsAction` → `site-settings`) were confirmed; epaper *issue* upload/publish was not traced to a `FrontendRevalidate` call in this audit.
+- ~~`broadcast-feed:{kind}`/`broadcast:{kind}:{slug}`~~ — **closed 2026-07-18**, see §11.
+- ~~`epaper-feed:{locale}`~~ — **closed 2026-07-18**, see §11.
 - **Polls** — six admin Actions exist with zero invalidation and (per this audit) zero frontend consumer. Per the 2026-07-17 review: do not add invalidation before confirming the feature is actually surfaced anywhere in the frontend — adding cache-invalidation plumbing for a feature nobody can see would be complexity with no payoff.
+- **`DeleteUserAction`/`RestoreUserAction`** — still do not invalidate `writers`/`writer:{id}` (unchanged from the original audit; not in scope for the 2026-07-18 pass, which only closed Broadcast/Epaper).
 
 ---
 
@@ -331,3 +358,152 @@ No source file changed in this pass, so no new tests were needed; the existing s
 
 ### Git diff summary
 This documentation update only. Zero application code changed.
+
+---
+
+## 11. Event-driven ISR conversion (2026-07-18)
+
+Goal: eliminate reliance on time-based ISR for freshness. Every public page's
+`export const revalidate` becomes a 10-hour (`36000`s) **safety fallback
+only** — freshness must come exclusively from `FrontendRevalidate::tags()`
+firing on every content-mutating Action. Requires (a) closing every remaining
+invalidation gap so raising the fallback is actually safe, then (b) raising
+the fallback everywhere it's safe to do so.
+
+### Scope decisions (confirmed with the team before implementation)
+
+- **External-API-passthrough data is excluded**: weather, ASE market/gold,
+  sport scores, and the sport `match-bar` widget have no Laravel-owned
+  mutation to hang `FrontendRevalidate` off — they stay at their existing
+  tiered time-based values (30s–1800s). Forcing these to 10h would make
+  genuinely-external data appear stale for hours.
+- **Engagement counters are excluded**: view/like/favorite counts
+  (`lib/engagement.ts`) stay at 300s by design — high-frequency,
+  intentionally not event-driven (an invalidation-per-view would be a
+  storm).
+- **Broadcast live/tv/radio pages ARE included** (raised to 36000s), despite
+  their prior 30s ceiling existing specifically because the fire-and-forget
+  invalidation job (`tries=1`, `timeout=15s`) could in theory fail silently
+  on a status transition. Confirmed explicitly: the full lifecycle now has
+  `FrontendRevalidate::tags()` coverage (see below), and the team chose
+  consistency with the rest of the site over the extra 30s safety margin.
+
+### Broadcast gap closed
+
+Zero Broadcast admin Actions called `FrontendRevalidate::tags()` before this
+pass — only the unrelated Laravel-side `Cache::tags(BroadcastCacheTags...)`
+existed. Added `FrontendCacheTags::broadcast()` (builds
+`broadcast-feed:{kind}` + `broadcast:{kind}:{slug}`, tracking old kind/slug
+on change — deliberately hand-built rather than translated from
+`BroadcastCacheTags`, since the backend tag shape isn't kind-dimensioned but
+the frontend's `lib/broadcast.ts` requires it) and
+`FrontendCacheTags::broadcastCategoryChange()` (all three feed tags, for
+category-level mutations that don't target one broadcast). Wired into:
+`CreateBroadcastAction`, `UpdateBroadcastAction`, `DeleteBroadcastAction`,
+`StartBroadcastAction`, `ScheduleBroadcastAction`, `EndBroadcastAction`,
+`FailBroadcastAction`, `ArchiveBroadcastAction`, `ResumeBroadcastAction`,
+`MarkBroadcastOfflineAction`, `EmergencyShutdownAction`,
+`MonitorBroadcastHealthAction`, `PublishDueBroadcastsAction` (batched),
+`CreateBroadcastCategoryAction`, `UpdateBroadcastCategoryAction`,
+`DeleteBroadcastCategoryAction` — 16 files. Deliberately excluded: viewer
+moderation (`BanViewerAction`/`CloseAudienceAction`/`ReopenAudienceAction`/
+`UnbanViewerAction`/`KickViewerAction` — session-only, no cached-output
+change) and read-only/analytics/high-frequency actions.
+
+### Epaper gap closed
+
+No backend cache-tag class existed for Epaper at all before this pass (zero
+`Cache::tags` calls in `app/Actions/Admin/Epaper/*.php`). Added
+`FrontendCacheTags::epaper()` (`epaper-feed:{locale}`, + old locale on
+change — the frontend has no per-issue detail tag; even the reader page
+reuses the list fetch). Wired into: `CreateEpaperAction`,
+`UpdateEpaperAction`, `DeleteEpaperAction`, `RestoreEpaperAction`,
+`ForceDeleteEpaperAction` (tags captured before `forceDelete()`, matching
+`ForceDeleteArticleAction`'s pattern), `DuplicateEpaperAction`,
+`ReplacePdfAction`, `SetEpaperCoverAction`, `TransitionEpaperStatusAction`
+(the actual draft→published/archived transition — the most consequential
+fix), `PublishDueEpapersAction` (batched, scheduled publish) — 10 files.
+Deliberately excluded: `ExtractEpaperTextAction`/`ReprocessEpaperOcrAction`
+(OCR text is search-index-only via `EpaperSearchIndexer`, confirmed by grep
+that it's never exposed on any public frontend response).
+
+### ISR-eligibility gap found and fixed (not part of the original ask)
+
+Raising `export const revalidate` is a no-op on a route that Next.js treats
+as fully dynamic. A production build (`next build` against the real edited
+source, in a disposable `node:20-alpine` container) surfaced that 5 routes
+had **zero ISR at all** — `writer/[id]`, `live/[slug]`, `radio/[slug]`,
+`tv/[slug]`, `newspaper/[idslug]` all built as `ƒ (Dynamic)`, not `● (SSG)` —
+because they were missing `generateStaticParams()`. This is the exact root
+cause already fixed for `articles/[idslug]` and `reels/[idslug]` during this
+session's earlier ISR Restoration work, just never applied to the other
+dynamic-segment routes. Confirmed and fixed by adding
+`export async function generateStaticParams() { return []; }` (identical
+pattern) to all 5 files — a second build confirmed all 5 flipped to `●`.
+`category/[slug]` and `videos/[idslug]` remain `ƒ` correctly — both read
+`searchParams`, a legitimate, pre-existing, unrelated reason for full
+dynamic rendering.
+
+One further empirical correction to a theoretical concern raised mid-task:
+the shared `(site)/layout.tsx` fetches `getMatchBar()` at `revalidate: 60`
+on every request; the worry was that this would drag every `(site)`-group
+page's *effective* ISR ceiling down to 60s regardless of the page's own
+`revalidate` export. The actual production build disproved this —
+`/economy`, `/latest`, `/trending`, `/live`, `/epaper`, `/videos` all build
+with a clean `10h` effective revalidate, not `1m`. Only the homepage itself
+is bounded lower (`2m`), and that's from its own embedded `ase-ticker` fetch
+(120s, already-excluded external data) — an expected, pre-existing
+exception, not a new gap.
+
+### Page-level `revalidate` raised to 36000
+
+`(site)/page.tsx` (homepage, 3600→36000), `(site)/latest`, `(site)/trending`,
+`(site)/live`, `(site)/live/[slug]`, `(site)/tv/[slug]`, `(site)/radio/[slug]`,
+`(site)/epaper`, `(site)/epaper/archive`, `(site)/economy`,
+`(site)/category/[slug]` (cosmetic — already fully dynamic via
+`searchParams`), `(site)/writer/[id]`, `(site)/videos`,
+`(site)/videos/[idslug]` (cosmetic — already fully dynamic via
+`searchParams`), `(site)/articles/[idslug]`, `(reels)/reels/[idslug]`,
+`(reels)/reels`, `newspaper/[idslug]` — 18 files. Left untouched:
+`(site)/bourse`, `(site)/gold-prices`, `(site)/weather` (external data),
+`(site)/pages/[slug]` (already 86400, exceeds the new baseline).
+
+### Fetch-level `next.revalidate` raised to 36000
+
+`articles.ts`, `broadcast.ts`, `epaper.ts`, `videos.ts` (all via their shared
+`REVALIDATE` constant), `categories.ts`, `comments.ts`, `search.ts`,
+`site-settings.ts`, `writer.ts`, `reels.ts` (both fetches),
+`static-pages.ts` (both fetches), `feed.ts` (all six tagged fetches),
+`auth-config.ts`, `recaptcha.ts`, `tts.ts` — 14 files. Left untouched:
+`ase-market.ts`, `ase.ts`, `engagement.ts`, `gold.ts`, `match-bar.ts`,
+`weather.ts`.
+
+### Test evidence
+
+- **Existing Pest suites** (`tests/Feature/Admin/{Broadcast,Epaper}`,
+  `tests/Feature/Public/{Broadcast,Epaper}`, 323 tests) run unchanged after
+  the invalidation-call additions: 322 passed, 1 pre-existing failure
+  (`EpaperAccessTest::it_applies_the_conservative_default_policy...`)
+  confirmed present and identical on `main` *before* this pass too (via
+  `git stash`) — unrelated to this work.
+- **Functional `Queue::fake()` verification**, matching this session's
+  established P0/P1 pattern, run against the live backend container with
+  the edited Action files copied in: every modified Broadcast action
+  (Create/Update/Delete/Start/Schedule/End/Fail/Archive/Resume/
+  MarkOffline/EmergencyShutdown/PublishDue/category CRUD) and every modified
+  Epaper action (Create/Duplicate/Restore/ForceDelete/SetCover/ReplacePdf/
+  TransitionStatus/PublishDue) confirmed dispatching
+  `RevalidateFrontendCacheJob` with the exact expected tag set, on real
+  broadcast id 2 (safe reversible transitions) and disposable test rows
+  (created, exercised, then hard-deleted — verified zero residual rows and
+  zero mutated production data afterward).
+- **Frontend build verification**: `npx tsc --noEmit` clean; `npm run build`
+  succeeds; production build output used as direct evidence for the
+  ISR-eligibility fix above (Static/Dynamic classification, effective
+  revalidate window per route).
+
+### Not changed
+SEO, public API contracts, and business logic were left untouched per the
+task's explicit constraints — every change in this section is either a
+numeric `revalidate` value, a new `FrontendRevalidate::tags()` call site, or
+a `generateStaticParams()` addition using the exact pre-existing pattern.

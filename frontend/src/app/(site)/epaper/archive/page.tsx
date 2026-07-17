@@ -9,7 +9,8 @@ import { buildMetadata } from '@/lib/seo';
 import { getSiteSettings } from '@/lib/site-settings';
 
 // أرشيف الجريدة الرقمية — جدار الأغلفة (بحث/ترشيح) + محفوظاتي. قابل للفهرسة (الأرشيف فقط).
-export const revalidate = 300;
+// ISR = سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر epaper-feed:{locale}.
+export const revalidate = 36000;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({ title: 'أرشيف الجريدة الرقمية', path: '/epaper/archive' });

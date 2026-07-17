@@ -9,7 +9,13 @@ import { getWriterProfile } from '@/lib/writer';
 // صفحة بروفيل الكاتب العامّ — للكُتّاب المفعّلين فقط (الباك إند يبوّب بـ is_writer؛ غيره ⇒ 404).
 // النبذة + روابط السوشيل + المعلومات. ISR = سقف أمان؛ التحديث حدثيّ عبر writers/writer:{id}
 // (أكشنات تعديل المستخدم/حالته). خطّ الموقع، صفر تلفيق (لا بيانات ⇒ 404/حالة فارغة).
-export const revalidate = 21600;
+export const revalidate = 36000;
+
+// بدون هذه (حتى فارغة)، Next.js يُعامل مسارات dynamic params كـdynamic بالكامل دومًا (no-store)
+// بصرف النظر عن revalidate أعلاه — تأكَّد تجريبيًا أثناء ISR Restoration (راجع articles/[idslug]).
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
