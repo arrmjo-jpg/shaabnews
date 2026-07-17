@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Actions\Admin\Content;
 
 use App\Models\Category;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -39,6 +41,15 @@ class BulkUpdateCategoriesAction
         }
 
         Cache::tags(['categories'])->flush();
+
+        // P1 (Cache Invalidation Audit): كانت هذه العملية الجماعية تُفرِّغ الكاش الخلفي فقط
+        // دون إخطار الواجهة — كل تصنيف متأثّر يُعامَل كتحديث فرديّ (نفس نمط UpdateCategoryAction).
+        $tags = $categories
+            ->flatMap(fn (Category $category): array => FrontendCacheTags::category($category))
+            ->unique()
+            ->values()
+            ->all();
+        FrontendRevalidate::tags($tags);
 
         return ApiResponse::success(
             __('category.bulk_updated', ['count' => $categories->count()]),
