@@ -109,6 +109,10 @@ services:
     <<: *backend-common
     user: www-data
     command: php artisan queue:work redis-media --queue=media --tries=2 --timeout=2520 --sleep=2 --max-time=3600
+    # 2550s > --timeout=2520s (job cap) > TranscodeVideoAssetJob::$timeout=2400s. Docker's
+    # default 10s SIGTERM->SIGKILL grace period would otherwise kill an in-flight video
+    # transcode outright on every deploy/restart.
+    stop_grace_period: 2550s
     healthcheck:
       test: ["CMD", "pgrep", "-f", "queue:work"]
       interval: 30s
@@ -118,6 +122,11 @@ services:
   scheduler:
     <<: *backend-common
     user: www-data
+    # schedule:work runs as PID 1 with no init process, so it never reaps the child
+    # processes it forks for each due command -> unbounded zombie accumulation over the
+    # container's lifetime (measured: ~2000 defunct processes after ~2h uptime). init: true
+    # injects Docker's built-in tini as PID 1, which reaps them automatically.
+    init: true
     command: php artisan schedule:work
     healthcheck:
       test: ["CMD", "pgrep", "-f", "schedule:work"]

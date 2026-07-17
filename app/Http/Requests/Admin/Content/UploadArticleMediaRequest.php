@@ -19,6 +19,7 @@ class UploadArticleMediaRequest extends BaseFormRequest
         $collection = (string) $this->input('collection');
         $isVideo = $collection === 'video';
         $videoMaxKb = (int) config('performance.media.video_max_kb', 256000);
+        $imageMaxDim = (int) config('performance.media.image_max_dimension', 8000);
 
         return [
             'collection' => ['required', Rule::in(['cover', 'gallery', 'inline', 'video'])],
@@ -26,7 +27,11 @@ class UploadArticleMediaRequest extends BaseFormRequest
                 ['required', 'file'],
                 $isVideo
                     ? ['mimetypes:video/mp4,video/webm', 'max:'.$videoMaxKb]
-                    : ['image', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
+                    : [
+                        'image', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120',
+                        // نفس حارس الأبعاد العملاقة الموجود في StoreMediaAssetRequest.
+                        Rule::dimensions()->maxWidth($imageMaxDim)->maxHeight($imageMaxDim),
+                    ],
             ),
         ];
     }
