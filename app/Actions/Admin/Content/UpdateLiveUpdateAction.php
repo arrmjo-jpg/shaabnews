@@ -12,6 +12,8 @@ use App\Support\Content\LiveUpdateGuard;
 use App\Support\Content\MediaAttachmentSyncer;
 use App\Support\Content\TipTapRenderer;
 use App\Support\Content\TipTapSanitizer;
+use App\Support\Frontend\FrontendCacheTags;
+use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
@@ -67,6 +69,7 @@ class UpdateLiveUpdateAction
         }
 
         Cache::tags(['live_updates'])->flush();
+        FrontendRevalidate::tags(FrontendCacheTags::liveUpdates($article));
 
         return ApiResponse::success(
             __('live_update.updated'),

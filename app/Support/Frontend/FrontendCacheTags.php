@@ -43,6 +43,9 @@ final class FrontendCacheTags
             'feed:latest',     // getLatestFeed (قسم /latest + الشريط الإخباري)
             'feed:most_read',  // getMostReadFeed («الأكثر قراءة» + /trending)
             "article:{$slug}", // getArticle (صفحة تفاصيل المقال)
+            // P0 (Cache Invalidation Audit): searchArticles() تستخدم هذا الوسم لكنه لم يكن
+            // يُبطَل إطلاقًا — نتيجة بحث لمقال جديد/محذوف كانت تنتظر سقف revalidate=60 فقط.
+            'search',
         ];
 
         // 1. Editors Pick, Hero, Header transitions
@@ -54,6 +57,11 @@ final class FrontendCacheTags
         }
         if ($article->is_editor_pick || $article->wasChanged('is_editor_pick')) {
             $tags[] = 'feed:editors_pick';
+        }
+        // P0 (Cache Invalidation Audit): كانت feed:breaking تُستخدَم في الواجهة
+        // (getBreakingFeed) بلا أي إبطال خلفي مطلقًا — لم تكن is_breaking مُعالَجة هنا إطلاقًا.
+        if ($article->is_breaking || $article->wasChanged('is_breaking')) {
+            $tags[] = 'feed:breaking';
         }
 
         // 2. Slug transition
@@ -171,6 +179,18 @@ final class FrontendCacheTags
     public static function comments(string $articleSlug): array
     {
         return ['comments', "comments:{$articleSlug}"];
+    }
+
+    /**
+     * وسوم التغطية المباشرة لمقال — يُبطلها إنشاء/تعديل/حذف/نقل أي تحديث خط (P0 Cache
+     * Invalidation Audit: كانت هذه العمليات تُفرِّغ Cache::tags(['live_updates']) الخلفي
+     * فقط دون إخطار الواجهة، فتبقى صفحة "مباشر" على حالها حتى انقضاء revalidate=1800).
+     *
+     * @return array<int,string>
+     */
+    public static function liveUpdates(Article $article): array
+    {
+        return ['live_updates', "live:{$article->slug}"];
     }
 
     /**
