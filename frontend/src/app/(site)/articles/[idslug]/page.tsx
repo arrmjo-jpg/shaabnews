@@ -38,6 +38,14 @@ function bareSlug(idslug: string): string {
   return s.replace(/^\d+-/, '');
 }
 
+// بدون هذه (حتى فارغة)، Next.js يُعامل مسارات dynamic params كـdynamic بالكامل دومًا (no-store)
+// بصرف النظر عن revalidate أعلاه — تأكَّد تجريبيًا أثناء ISR Restoration (Cache-Control تحوّلت من
+// no-store إلى s-maxage فور إضافتها، بلا أي تغيير آخر). لا مسارات مُولَّدة مسبقًا عند البناء
+// (المقالات كثيرة ومتغيّرة) — كل مسار يُبنى ويُكاش عند أول زيارة (ISR عند الطلب).
+export async function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({
   params,
 }: {

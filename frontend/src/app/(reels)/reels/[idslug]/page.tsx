@@ -1,16 +1,22 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { ReelsAccountBlock, ReelsSocialRow } from '@/components/reels/reels-extras';
+import { UserAuthSlot } from '@/components/auth/user-auth-slot';
+import { ReelsSocialRow } from '@/components/reels/reels-extras';
 import { ReelsFeed, type ReelsNavItem } from '@/components/reels/reels-feed';
 import { socialEntries } from '@/components/layout/social-map';
-import { getCurrentUser } from '@/lib/auth';
 import { getReelByIdSlug, getReelsFeed } from '@/lib/reels';
 import { REELS_PRIMARY, REELS_SERVICES } from '@/lib/reels-nav';
 import { getSiteSettings } from '@/lib/site-settings';
 
 // رابط عميق لريل محدّد — يفتح الـfeed مبتدئاً به. ISR = سقف أمان؛ التحديث حدثيّ عبر reel:{locale}:{slug}.
 export const revalidate = 21600;
+
+// بدون هذه (حتى فارغة)، Next.js يُعامل مسارات dynamic params كـdynamic بالكامل دومًا (no-store)
+// بصرف النظر عن revalidate أعلاه — تأكَّد تجريبيًا أثناء ISR Restoration (راجع articles/[idslug]).
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({
   params,
@@ -34,11 +40,10 @@ export async function generateMetadata({
 
 export default async function ReelDeepLinkPage({ params }: { params: Promise<{ idslug: string }> }) {
   const { idslug } = await params;
-  const [reel, page, settings, user] = await Promise.all([
+  const [reel, page, settings] = await Promise.all([
     getReelByIdSlug(idslug),
     getReelsFeed(),
     getSiteSettings(),
-    getCurrentUser(),
   ]);
   if (!reel) notFound();
 
@@ -48,9 +53,10 @@ export default async function ReelDeepLinkPage({ params }: { params: Promise<{ i
     ...REELS_PRIMARY.map((l) => ({ ...l, active: l.href === '/reels' })),
     ...REELS_SERVICES,
   ];
+  // بطاقة الحساب معزولة عميليًّا (UserAuthSlot) بدل getCurrentUser() خادميّ — راجع ISR Restoration.
   const extras = (
     <>
-      <ReelsAccountBlock user={user} />
+      <UserAuthSlot variant="reels" />
       <ReelsSocialRow social={socialEntries(settings?.social)} />
     </>
   );

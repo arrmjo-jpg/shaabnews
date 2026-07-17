@@ -172,7 +172,10 @@ services:
     healthcheck:
       # Next.js standalone هنا يستمع على عنوان الحاوية نفسها لا 127.0.0.1/localhost —
       # $HOSTNAME (يضبطه Docker تلقائياً) يحلّ لعنوان الحاوية عبر /etc/hosts الداخلي.
-      test: ["CMD-SHELL", "wget --spider -q http://$$HOSTNAME:3000/ || exit 1"]
+      # /api/health (وليس /): الصفحة الرئيسية كانت dynamic بالكامل (cookies() في الهيدر —
+      # راجع ISR Restoration)، فكانت كل نبضة فحص هنا كل 30 ثانية تُطلق Render كامل + عشرات
+      # نداءات Laravel API. /api/health لا يستخدم أي API ديناميكي، فلا يُطلق أي عمل فعليّ أبداً.
+      test: ["CMD-SHELL", "wget --spider -q http://$$HOSTNAME:3000/api/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

@@ -1,17 +1,18 @@
 import Link from 'next/link';
 
+import { UserAuthSlot } from '@/components/auth/user-auth-slot';
 import { socialEntries } from '@/components/layout/social-map';
-import { getCurrentUser } from '@/lib/auth';
 import { REELS_PRIMARY, REELS_SERVICES } from '@/lib/reels-nav';
 import { getSiteSettings } from '@/lib/site-settings';
 
-import { ReelsAccountBlock, ReelsSocialRow } from './reels-extras';
+import { ReelsSocialRow } from './reels-extras';
 import { ReelsThemeToggle } from './reels-theme-toggle';
 
 // الشريط الجانبيّ لصفحة الريلز (ديسكتوب) — يدعم الداكن/الفاتح عبر متغيّرات الثيم (--rl-*):
 // شعار + تنقّل أساسيّ + خدمات الموقع (بدل الأقسام) + بطاقة حساب/دخول + روابط سوشيل + زرّ الثيم.
+// بطاقة الحساب معزولة عميليًّا (UserAuthSlot) بدل getCurrentUser() خادميّ — راجع ISR Restoration.
 export async function ReelsSidebar() {
-  const [settings, user] = await Promise.all([getSiteSettings(), getCurrentUser()]);
+  const settings = await getSiteSettings();
   const siteName = settings?.site_name || 'صدى الشعب الأخباري';
   const logoDark = settings?.logo_dark ?? settings?.logo_light ?? null;
   const logoLight = settings?.logo_light ?? settings?.logo_dark ?? null;
@@ -55,7 +56,7 @@ export async function ReelsSidebar() {
 
       {/* الأسفل: الحساب/الدخول + السوشيل + الثيم + الحقوق */}
       <div className="space-y-3 border-t border-[var(--rl-border)] p-3">
-        <ReelsAccountBlock user={user} />
+        <UserAuthSlot variant="reels" />
         <ReelsSocialRow social={social} />
         <ReelsThemeToggle className="w-full justify-start" />
         <p className="text-center text-xs text-[var(--rl-muted)]">{settings?.copyright || `© ${siteName}`}</p>

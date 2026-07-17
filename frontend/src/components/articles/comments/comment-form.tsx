@@ -2,9 +2,17 @@
 
 import { useState, type FormEvent } from 'react';
 
+import { useAuthSession } from '@/lib/use-auth-session';
+
 // نموذج التعليق — **زائر**: الاسم + البريد + النصّ؛ **مسجّل دخول**: النصّ فقط (الاسم/البريد من الحساب خادميّاً).
 // يرسل لـBFF /api/comments (يمرّره للباك إند الذي يُنشئ pending). نجاح ⇒ إشعار «قيد المراجعة» (لا إدراج متفائل — التعليق معلَّق).
-export function CommentForm({ slug, isLoggedIn }: { slug: string; isLoggedIn: boolean }) {
+// حالة الدخول تُحسَم هنا محليًّا (useAuthSession) بدل تمريرها كـprop خادميّ — كانت CommentSection
+// تستدعي getCurrentUser() خادميًّا، ما يُسقِط صفحة المقال بالكامل من ISR (راجع ISR Restoration).
+// أثناء التحميل الأول (session === undefined) نعرض نموذج الزائر (نفس حقول الاسم/البريد) لتفادي
+// أي قفزة تخطيطية لاحقة إن ظهر المستخدم لاحقًا مسجَّلاً — الفرق الوحيد وقتها هو اختفاء حقلين اختياريين.
+export function CommentForm({ slug }: { slug: string }) {
+  const session = useAuthSession();
+  const isLoggedIn = session?.authed ?? false;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [body, setBody] = useState('');

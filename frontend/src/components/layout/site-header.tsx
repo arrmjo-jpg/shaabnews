@@ -2,9 +2,7 @@ import Link from 'next/link';
 import { Newspaper } from 'lucide-react';
 
 import { SiteLogo } from '@/components/branding/site-logo';
-import { UserIcon } from '@/components/icons';
-import { getUnreadCount } from '@/lib/account';
-import { getCurrentUser } from '@/lib/auth';
+import { UserAuthSlot } from '@/components/auth/user-auth-slot';
 import { getRecaptchaConfig } from '@/lib/recaptcha';
 import { getNavCategories, getSiteSettings } from '@/lib/site-settings';
 import { getStaticPages } from '@/lib/static-pages';
@@ -14,22 +12,22 @@ import { Container } from './container';
 import { HeaderSearch } from './header-search';
 import { MainNav } from './main-nav';
 import { MobileNav } from './mobile-nav';
-import { UserMenu } from './user-menu';
+
+// عزل ISR (ISR Restoration): منطقة تسجيل الدخول هي المكان الوحيد في هذا الهيدر الذي كان يحتاج
+// cookies() (عبر getCurrentUser/getUnreadCount) — استخراجها إلى <UserAuthSlot variant="header">
+// (عميل، يجلب /api/auth/session بعد mount) يُبقي بقيّة الهيدر (الشعار/التنقّل/البحث/رابط
+// الجريدة) Server Component ثابتًا تمامًا، فيستعيد الصفحات تحت (site) أهليّة ISR.
 
 // Sticky platform header. brand · primary nav · live + search + (auth area) + mobile trigger.
 // Auth area is personalized: guest → login button; authenticated → avatar menu with unread badge.
 export async function SiteHeader() {
-  const [recaptcha, user, navCategories, pages, settings] = await Promise.all([
+  const [recaptcha, navCategories, pages, settings] = await Promise.all([
     getRecaptchaConfig(),
-    getCurrentUser(),
     getNavCategories(),
     getStaticPages('footer'),
     getSiteSettings(),
   ]);
   const newspaperEnabled = settings?.newspaper_enabled ?? false;
-  // الرابط يفتح «عرض الأعداد» (صفحة الهبوط بهيدر/فوتر الموقع): أحدث عدد + بحث برقم/تاريخ + جدار
-  // الأغلفة. اختيار عدد/نتيجة بحث يفتح الـ PDF في القارئ المستقلّ. (لا قفز مباشر للعارض الأعمى.)
-  const unread = user ? await getUnreadCount() : 0;
   const staticPages = pages.map((p) => ({ id: p.id, title: p.title, href: p.href }));
 
   return (
@@ -61,19 +59,9 @@ export async function SiteHeader() {
           {/* Search */}
           <HeaderSearch recaptchaEnabled={recaptcha?.enabled ?? false} />
 
-          {/* Auth area */}
-          {user ? (
-            <UserMenu name={user.name} avatar={user.avatar ?? null} isWriter={user.is_writer} unread={unread} />
-          ) : (
-            /* Guest: bare account icon on all widths — no background, color-only hover */
-            <Link
-              href="/login"
-              aria-label="تسجيل الدخول"
-              className="inline-flex size-10 items-center justify-center text-fg outline-none transition-colors hover:text-primary focus-visible:text-primary"
-            >
-              <UserIcon className="size-5" aria-hidden />
-            </Link>
-          )}
+          {/* Auth area — معزول عميليًّا، انظر التعليق أعلى الملف. حالة التحميل تعرض رابط الزائر
+              نفسه (داخل UserAuthSlot) فلا تظهر أي قفزة تخطيطية (Layout Shift). */}
+          <UserAuthSlot variant="header" />
 
           <MobileNav staticPages={staticPages} />
         </div>

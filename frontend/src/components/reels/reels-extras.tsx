@@ -1,12 +1,14 @@
 import Link from 'next/link';
 
 import { socialEntries } from '@/components/layout/social-map';
-import type { AccountUser } from '@/lib/auth';
+import type { SessionUser } from '@/lib/use-auth-session';
 
 // كتلتا «الحساب/الدخول» و«السوشيل» — مشتركتان بين الشريط الجانبيّ (ديسكتوب) ودرج الجوّال
 // (تُمرَّران كعنصر مُهيّأ من الصفحة الخادميّة للدرج العميل). مُثيَّمتان عبر متغيّرات --rl-*.
+// user: SessionUser (اسم/أفتار فقط) وليس AccountUser الكاملة — يُحسَم الآن عميليًّا عبر
+// UserAuthSlot/useAuthSession بدل getCurrentUser() خادميّ (كان يُسقِط صفحات الريلز من ISR).
 
-export function ReelsAccountBlock({ user, onNavigate }: { user: AccountUser | null; onNavigate?: () => void }) {
+export function ReelsAccountBlock({ user, onNavigate }: { user: SessionUser | null; onNavigate?: () => void }) {
   if (user) {
     return (
       <Link
