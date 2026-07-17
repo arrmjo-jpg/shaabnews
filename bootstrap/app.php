@@ -36,6 +36,15 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
         ]);
 
+        // هذا تطبيق API بحت (Sanctum Bearer فقط) — لا صفحة تسجيل دخول ويب مُسجَّلة إطلاقًا.
+        // افتراضي Authenticate::redirectTo() في Laravel يستدعي route('login') لأي طلب لا يحمل
+        // Accept: application/json (عملاء لا يضبطون هذا الرأس صراحة، مثل curl الخام) — بما أن
+        // هذا الراوت غير موجود هنا، كان ذلك يرمي RouteNotFoundException غير مُعالَج في
+        // ApiExceptionRenderer، فيتحوّل زورًا إلى 500 بدل 401 Unauthenticated الصحيح. تعطيل
+        // إعادة التوجيه نهائيًا (بدل الاعتماد على رأس الطلب) يضمن أن AuthenticationException
+        // الحقيقي يصل دائمًا لـ ApiExceptionRenderer الذي يعالجه بالفعل بشكل صحيح (401 JSON).
+        $middleware->redirectGuestsTo(fn () => null);
+
         // TrustProxies (V1) — خلف CDN يجب أن يحلّ $request->ip() عنوان العميل الحقيقي ليصحّ
         // ربط حمايات الإعلان/التفاعل بالـ IP. مدفوع بيئياً: TRUSTED_PROXIES = قائمة CIDR
         // مفصولة بفواصل، أو '*' (آمن فقط إن كان الأصل مقفولاً شبكياً على الـ CDN). فارغ ⇒
