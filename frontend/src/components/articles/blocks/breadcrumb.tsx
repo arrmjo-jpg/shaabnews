@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import { env } from '@/lib/env';
 
-// مسار تنقّل المقال (Breadcrumb) + JSON-LD (BreadcrumbList). ملاحظة تكيّف: النسخة المرجعية
-// تبني رابط التصنيف بصيغة `/category-{id}/{slug}` (تعتمد category.id غير الموجود في مخطّط
-// هذا المشروع)؛ استُبدلت بصيغة روابط التصنيف الفعلية المستخدمة في كل مكان آخر بهذا المشروع:
-// `/category/{slug}` (نفس الصيغة المستخدمة أصلاً في article-detail.tsx القديم) — تطابق فعليّ
-// مع نظام التوجيه الحالي، لا تغيير في أي عقد API.
+// مسار تنقّل المقال (Breadcrumb) + JSON-LD (BreadcrumbList). رابط التصنيف: مسار مفرد
+// `/news/category/{slug}` (بلا سلسلة أسلاف — هذا المكوّن لا يملك إلا slug القسم الأساسيّ
+// للمقال، لا سلسلته الكاملة). يطابق item.href في JSON-LD أدناه؛ إن كان القسم متداخلاً
+// فعلياً، /news/category/{slug} يُعيد توجيه 301 لمساره الكامل (لا كسر، مجرّد قفزة إضافية).
 interface BreadcrumbProps {
   category: { name: string; slug: string } | null;
   title: string;
@@ -31,7 +30,7 @@ export function ArticleBreadcrumb({ category, title, articleUrl }: BreadcrumbPro
               '@type': 'ListItem',
               position: 2,
               name: category.name,
-              item: `${siteUrl}/category/${encodeURIComponent(category.slug)}`,
+              item: `${siteUrl}/news/category/${encodeURIComponent(category.slug)}`,
             },
           ]
         : []),
@@ -67,7 +66,7 @@ export function ArticleBreadcrumb({ category, title, articleUrl }: BreadcrumbPro
               <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem" className="flex items-center">
                 <Link
                   itemProp="item"
-                  href={`/category/${encodeURIComponent(category.slug)}`}
+                  href={`/news/category/${encodeURIComponent(category.slug)}`}
                   className="transition-colors hover:text-primary font-medium"
                 >
                   <span itemProp="name">{category.name}</span>

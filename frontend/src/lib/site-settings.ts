@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { z } from 'zod';
 
 import { env } from './env';
+import { categoryHref, getCategoryAncestry } from './feed';
 
 // ── Backend Site Settings contract (GET /api/v1/site?locale=…) ──────────────────────────────
 // Real fields the backend returns today + FORWARD-COMPAT optional SEO/analytics/verification fields.
@@ -11,11 +12,14 @@ import { env } from './env';
 const SocialSchema = z.record(z.string(), z.string());
 
 // Header navigation menu from the CMS (categories flagged `show_in_header`, ordered).
-// Parents may carry children → rendered as a dropdown.
+// Parents may carry children → rendered as a dropdown. `href` is pre-resolved server-side
+// (full ancestry path, mirrors Category::canonicalPath) so client components (MainNav) never
+// need to build category URLs themselves.
 export interface NavCategory {
   name: string;
   slug: string;
-  children: { name: string; slug: string }[];
+  href: string;
+  children: { name: string; slug: string; href: string }[];
 }
 
 const NavCategorySchema = z
@@ -92,11 +96,33 @@ export const getSiteSettings = cache(async (locale = 'ar'): Promise<SiteSettings
   }
 });
 
+// مسار قسم كامل من slug — يحلّ سلسلة الأسلاف الحقيقيّة (getCategoryAncestry، لا يفترض
+// أنّ تجميع قوائم التنقّل يطابق شجرة /categories الفعليّة) ثمّ يبنيها بـcategoryHref.
+// ancestry فارغة (قسم خارج الشجرة) ⇒ ارتداد بمسار مفرد /news/category/{slug}.
+async function resolveCategoryHref(slug: string, locale: string): Promise<string> {
+  const ancestry = await getCategoryAncestry(slug, locale);
+  return ancestry && ancestry.length > 0 ? categoryHref(ancestry) : `/news/category/${encodeURIComponent(slug)}`;
+}
+
 // Header navigation menu (DB-driven). Empty when the admin hasn't enabled any
 // `show_in_header` category → callers fall back to the static nav.
 export async function getNavCategories(locale = 'ar'): Promise<NavCategory[]> {
   const settings = await getSiteSettings(locale);
-  return (settings?.nav_categories ?? []) as NavCategory[];
+  const raw = settings?.nav_categories ?? [];
+  return Promise.all(
+    raw.map(async (cat) => ({
+      name: cat.name,
+      slug: cat.slug,
+      href: await resolveCategoryHref(cat.slug, locale),
+      children: await Promise.all(
+        cat.children.map(async (child) => ({
+          name: child.name,
+          slug: child.slug,
+          href: await resolveCategoryHref(child.slug, locale),
+        })),
+      ),
+    })),
+  );
 }
 
 /** Social values that are absolute URLs (for schema.org sameAs / social rows). */

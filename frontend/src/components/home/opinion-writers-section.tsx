@@ -24,7 +24,7 @@ export async function OpinionWritersSection({
   const items = await getCategoryFeed(category.slug, 6);
   if (items.length === 0) return null;
   const title = category.name.trim() || fallbackTitle || category.slug.replace(/-/g, ' ');
-  const moreHref = items[0]?.categoryHref ?? `/category/${encodeURIComponent(category.slug)}`;
+  const moreHref = category.href;
 
   return (
     <section className="mt-6 bg-white sm:mt-8" dir="rtl" aria-labelledby={headingId}>

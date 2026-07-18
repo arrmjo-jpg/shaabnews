@@ -163,7 +163,7 @@ export async function SiteFooter() {
                     {categories.map((cat) => (
                       <li key={cat.slug}>
                         <Link
-                          href={`/category/${encodeURIComponent(cat.slug)}`}
+                          href={cat.href}
                           className="inline-block text-sm text-white/60 transition-[color,padding] hover:ps-1 hover:text-white motion-reduce:transition-none"
                         >
                           {cat.name}

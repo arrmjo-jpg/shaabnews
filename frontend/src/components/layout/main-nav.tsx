@@ -34,17 +34,17 @@ export function MainNav({ categories = [] }: { categories?: NavCategory[] }) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild className="text-base">
-                  <Link href={`/category/${encodeURIComponent(cat.slug)}`}>كل {cat.name}</Link>
+                  <Link href={cat.href}>كل {cat.name}</Link>
                 </DropdownMenuItem>
                 {cat.children.map((child) => (
                   <DropdownMenuItem key={child.slug} asChild className="text-base">
-                    <Link href={`/category/${encodeURIComponent(child.slug)}`}>{child.name}</Link>
+                    <Link href={child.href}>{child.name}</Link>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link key={cat.slug} href={`/category/${encodeURIComponent(cat.slug)}`} className={LINK}>
+            <Link key={cat.slug} href={cat.href} className={LINK}>
               {cat.name}
             </Link>
           ),

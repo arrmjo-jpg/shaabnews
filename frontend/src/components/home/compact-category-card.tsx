@@ -34,7 +34,7 @@ async function CompactCategoryCard({ categoryId, headingId, fallbackTitle }: Car
   const items = await getCategoryFeed(category.slug, 8);
   if (items.length === 0) return null;
   const title = category.name.trim() || fallbackTitle || category.slug.replace(/-/g, ' ');
-  const moreHref = items[0]?.categoryHref ?? `/category/${encodeURIComponent(category.slug)}`;
+  const moreHref = category.href;
 
   const features = items.slice(0, 2);
   const list = items.slice(2, 8);

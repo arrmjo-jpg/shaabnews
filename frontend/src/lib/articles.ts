@@ -29,7 +29,7 @@ export interface ArticleDetail {
   subtitle: string | null;
   excerpt: string | null;
   contentHtml: string;
-  href: string; // canonical_path بلا بادئة لغة → /articles/{id}-{slug}
+  href: string; // canonicalArticlePath(id, publishedAt) → /news/dd/mm/yyyy/{id}
   publishedAt: string | null;
   viewsCount: number;
   isLive: boolean;
@@ -125,7 +125,6 @@ const ArticleSchema = z
     subtitle: z.string().nullish(),
     excerpt: z.string().nullish(),
     content_html: z.string().nullish(),
-    canonical_path: z.string().nullish(),
     published_at: z.string().nullish(),
     views_count: z.number().nullish(),
     is_live: z.boolean().nullish(),
@@ -168,14 +167,35 @@ const ArticleSchema = z
 type RawArticle = z.infer<typeof ArticleSchema>;
 const ArticleEnvelope = z.object({ data: ArticleSchema.nullish() }).passthrough();
 
-// نزع بادئة اللغة من canonical_path، ثمّ تطبيع مسار المقال القانوني من الباك إند (Article::canonicalPath،
-// وفق ADR A3.6): /article/{id} (بالمفرد، بلا slug) → مسار الواجهة الفعليّ /articles/{id} (بالجمع؛
-// صفحة /articles/[idslug] تقبل id مجرّداً أو id-slug). بلا هذا التطبيع تُصبح روابط كلّ مقال معطوبة.
-function localeless(path: string | null | undefined): string {
-  if (!path) return '#';
-  const stripped = path.replace(/^\/[a-z]{2}(?=\/)/, '');
-  if (!stripped) return '#';
-  return stripped.replace(/^\/article\//, '/articles/');
+// مطابق حرفيّاً لـ Article::canonicalPath() (PHP) — بما في ذلك المنطقة الزمنية
+// (Asia/Amman، config('app.timezone')). ضروريّ: published_at القادم من الـAPI
+// UTC (toISOString())، بينما الباك إند يُنسِّق بالتوقيت المحليّ؛ استخدام UTC هنا
+// كان سينتج تاريخاً مختلفاً قرب منتصف الليل ويُسبِّب حلقة إعادة توجيه كاذبة.
+export function canonicalArticleDateParts(publishedAtIso: string): { dd: string; mm: string; yyyy: string } {
+  const date = new Date(publishedAtIso);
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Amman',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  const parts = fmt.formatToParts(date);
+  const get = (type: string): string => parts.find((p) => p.type === type)?.value ?? '00';
+
+  return { dd: get('day'), mm: get('month'), yyyy: get('year') };
+}
+
+/**
+ * يبني /news/dd/mm/yyyy/{id} — مرآة Article::canonicalPath() الحرفيّة. بلا شرطة
+ * مائلة زائدة (قرار صريح: Next.js يحذفها تلقائياً بإعادة توجيه 308 قبل وصول
+ * الطلب لكود الصفحة، فإبقاؤها في القيمة "القانونية" كانت ستُنتج قفزة توجيه
+ * مزدوجة لا يراها أحد فعلياً — راجع docs/architecture/CACHE-INVALIDATION.md §12).
+ */
+export function canonicalArticlePath(id: number, publishedAtIso: string | null): string {
+  if (!publishedAtIso) return `/news/00/00/0000/${id}`;
+  const { dd, mm, yyyy } = canonicalArticleDateParts(publishedAtIso);
+
+  return `/news/${dd}/${mm}/${yyyy}/${id}`;
 }
 
 function mapImage(i: z.infer<typeof ImageSchema> | null | undefined): ArticleImage | null {
@@ -191,7 +211,7 @@ function mapArticle(a: RawArticle): ArticleDetail {
     subtitle: a.subtitle ?? null,
     excerpt: a.excerpt ?? null,
     contentHtml: a.content_html ?? '',
-    href: localeless(a.canonical_path),
+    href: canonicalArticlePath(a.id, a.published_at ?? null),
     publishedAt: a.published_at ?? null,
     viewsCount: a.views_count ?? 0,
     isLive: a.is_live ?? false,
@@ -226,7 +246,14 @@ function mapArticle(a: RawArticle): ArticleDetail {
   };
 }
 
-/** تفاصيل مقال بالسلَغ المجرّد. النقطة تتبع 301 لسلَغ قديم (fetch redirect:follow). غير موجود/فشل ⇒ null. */
+/**
+ * تفاصيل مقال بمُعرِّف مجرّد. **يجب أن يكون `slug` رقم المقال (id) دائماً في كل
+ * استدعاء جديد** (2026-07-18) — الوسم `article:{slug}` أدناه يطابق حرفياً
+ * `article:{id}` الذي يُصدره الباك إند الآن (FrontendCacheTags::article())؛ تمرير
+ * سلَغ نصّي حقيقيّ هنا يُنتج وسماً لن يُبطِله أي تحديث (نفس عطل الكاش الذي أصلحناه
+ * — راجع docs/architecture/CACHE-INVALIDATION.md). النقطة الخلفية لا تزال تقبل
+ * سلَغاً قديماً احتياطياً (301) لكن هذا لا يُستهلَك من الواجهة بعد الآن.
+ */
 export const getArticle = cache(async (slug: string, locale = 'ar'): Promise<ArticleDetail | null> => {
   if (!env.apiBaseUrl) return null;
   try {

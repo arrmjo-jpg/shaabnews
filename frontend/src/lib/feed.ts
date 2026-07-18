@@ -2,6 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import { z } from 'zod';
 
+import { canonicalArticlePath } from './articles';
 import { env } from './env';
 
 // عنصر تغذية جاهز للعرض (view-model) — لا يتسرّب شكل الـAPI الخام إلى العارض.
@@ -37,7 +38,6 @@ export const ItemSchema = z
     title: z.string(),
     subtitle: z.string().nullish(),
     excerpt: z.string().nullish(),
-    canonical_path: z.string().nullish(),
     published_at: z.string().nullish(),
     is_breaking: z.boolean().nullish(),
     is_live: z.boolean().nullish(),
@@ -58,16 +58,6 @@ type Item = z.infer<typeof ItemSchema>;
 
 const EnvelopeSchema = z.object({ data: z.array(ItemSchema).nullish() }).passthrough();
 
-// نزع بادئة اللغة من canonical_path، ثمّ تطبيع مسار المقال القانوني من الباك إند (Article::canonicalPath،
-// وفق ADR A3.6): /article/{id} (بالمفرد، بلا slug) → مسار الواجهة الفعليّ /articles/{id} (بالجمع؛
-// صفحة /articles/[idslug] تقبل id مجرّداً أو id-slug). بلا هذا التطبيع تُصبح روابط كلّ مقال معطوبة.
-function localeless(path: string | null | undefined): string {
-  if (!path) return '#';
-  const stripped = path.replace(/^\/[a-z]{2}(?=\/)/, '');
-  if (!stripped) return '#';
-  return stripped.replace(/^\/article\//, '/articles/');
-}
-
 // شارة الكرت من أعلام حقيقية فقط: تغطية مباشرة (live) تسبق عاجل (breaking)؛ غير ذلك ⇒ بلا شارة.
 function toBadge(item: Item): FeedItem['badge'] {
   if (item.is_live) return { kind: 'live', label: 'تغطية مباشرة' };
@@ -75,17 +65,28 @@ function toBadge(item: Item): FeedItem['badge'] {
   return null;
 }
 
-export function mapItem(it: Item): FeedItem {
+// href المقال: يُحسَب دوماً من id/published_at (canonicalArticlePath) — لا يُقرأ من canonical_path
+// القادم من الباك إند، لأنّه قد يعكس بيانات لم تُهاجَر بعد لسجلّات أقدم (راجع
+// docs/architecture/CACHE-INVALIDATION.md — تدقيق روابط 2026-07-18). href القسم: سلسلة الأسلاف
+// كاملة (getCategoryAncestry + categoryHref) مطابقةً لـCategory::canonicalPath (الباك إند) —
+// مسار مفرد `/category/{slug}` وحده كان سينتج رابطاً يُعاد توجيهه دوماً بدل القانونيّ مباشرةً.
+export async function mapItem(it: Item): Promise<FeedItem> {
   const slug = it.primary_category?.slug;
+  const ancestry = slug ? await getCategoryAncestry(slug) : null;
   return {
     id: it.id,
     title: it.title,
     excerpt: (it.excerpt ?? it.subtitle ?? '').trim() || null,
-    href: localeless(it.canonical_path),
+    href: canonicalArticlePath(it.id, it.published_at ?? null),
     image: it.cover?.medium ?? it.cover?.url ?? null,
     imageAlt: it.cover?.alt ?? it.title,
     category: it.primary_category?.name ?? null,
-    categoryHref: slug ? `/category/${encodeURIComponent(slug)}` : null,
+    categoryHref:
+      ancestry && ancestry.length > 0
+        ? categoryHref(ancestry)
+        : slug
+          ? `/news/category/${encodeURIComponent(slug)}`
+          : null,
     author: it.author?.name
       ? {
           id: typeof it.author.id === 'number' ? it.author.id : null,
@@ -112,7 +113,7 @@ const fetchFeed = cache(
       if (!res.ok) return [];
       const parsed = EnvelopeSchema.safeParse(await res.json());
       if (!parsed.success) return [];
-      return (parsed.data.data ?? []).map(mapItem);
+      return Promise.all((parsed.data.data ?? []).map(mapItem));
     } catch {
       return [];
     }
@@ -146,7 +147,7 @@ export const getMostReadFeed = cache(async (locale = 'ar', limit = 6): Promise<F
     if (!res.ok) return [];
     const parsed = EnvelopeSchema.safeParse(await res.json());
     if (!parsed.success) return [];
-    return (parsed.data.data ?? []).map(mapItem);
+    return Promise.all((parsed.data.data ?? []).map(mapItem));
   } catch {
     return [];
   }
@@ -170,6 +171,8 @@ export interface CategoryRef {
   id: number;
   name: string;
   slug: string;
+  href: string;
+  description?: string;
   appearance?: CategoryAppearance;
 }
 
@@ -200,6 +203,7 @@ interface RawCategoryNode {
   id?: unknown;
   name?: unknown;
   slug?: unknown;
+  description?: unknown;
   appearance?: unknown;
   children?: unknown;
 }
@@ -224,22 +228,28 @@ const fetchCategoryTree = cache(async (locale: string): Promise<RawCategoryNode[
   }
 });
 
+// href كلّ عقدة يُحسَب أثناء النزول عبر سلسلة أسلافها المتراكمة (لا بحث DFS منفصل لكل عقدة
+// كما في getCategoryAncestry) — نفس صيغة categoryHref(ancestry) أدناه، فمصدر واحد للمسار.
 const fetchCategoryIndex = cache(async (locale: string): Promise<Map<number, CategoryRef>> => {
   const index = new Map<number, CategoryRef>();
-  const walk = (nodes: RawCategoryNode[]): void => {
+  const walk = (nodes: RawCategoryNode[], ancestry: CategoryAncestor[]): void => {
     for (const n of nodes) {
+      let nextAncestry = ancestry;
       if (typeof n.id === 'number' && typeof n.slug === 'string' && n.slug) {
+        nextAncestry = [...ancestry, { id: n.id, name: typeof n.name === 'string' ? n.name : '', slug: n.slug }];
         index.set(n.id, {
           id: n.id,
           name: typeof n.name === 'string' ? n.name : '',
           slug: n.slug,
+          href: categoryHref(nextAncestry),
+          description: typeof n.description === 'string' ? n.description : undefined,
           appearance: readAppearance(n.appearance),
         });
       }
-      if (Array.isArray(n.children)) walk(n.children as RawCategoryNode[]);
+      if (Array.isArray(n.children)) walk(n.children as RawCategoryNode[], nextAncestry);
     }
   };
-  walk(await fetchCategoryTree(locale));
+  walk(await fetchCategoryTree(locale), []);
   return index;
 });
 
@@ -271,6 +281,20 @@ export const getCategoryAncestry = cache(
   },
 );
 
+/**
+ * يبني /news/category/{...} من سلسلة أسلاف كاملة (جذر ⇐ ... ⇐ القسم نفسه) —
+ * مرآة Category::canonicalPath() (PHP). مصدر واحد لكل رابط قسم في الواجهة
+ * (2026-07-18) بدل بناء يدويّ مسطّح `/category/${slug}` مبعثر في عدّة مكوّنات.
+ */
+export function categoryHref(ancestry: Pick<CategoryAncestor, 'slug'>[]): string {
+  if (ancestry.length === 0) return '#';
+
+  // encodeURIComponent لكل مقطع على حدة (لا للمسار كاملاً — كان سيُرمِّز "/" الفاصلة
+  // نفسها). ضروريّ: slugs عربية خام في ترويسة Location (permanentRedirect) تُسقِط
+  // الخادم بـ ERR_INVALID_CHAR — Node.js يرفض أي حرف غير ASCII في ترويسات HTTP.
+  return '/news/category/' + ancestry.map((a) => encodeURIComponent(a.slug)).join('/');
+}
+
 // تصنيف بالـID (مقاوم لإعادة التسمية). غير موجود/محذوف ⇒ null.
 export const getCategoryById = cache(
   async (id: number, locale = 'ar'): Promise<CategoryRef | null> => (await fetchCategoryIndex(locale)).get(id) ?? null,
@@ -301,7 +325,7 @@ export const getCategoryFeed = cache(
       if (!res.ok) return [];
       const parsed = EnvelopeSchema.safeParse(await res.json());
       if (!parsed.success) return [];
-      return (parsed.data.data ?? []).map(mapItem);
+      return Promise.all((parsed.data.data ?? []).map(mapItem));
     } catch {
       return [];
     }
@@ -325,7 +349,7 @@ export const getCategoryFeaturedGrid = cache(
       if (!res.ok) return [];
       const parsed = EnvelopeSchema.safeParse(await res.json());
       if (!parsed.success) return [];
-      return (parsed.data.data ?? []).map(mapItem);
+      return Promise.all((parsed.data.data ?? []).map(mapItem));
     } catch {
       return [];
     }
@@ -376,7 +400,7 @@ export const getCategoryPage = cache(
       if (!res.ok) return empty;
       const parsed = PaginatedEnvelope.safeParse(await res.json());
       if (!parsed.success) return empty;
-      const items = (parsed.data.data ?? []).map(mapItem);
+      const items = await Promise.all((parsed.data.data ?? []).map(mapItem));
       const pg = parsed.data.meta?.pagination;
       return {
         items,

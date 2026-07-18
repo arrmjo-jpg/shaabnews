@@ -61,7 +61,7 @@ export async function getMyActivity(
 
   const items: ActivityItem[] = [];
   for (const row of parsed.data.data ?? []) {
-    const mapped = mapRow(row.content_type, row.item);
+    const mapped = await mapRow(row.content_type, row.item);
     if (mapped) items.push(mapped);
   }
 
@@ -77,10 +77,10 @@ export async function getMyActivity(
 }
 
 // يربط عنصر الاستجابة بـ view-model عبر **المابر الموجود** لكلّ نوع (لا تكرار، لا بطاقة جديدة).
-function mapRow(contentType: string, item: unknown): ActivityItem | null {
+async function mapRow(contentType: string, item: unknown): Promise<ActivityItem | null> {
   if (contentType === 'article') {
     const p = ItemSchema.safeParse(item);
-    return p.success ? { contentType: 'article', data: mapItem(p.data) } : null;
+    return p.success ? { contentType: 'article', data: await mapItem(p.data) } : null;
   }
   if (contentType === 'video') {
     const p = VideoSchema.safeParse(item);

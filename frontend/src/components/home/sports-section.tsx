@@ -47,7 +47,7 @@ export async function SportsSection({
   ]);
   if (items.length === 0) return null;
   const title = category.name.trim() || fallbackTitle || category.slug.replace(/-/g, ' ');
-  const moreHref = items[0]?.categoryHref ?? `/category/${encodeURIComponent(category.slug)}`;
+  const moreHref = category.href;
 
   const feature = items[0];
   const list = items.slice(1, 5);

@@ -14,7 +14,7 @@ export async function SportNews({ headingId = 'sport-news-heading' }: { headingI
   if (!category) return null;
   const items = await getCategoryFeed(category.slug, 6);
   if (items.length === 0) return null;
-  const moreHref = items[0]?.categoryHref ?? `/category/${encodeURIComponent(category.slug)}`;
+  const moreHref = category.href;
 
   return (
     <section dir="rtl" aria-labelledby={headingId}>

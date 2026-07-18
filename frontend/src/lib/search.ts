@@ -53,7 +53,7 @@ export const searchArticles = cache(
       if (!res.ok) return empty;
       const parsed = SearchEnvelope.safeParse(await res.json());
       if (!parsed.success) return empty;
-      const items = (parsed.data.data ?? []).map(mapItem);
+      const items = await Promise.all((parsed.data.data ?? []).map(mapItem));
       const pg = parsed.data.meta?.pagination;
       return {
         items,

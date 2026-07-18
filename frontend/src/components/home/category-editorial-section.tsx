@@ -28,7 +28,7 @@ export async function EditorialCategorySection({
   const features = items.slice(0, 2);
   const list = items.slice(2, 6);
   const hasList = list.length > 0;
-  const moreHref = items[0]?.categoryHref ?? `/category/${encodeURIComponent(category.slug)}`;
+  const moreHref = category.href;
 
   return (
     <section className="mt-6 bg-white sm:mt-8" dir="rtl" aria-labelledby={headingId}>
