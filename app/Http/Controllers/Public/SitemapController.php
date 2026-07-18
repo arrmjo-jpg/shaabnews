@@ -19,6 +19,7 @@ use App\Support\Cache\TeamMemberCacheTags;
 use App\Support\Cache\VideoCacheTags;
 use App\Support\Content\PublicSeoBuilder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\SitemapIndex;
@@ -99,20 +100,36 @@ class SitemapController extends Controller
             function () use ($locale): string {
                 $sitemap = Sitemap::create();
 
+                // USE INDEX (لا FORCE INDEX): بلا هذا التلميح يختار محسّن MySQL
+                // articles_locale_slug_unique (فهرس الـslug، لا صلة له بهذا الاستعلام) بدل
+                // articles_status_locale_pub_idx المطابق تماماً لشرط الاستعلام وترتيبه — رغم
+                // ANALYZE TABLE (قِيس: 32.6ث → 36.9ث، بلا تحسّن، نفس خطة "Using filesort").
+                // نتيجة القرار الخاطئ: filesort على عشرات آلاف الصفّ بدل مسح فهرس عكسيّ مباشر
+                // (32.6ث ← 0.34ث لنفس النتيجة عند إجبار الفهرس الصحيح — قياس، لا افتراض).
+                // USE INDEX (توجيه، غير ملزم) بدل FORCE INDEX: يبقي الخيار الاحتياطيّ لمحسّن
+                // MySQL إن أصبح غير مناسب مستقبلاً (تغيّر توزيع البيانات)، بلا قفل صلب لخطة واحدة.
+                // select() مقصور على الأعمدة التي يقرأها هذا الحلقة فعلياً (id/canonicalPath
+                // عبر published_at،created_at + updated_at + translation_group + locale) —
+                // بلا SELECT *: كان يجرّ content_html/excerpt/… (نصوص كبيرة) لخمسين ألف صفّ
+                // دفعة واحدة رغم عدم قراءتها هنا إطلاقاً. primaryCategory غير مُستخدَم في هذا
+                // المتن (لا article->primaryCategory ولا sib->primaryCategory) ⇐ حُذف eager
+                // load بلا فائدة (كان يُحمَّل ولا يُقرأ قطّ).
                 $articles = Article::query()
+                    ->from(DB::raw('`articles` USE INDEX (articles_status_locale_pub_idx)'))
                     ->published()
                     ->forLocale($locale)
-                    ->with(['primaryCategory:id,slug'])
+                    ->select(['id', 'locale', 'published_at', 'created_at', 'updated_at', 'translation_group'])
                     ->orderByDesc('published_at')
                     ->limit(self::ARTICLES_PER_SITEMAP)
                     ->get();
 
-                // Group siblings by translation_group for hreflang in one pass.
+                // Group siblings by translation_group for hreflang in one pass. نفس تضييق
+                // الأعمدة — sib هنا لا يُقرَأ منه سوى canonicalPath()/locale (لا updated_at).
                 $byGroup = Article::query()
                     ->published()
                     ->whereNotNull('translation_group')
                     ->whereIn('translation_group', $articles->pluck('translation_group')->filter())
-                    ->with('primaryCategory:id,slug')
+                    ->select(['id', 'locale', 'published_at', 'created_at', 'translation_group'])
                     ->get()
                     ->groupBy('translation_group');
 
