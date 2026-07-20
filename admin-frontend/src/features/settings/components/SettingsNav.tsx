@@ -13,6 +13,7 @@ const items = [
   { key: 'mediaStorage', to: paths.settingsMediaStorage, icon: HardDrive },
   { key: 'newspaper', to: paths.settingsNewspaper, icon: Newspaper },
   { key: 'matchBar', to: paths.settingsMatchBar, icon: Trophy },
+  { key: 'sport', to: paths.settingsSport, icon: Trophy },
 ];
 
 export function SettingsNav() {

@@ -456,6 +456,9 @@ export interface CategoryData {
   /** Total articles (primary + secondary) — list endpoint only. */
   articles_count?: number;
   children: CategoryData[];
+  /** ربط تصنيف نوع رياضة بمزوّد بيانات (Sports Engine, Approved Baseline v1.0 §0). */
+  provider?: string | null;
+  external_id?: string | null;
 }
 
 /** A soft-deleted category (flat trash list). */
@@ -496,6 +499,8 @@ export interface CategoryUpsertPayload {
   show_in_body?: boolean;
   show_in_footer?: boolean;
   sort_order?: number;
+  provider?: string | null;
+  external_id?: string | null;
 }
 
 // ─── Unified Media Studio (P9 — central shared assets) ─────────────────────

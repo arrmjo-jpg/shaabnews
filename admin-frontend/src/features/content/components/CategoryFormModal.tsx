@@ -16,6 +16,13 @@ import type {
 const selectCls =
   'h-10 w-full border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
+// معرّف تصنيف "الرياضة" الجذر — نفس الثابت غير المُجرَّد المستخدَم اليوم في الواجهة العامة
+// (frontend/src/components/sport/sport-news.tsx). حقول provider/external_id تُعرَض فقط لتصنيف
+// تحت هذا الجذر — واجهة مستخدم فقط، لا حد تحقّق خلفيّ (الـ backend يقبلها لأيّ تصنيف).
+const SPORT_ROOT_CATEGORY_ID = 4;
+
+const SPORT_PROVIDERS = ['365scores'] as const;
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -38,6 +45,8 @@ interface FormState {
   show_in_header: boolean;
   show_in_body: boolean;
   show_in_footer: boolean;
+  provider: string;
+  external_id: string;
 }
 
 function emptyState(parent: CategoryData | null | undefined): FormState {
@@ -52,6 +61,8 @@ function emptyState(parent: CategoryData | null | undefined): FormState {
     show_in_header: false,
     show_in_body: true,
     show_in_footer: false,
+    provider: '',
+    external_id: '',
   };
 }
 
@@ -85,6 +96,8 @@ export function CategoryFormModal({
         show_in_header: category.show_in_header,
         show_in_body: category.show_in_body,
         show_in_footer: category.show_in_footer,
+        provider: category.provider ?? '',
+        external_id: category.external_id ?? '',
       });
     } else {
       setForm(emptyState(parent));
@@ -111,6 +124,34 @@ export function CategoryFormModal({
     return out;
   }, [allCategories, form.locale, category?.id]);
 
+  // خريطة id -> عقدة كاملة (تُسطَّح مرّة واحدة) — لتسلّق سلسلة الآباء وتحديد ما إذا كان هذا
+  // التصنيف (أو أبوه المختار) تحت جذر "الرياضة".
+  const categoryById = useMemo(() => {
+    const map = new Map<number, CategoryData>();
+    const walk = (nodes: CategoryData[]) => {
+      for (const n of nodes) {
+        map.set(n.id, n);
+        if (Array.isArray(n.children)) walk(n.children);
+      }
+    };
+    walk(allCategories);
+    return map;
+  }, [allCategories]);
+
+  const isDescendantOfSportRoot = (id: number | null): boolean => {
+    let current = id;
+    let guard = 0;
+    while (current !== null && guard < 20) {
+      if (current === SPORT_ROOT_CATEGORY_ID) return true;
+      current = categoryById.get(current)?.parent_id ?? null;
+      guard += 1;
+    }
+    return false;
+  };
+
+  const isSportCategory =
+    isDescendantOfSportRoot(category?.id ?? null) || isDescendantOfSportRoot(form.parent_id);
+
   const patch = (p: Partial<FormState>) => setForm((prev) => ({ ...prev, ...p }));
 
   const submit = () => {
@@ -129,6 +170,12 @@ export function CategoryFormModal({
       show_in_header: form.show_in_header,
       show_in_body: form.show_in_body,
       show_in_footer: form.show_in_footer,
+      ...(isSportCategory
+        ? {
+            provider: form.provider.trim() ? form.provider.trim() : null,
+            external_id: form.external_id.trim() ? form.external_id.trim() : null,
+          }
+        : {}),
     };
 
     if (isEdit && category) {
@@ -281,6 +328,41 @@ export function CategoryFormModal({
             </label>
           ))}
         </div>
+
+        {isSportCategory ? (
+          <div className="space-y-4 border-t border-border pt-4">
+            <p className="text-sm font-medium text-foreground">{t('categories.form.sport.title')}</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="cat-provider">{t('categories.form.sport.provider')}</Label>
+                <select
+                  id="cat-provider"
+                  value={form.provider}
+                  onChange={(e) => patch({ provider: e.target.value })}
+                  className={selectCls}
+                >
+                  <option value="">{t('categories.form.sport.providerNone')}</option>
+                  {SPORT_PROVIDERS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="cat-external-id">{t('categories.form.sport.externalId')}</Label>
+                <Input
+                  id="cat-external-id"
+                  value={form.external_id}
+                  onChange={(e) => patch({ external_id: e.target.value.replace(/[^\d]/g, '') })}
+                  dir="ltr"
+                  placeholder="1"
+                  maxLength={100}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </Modal>
   );

@@ -17,7 +17,9 @@ import AnalyticsSettingsPage from '@/features/settings/pages/AnalyticsSettingsPa
 import MediaStorageSettingsPage from '@/features/settings/pages/MediaStorageSettingsPage';
 import NewspaperSettingsPage from '@/features/settings/pages/NewspaperSettingsPage';
 import MatchBarSettingsPage from '@/features/sport/pages/MatchBarSettingsPage';
+import SportSettingsPage from '@/features/sport/pages/SportSettingsPage';
 import CompetitionsPage from '@/features/sport/pages/CompetitionsPage';
+import SportMenuPage from '@/features/sport/pages/SportMenuPage';
 import ThirdPartyLayoutPage from '@/features/third-party/pages/ThirdPartyLayoutPage';
 import SocialLoginPage from '@/features/third-party/pages/SocialLoginPage';
 import RecaptchaPage from '@/features/third-party/pages/RecaptchaPage';
@@ -256,6 +258,7 @@ export const router = createBrowserRouter([
           { path: paths.settingsMediaStorage, element: <MediaStorageSettingsPage /> },
           { path: paths.settingsNewspaper, element: <NewspaperSettingsPage /> },
           { path: paths.settingsMatchBar, element: <MatchBarSettingsPage /> },
+          { path: paths.settingsSport, element: <SportSettingsPage /> },
         ],
       },
       {
@@ -532,6 +535,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute permission="competitions.view">
             <CompetitionsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: paths.sportMenu,
+        element: (
+          <ProtectedRoute permission="sport_menu.view">
+            <SportMenuPage />
           </ProtectedRoute>
         ),
       },

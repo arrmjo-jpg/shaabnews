@@ -51,5 +51,71 @@
     "eligibleCount": "البطولات المؤهَّلة حاليًّا: {{count}}",
     "noPermission": "لا تملك صلاحية تعديل الإعدادات.",
     "saved": "تم حفظ إعدادات شريط المباريات."
+  },
+  "sportMenu": {
+    "title": "قائمة قسم الرياضة",
+    "subtitle": "عناصر قائمة قسم الرياضة — روابط تصنيفات تحريرية أو أقسام وظيفية (مباريات/نتائج/بطولات...)، بترتيب حرّ وشجرة بمستوى واحد من التداخل.",
+    "new": "عنصر جديد",
+    "addChild": "إضافة عنصر فرعي",
+    "empty": { "title": "لا توجد عناصر بعد", "description": "أضف عنصرًا لبدء بناء قائمة قسم الرياضة." },
+    "status": { "enabled": "مفعَّل", "disabled": "غير مفعَّل" },
+    "form": {
+      "createTitle": "عنصر قائمة جديد",
+      "editTitle": "تعديل عنصر القائمة",
+      "locale": "اللغة",
+      "localeAr": "العربية",
+      "localeEn": "الإنجليزية",
+      "type": "النوع",
+      "typeSection": "قسم وظيفي",
+      "typeCategory": "تصنيف تحريري",
+      "title": "العنوان",
+      "category": "التصنيف",
+      "categoryNone": "اختر تصنيفًا…",
+      "sectionKey": "مفتاح القسم الوظيفي",
+      "sectionKeyHint": "مثال: matches, results, competitions, teams, players, predictions",
+      "parent": "الأب",
+      "parentNone": "بلا أب (عنصر جذر)",
+      "icon": "الأيقونة",
+      "enabled": "مفعَّل",
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ…",
+      "cancel": "إلغاء"
+    },
+    "confirm": {
+      "deleteTitle": "حذف عنصر القائمة؟",
+      "deleteText": "سيُحذف عنصر «{{title}}». لا يمكن التراجع.",
+      "yes": "حذف"
+    },
+    "noPermission": "لا تملك صلاحية إدارة قائمة قسم الرياضة."
+  },
+  "sportSettings": {
+    "theme": {
+      "title": "المظهر",
+      "desc": "الألوان والوضع الافتراضي لقسم الرياضة — مستقلّ عن باقي الموقع."
+    },
+    "defaultTheme": "الوضع الافتراضي",
+    "themeLight": "فاتح",
+    "themeDark": "داكن",
+    "themeSystem": "حسب النظام",
+    "allowThemeSwitch": "السماح بتبديل الوضع",
+    "primaryColor": "اللون الأساسي",
+    "secondaryColor": "اللون الثانوي",
+    "themeCookie": "اسم كوكي المظهر",
+    "defaults": {
+      "title": "الافتراضيات",
+      "desc": "الرياضة والدولة والبطولة الافتراضية عند دخول القسم لأول مرة."
+    },
+    "defaultSport": "الرياضة الافتراضية",
+    "defaultCountry": "الدولة الافتراضية",
+    "defaultCompetition": "البطولة الافتراضية",
+    "features": {
+      "title": "الميزات",
+      "desc": "تفعيل/تعطيل ميزات قسم الرياضة."
+    },
+    "predictionEnabled": "تفعيل لعبة التوقعات",
+    "searchEnabled": "تفعيل بحث الرياضة",
+    "liveScoresEnabled": "تفعيل النتائج المباشرة",
+    "noPermission": "لا تملك صلاحية تعديل الإعدادات.",
+    "saved": "تم حفظ إعدادات قسم الرياضة."
   }
 }

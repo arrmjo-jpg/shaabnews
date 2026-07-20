@@ -1268,6 +1268,12 @@
       "show_in_footer": "في الفوتر",
       "validation": {
         "nameRequired": "اسم القسم مطلوب (حدّ أدنى حرفان)."
+      },
+      "sport": {
+        "title": "ربط الرياضة",
+        "provider": "المزوّد",
+        "providerNone": "بلا مزوّد",
+        "externalId": "المعرّف لدى المزوّد"
       }
     }
   },

@@ -114,7 +114,10 @@ export const navSections: NavSection[] = [
     key: 'sport',
     titleKey: 'sport',
     icon: Trophy,
-    items: [{ key: 'competitions', to: paths.competitions, icon: Trophy, permission: 'competitions.view' }],
+    items: [
+      { key: 'competitions', to: paths.competitions, icon: Trophy, permission: 'competitions.view' },
+      { key: 'sportMenu', to: paths.sportMenu, icon: Trophy, permission: 'sport_menu.view' },
+    ],
   },
   {
     key: 'broadcast',

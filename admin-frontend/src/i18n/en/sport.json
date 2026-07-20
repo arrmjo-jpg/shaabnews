@@ -51,5 +51,71 @@
     "eligibleCount": "Currently eligible competitions: {{count}}",
     "noPermission": "You don't have permission to edit settings.",
     "saved": "Match Bar settings saved."
+  },
+  "sportMenu": {
+    "title": "Sport Menu",
+    "subtitle": "Sport section menu items — editorial category links or functional sections (matches/results/competitions...), freely ordered as a one-level-deep tree.",
+    "new": "New item",
+    "addChild": "Add child item",
+    "empty": { "title": "No items yet", "description": "Add an item to start building the Sport section menu." },
+    "status": { "enabled": "Enabled", "disabled": "Disabled" },
+    "form": {
+      "createTitle": "New menu item",
+      "editTitle": "Edit menu item",
+      "locale": "Locale",
+      "localeAr": "Arabic",
+      "localeEn": "English",
+      "type": "Type",
+      "typeSection": "Functional section",
+      "typeCategory": "Editorial category",
+      "title": "Title",
+      "category": "Category",
+      "categoryNone": "Choose a category…",
+      "sectionKey": "Section key",
+      "sectionKeyHint": "e.g. matches, results, competitions, teams, players, predictions",
+      "parent": "Parent",
+      "parentNone": "No parent (root item)",
+      "icon": "Icon",
+      "enabled": "Enabled",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel"
+    },
+    "confirm": {
+      "deleteTitle": "Delete menu item?",
+      "deleteText": "This will delete “{{title}}”. This cannot be undone.",
+      "yes": "Delete"
+    },
+    "noPermission": "You don't have permission to manage the Sport menu."
+  },
+  "sportSettings": {
+    "theme": {
+      "title": "Appearance",
+      "desc": "Colors and default theme for the Sport section — independent from the rest of the site."
+    },
+    "defaultTheme": "Default theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "allowThemeSwitch": "Allow theme switching",
+    "primaryColor": "Primary color",
+    "secondaryColor": "Secondary color",
+    "themeCookie": "Theme cookie name",
+    "defaults": {
+      "title": "Defaults",
+      "desc": "Default sport, country, and competition when first entering the section."
+    },
+    "defaultSport": "Default sport",
+    "defaultCountry": "Default country",
+    "defaultCompetition": "Default competition",
+    "features": {
+      "title": "Features",
+      "desc": "Enable/disable Sport section features."
+    },
+    "predictionEnabled": "Enable Prediction Game",
+    "searchEnabled": "Enable Sport search",
+    "liveScoresEnabled": "Enable live scores",
+    "noPermission": "You don't have permission to edit settings.",
+    "saved": "Sport settings saved."
   }
 }
