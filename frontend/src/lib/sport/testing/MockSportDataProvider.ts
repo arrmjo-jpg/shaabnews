@@ -2,13 +2,28 @@
 // بالعمل ضدّ الواجهة مباشرة، بلا أي تمويه لـ fetch وبلا أي اتصال فعلي بـ Scores365Adapter/365Scores.
 import type {
   Competition,
+  CompetitionBracketStage,
+  CompetitionChampion,
+  CompetitionFixtures,
+  CompetitionInsightsSummary,
+  CompetitionMatchListing,
   CompetitionProfile,
   CompetitionRoster,
+  CompetitionStatsSummary,
   Country,
+  FixtureTrend,
+  HeadToHead,
   Match,
   MatchDetail,
+  MatchStatRow,
+  MatchTrendsSummary,
   Player,
+  PlayerCareer,
+  PlayerRecentMatch,
   PlayerStatLine,
+  PlayerTrophy,
+  PreGameComparison,
+  ShotChart,
   SquadMember,
   Standing,
   Statistic,
@@ -31,7 +46,26 @@ export interface MockSportDataProviderCanned {
   teamSquad?: SquadMember[];
   playerProfile?: Player | null;
   playerStats?: PlayerStatLine[];
+  competitionGamesList?: CompetitionFixtures;
+  competitionMatchListing?: CompetitionMatchListing;
+  competitionStatsSummary?: CompetitionStatsSummary | null;
+  competitionHistory?: CompetitionChampion[];
+  competitionBrackets?: CompetitionBracketStage[];
+  competitionInsights?: CompetitionInsightsSummary | null;
+  fixtureTrends?: FixtureTrend[];
+  matchStats?: MatchStatRow[];
+  preGameComparison?: PreGameComparison | null;
+  matchTrendsSummary?: MatchTrendsSummary | null;
+  headToHead?: HeadToHead | null;
+  shotChart?: ShotChart | null;
+  playerRecentMatches?: PlayerRecentMatch[];
+  playerCareer?: PlayerCareer;
+  playerTrophies?: PlayerTrophy[];
 }
+
+const EMPTY_COMPETITION_FIXTURES: CompetitionFixtures = { fixtures: [], results: [] };
+const EMPTY_MATCH_LISTING: CompetitionMatchListing = { today: [], upcoming: [], recent: [], fixtures: [], results: [] };
+const EMPTY_PLAYER_CAREER: PlayerCareer = { sections: [], competitions: [] };
 
 export class MockSportDataProvider implements SportDataProvider {
   constructor(private readonly canned: MockSportDataProviderCanned = {}) {}
@@ -86,5 +120,65 @@ export class MockSportDataProvider implements SportDataProvider {
 
   async getPlayerStats(): Promise<PlayerStatLine[]> {
     return this.canned.playerStats ?? [];
+  }
+
+  async getCompetitionGamesList(): Promise<CompetitionFixtures> {
+    return this.canned.competitionGamesList ?? EMPTY_COMPETITION_FIXTURES;
+  }
+
+  async getCompetitionMatchListing(): Promise<CompetitionMatchListing> {
+    return this.canned.competitionMatchListing ?? EMPTY_MATCH_LISTING;
+  }
+
+  async getCompetitionStatsSummary(): Promise<CompetitionStatsSummary | null> {
+    return this.canned.competitionStatsSummary ?? null;
+  }
+
+  async getCompetitionHistory(): Promise<CompetitionChampion[]> {
+    return this.canned.competitionHistory ?? [];
+  }
+
+  async getCompetitionBrackets(): Promise<CompetitionBracketStage[]> {
+    return this.canned.competitionBrackets ?? [];
+  }
+
+  async getCompetitionInsights(): Promise<CompetitionInsightsSummary | null> {
+    return this.canned.competitionInsights ?? null;
+  }
+
+  async getFixtureTrends(): Promise<FixtureTrend[]> {
+    return this.canned.fixtureTrends ?? [];
+  }
+
+  async getMatchStats(): Promise<MatchStatRow[]> {
+    return this.canned.matchStats ?? [];
+  }
+
+  async getPreGameComparison(): Promise<PreGameComparison | null> {
+    return this.canned.preGameComparison ?? null;
+  }
+
+  async getMatchTrendsSummary(): Promise<MatchTrendsSummary | null> {
+    return this.canned.matchTrendsSummary ?? null;
+  }
+
+  async getHeadToHead(): Promise<HeadToHead | null> {
+    return this.canned.headToHead ?? null;
+  }
+
+  async getShotChart(): Promise<ShotChart | null> {
+    return this.canned.shotChart ?? null;
+  }
+
+  async getPlayerRecentMatches(): Promise<PlayerRecentMatch[]> {
+    return this.canned.playerRecentMatches ?? [];
+  }
+
+  async getPlayerCareer(): Promise<PlayerCareer> {
+    return this.canned.playerCareer ?? EMPTY_PLAYER_CAREER;
+  }
+
+  async getPlayerTrophies(): Promise<PlayerTrophy[]> {
+    return this.canned.playerTrophies ?? [];
   }
 }

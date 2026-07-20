@@ -36,4 +36,27 @@ describe('Scores365Adapter — تفويض رقيق إلى games.ts/stats.ts', ()
     await expect(adapter.getPlayerProfile(1)).resolves.toBeNull();
     await expect(adapter.getPlayerStats(1, 1)).resolves.toEqual([]);
   });
+
+  it('يفوّض دوال الجولة الثانية (صفحات البطولة/المباراة/اللاعب الفعلية) بنفس اتفاقية الفشل المغلَق', async () => {
+    stubEmptyFetch();
+    const adapter = new Scores365Adapter();
+
+    await expect(adapter.getCompetitionGamesList(1)).resolves.toEqual({ fixtures: [], results: [] });
+    await expect(adapter.getCompetitionMatchListing(1)).resolves.toEqual({ today: [], upcoming: [], recent: [], fixtures: [], results: [] });
+    await expect(adapter.getCompetitionStatsSummary(1)).resolves.toBeNull();
+    await expect(adapter.getCompetitionHistory(1)).resolves.toEqual([]);
+    await expect(adapter.getCompetitionBrackets(1)).resolves.toEqual([]);
+    await expect(adapter.getCompetitionInsights(1)).resolves.toBeNull();
+    await expect(adapter.getFixtureTrends(1)).resolves.toEqual([]);
+
+    await expect(adapter.getMatchStats(1)).resolves.toEqual([]);
+    await expect(adapter.getPreGameComparison(1)).resolves.toBeNull();
+    await expect(adapter.getMatchTrendsSummary(1)).resolves.toBeNull();
+    await expect(adapter.getHeadToHead(1)).resolves.toBeNull();
+    await expect(adapter.getShotChart(1)).resolves.toBeNull();
+
+    await expect(adapter.getPlayerRecentMatches(1)).resolves.toEqual([]);
+    await expect(adapter.getPlayerCareer(1)).resolves.toEqual({ sections: [], competitions: [] });
+    await expect(adapter.getPlayerTrophies(1, [])).resolves.toEqual([]);
+  });
 });
