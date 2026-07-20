@@ -22,4 +22,18 @@ describe('Scores365Adapter — تفويض رقيق إلى games.ts/stats.ts', ()
     await expect(adapter.getMatchesByCountry(1, '2026-07-20')).resolves.toEqual([]);
     await expect(adapter.getTopScorers([])).resolves.toEqual([]);
   });
+
+  it('يفوّض دوال صفحات التفصيل الأربع (Phase 1.4 §34) بنفس اتفاقية الفشل المغلَق', async () => {
+    stubEmptyFetch();
+    const adapter = new Scores365Adapter();
+
+    await expect(adapter.getMatchDetail(1)).resolves.toBeNull();
+    await expect(adapter.getCompetitionProfile(1)).resolves.toBeNull();
+    await expect(adapter.getCompetitionRoster(1)).resolves.toEqual([]);
+    await expect(adapter.getStandings(1)).resolves.toBeNull();
+    await expect(adapter.getTeamProfile(1)).resolves.toBeNull();
+    await expect(adapter.getTeamSquad(1)).resolves.toEqual([]);
+    await expect(adapter.getPlayerProfile(1)).resolves.toBeNull();
+    await expect(adapter.getPlayerStats(1, 1)).resolves.toEqual([]);
+  });
 });
