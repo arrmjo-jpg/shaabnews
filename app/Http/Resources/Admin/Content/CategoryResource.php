@@ -30,6 +30,9 @@ class CategoryResource extends JsonResource
             'show_in_body' => $this->show_in_body,
             'show_in_footer' => $this->show_in_footer,
             'sort_order' => $this->sort_order,
+            'provider' => $this->provider,
+            'external_id' => $this->external_id,
+            'provider_metadata' => $this->provider_metadata,
             'created_at' => $this->created_at?->toISOString(),
             'children' => CategoryResource::collection($this->whenLoaded('children')),
         ];

@@ -42,6 +42,7 @@ class Category extends Model
         'parent_id', 'locale', 'scope', 'name', 'slug', 'description',
         'icon', 'status', 'show_in_header', 'show_in_body',
         'show_in_footer', 'sort_order',
+        'provider', 'external_id',
     ];
 
     protected $fillable = [
@@ -58,6 +59,9 @@ class Category extends Model
         'show_in_body',
         'show_in_footer',
         'sort_order',
+        'provider',
+        'external_id',
+        'provider_metadata',
     ];
 
     protected function casts(): array
@@ -69,6 +73,7 @@ class Category extends Model
             'show_in_body' => 'boolean',
             'show_in_footer' => 'boolean',
             'sort_order' => 'integer',
+            'provider_metadata' => 'array',
         ];
     }
 

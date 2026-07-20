@@ -5,6 +5,7 @@ use App\Settings\GeneralSettings;
 use App\Settings\MatchBarSettings;
 use App\Settings\NewspaperSettings;
 use App\Settings\NotificationSettings;
+use App\Settings\SportSettings;
 use App\Settings\ThirdPartySettings;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelSettings\SettingsCasts\DataCast;
@@ -26,6 +27,7 @@ return [
         NewspaperSettings::class,
         NotificationSettings::class,
         MatchBarSettings::class,
+        SportSettings::class,
     ],
 
     /*

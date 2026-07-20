@@ -24,6 +24,11 @@ class PublicCategoryResource extends JsonResource
             'description' => $this->description,
             'icon' => $this->icon,
             'locale' => $this->locale,
+            // provider/external_id: عامّان عمدًا — الواجهة تحتاجهما لتوجيه تصنيف نوع الرياضة
+            // إلى محرّك الرياضة (SportProviderResolver، Approved Architecture Baseline v1.0 §0).
+            // provider_metadata يبقى إداريًّا فقط، بلا عقد عامّ محدَّد لشكله.
+            'provider' => $this->provider,
+            'external_id' => $this->external_id,
             // حلٌّ تكراريّ إلى مصفوفة (لا كائن AnonymousResourceCollection): الأكشن
             // يخزّن الناتج في الكاش، وكائن المورد غير المحلول يُسلسَل ويعود عند القراءة
             // كـ __PHP_Incomplete_Class فيكسر الـJSON. مصفوفة محضة تبقى سليمة دائماً.
