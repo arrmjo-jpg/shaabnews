@@ -43,6 +43,10 @@ class UpdateCategoryRequest extends BaseFormRequest
             'show_in_body' => ['sometimes', 'boolean'],
             'show_in_footer' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:65535'],
+            // ربط تصنيف نوع رياضة بمزوّد بيانات (Approved Architecture Baseline v1.0 §0) —
+            // provider_metadata عمداً بلا حقل نموذج هنا (بلا شكل مُعرَّف بعد، إداريّ تقنيّ فقط).
+            'provider' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'external_id' => ['sometimes', 'nullable', 'string', 'max:100'],
         ];
     }
 }

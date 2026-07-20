@@ -38,7 +38,8 @@ class UpdateCategoryAction
         }
 
         foreach (['name', 'description', 'icon', 'scope', 'status', 'show_in_header',
-            'show_in_body', 'show_in_footer', 'sort_order', 'locale'] as $field) {
+            'show_in_body', 'show_in_footer', 'sort_order', 'locale',
+            'provider', 'external_id'] as $field) {
             if (array_key_exists($field, $validated)) {
                 $category->{$field} = $validated[$field];
             }

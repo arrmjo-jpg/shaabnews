@@ -39,6 +39,8 @@ class CreateCategoryAction
             'show_in_body' => $validated['show_in_body'] ?? true,
             'show_in_footer' => $validated['show_in_footer'] ?? false,
             'sort_order' => $validated['sort_order'] ?? 0,
+            'provider' => $validated['provider'] ?? null,
+            'external_id' => $validated['external_id'] ?? null,
         ]);
 
         // slug صريح اختياري — وإلا يولّده Sluggable (عربي-المحافظة، فريد/لغة)

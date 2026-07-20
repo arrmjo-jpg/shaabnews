@@ -169,6 +169,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'sport' => [
                 ['name' => 'competitions.view',   'display_name' => 'عرض البطولات',   'description' => 'عرض قائمة البطولات وتغطيتها وأعلام شريط المباريات'],
                 ['name' => 'competitions.manage', 'display_name' => 'إدارة البطولات', 'description' => 'إنشاء/تعديل/حذف بطولة، تفعيل تغطيتها ومزامنتها، وضبط ظهورها في شريط المباريات'],
+                ['name' => 'sport_menu.view',   'display_name' => 'عرض قائمة الرياضة',  'description' => 'عرض عناصر قائمة قسم الرياضة (تصنيفات وأقسام وظيفية)'],
+                ['name' => 'sport_menu.manage', 'display_name' => 'إدارة قائمة الرياضة', 'description' => 'إنشاء/تعديل/ترتيب/حذف عناصر قائمة قسم الرياضة'],
             ],
 
             'broadcast' => [

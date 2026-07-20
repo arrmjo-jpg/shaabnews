@@ -42,6 +42,8 @@ use App\Http\Controllers\Api\V1\Admin\Settings\MediaController;
 use App\Http\Controllers\Api\V1\Admin\Settings\SettingsController;
 use App\Http\Controllers\Api\V1\Admin\Sport\CompetitionController;
 use App\Http\Controllers\Api\V1\Admin\Sport\MatchBarSettingsController;
+use App\Http\Controllers\Api\V1\Admin\Sport\SportMenuItemController;
+use App\Http\Controllers\Api\V1\Admin\Sport\SportSettingsController;
 use App\Http\Controllers\Api\V1\Admin\System\FailedJobController;
 use App\Http\Controllers\Api\V1\Admin\System\OpsController;
 use App\Http\Controllers\Api\V1\Admin\System\SystemController;
@@ -467,6 +469,36 @@ Route::prefix('competitions')->group(function (): void {
 Route::prefix('settings/match-bar')->group(function (): void {
     Route::get('/', [MatchBarSettingsController::class, 'show']);
     Route::put('/', [MatchBarSettingsController::class, 'update'])
+        ->middleware('permission:settings.edit');
+});
+
+// ─── Sport Menu Items — قائمة قسم الرياضة (تصنيفات + أقسام وظيفية)، شجرة (أب/أبناء) بمستوى
+// واحد من التداخل. حجم متوقَّع صغير ⇒ بلا ترقيم صفحات/حذف ناعم (Phase 1.1). ─────────────────
+Route::prefix('sport-menu-items')->group(function (): void {
+    Route::get('/', [SportMenuItemController::class, 'index'])
+        ->middleware('permission:sport_menu.view');
+
+    Route::post('/', [SportMenuItemController::class, 'store'])
+        ->middleware('permission:sport_menu.manage');
+
+    // إعادة الترتيب — مسار حرفيّ قبل {sportMenuItem} الرقمي.
+    Route::patch('/reorder', [SportMenuItemController::class, 'reorder'])
+        ->middleware('permission:sport_menu.manage');
+
+    Route::put('/{sportMenuItem}', [SportMenuItemController::class, 'update'])
+        ->middleware('permission:sport_menu.manage')
+        ->whereNumber('sportMenuItem');
+
+    Route::delete('/{sportMenuItem}', [SportMenuItemController::class, 'destroy'])
+        ->middleware('permission:sport_menu.manage')
+        ->whereNumber('sportMenuItem');
+});
+
+// ─── إعدادات قسم الرياضة العامة (Sport Settings) — نمط القراءة/الكتابة نفسه أعلاه
+// (settings.edit فقط للكتابة، لا صلاحية إضافية للقراءة). ────────────────────────────────
+Route::prefix('settings/sport')->group(function (): void {
+    Route::get('/', [SportSettingsController::class, 'show']);
+    Route::put('/', [SportSettingsController::class, 'update'])
         ->middleware('permission:settings.edit');
 });
 

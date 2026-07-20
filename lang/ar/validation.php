@@ -90,6 +90,7 @@ return [
     'not_regex' => 'صيغة :attribute غير صحيحة.',
     'numeric' => ':attribute يجب أن يكون رقماً.',
     'present' => 'حقل :attribute يجب أن يكون موجوداً.',
+    'prohibited_if' => 'حقل :attribute ممنوع عندما يكون :other هو :value.',
     'regex' => 'صيغة :attribute غير صحيحة.',
     'required' => 'حقل :attribute مطلوب.',
     'required_if' => 'حقل :attribute مطلوب عندما يكون :other هو :value.',
