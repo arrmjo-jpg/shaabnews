@@ -8,23 +8,23 @@ use App\Actions\Admin\Sport\ShowCompetitionBarSettingsAction;
 use App\Actions\Admin\Sport\UpdateCompetitionBarSettingsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Sport\UpdateBarSettingsRequest;
-use App\Settings\MatchBarSettings;
+use App\Settings\SportsHomeBarSettings;
 use Illuminate\Http\JsonResponse;
 
-class MatchBarSettingsController extends Controller
+class SportsHomeBarSettingsController extends Controller
 {
     public function show(ShowCompetitionBarSettingsAction $action): JsonResponse
     {
-        return $action->handle(app(MatchBarSettings::class)->enabled, 'show_in_match_bar');
+        return $action->handle(app(SportsHomeBarSettings::class)->enabled, 'show_in_sports_home_bar');
     }
 
     public function update(UpdateBarSettingsRequest $request, UpdateCompetitionBarSettingsAction $action): JsonResponse
     {
         return $action->handle(
-            settings: app(MatchBarSettings::class),
+            settings: app(SportsHomeBarSettings::class),
             enabled: (bool) $request->validated()['enabled'],
-            auditGroup: 'match_bar',
-            cacheTag: 'match-bar',
+            auditGroup: 'sports_home_bar',
+            cacheTag: 'sports-home-bar',
         );
     }
 }

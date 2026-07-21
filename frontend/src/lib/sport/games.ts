@@ -1,5 +1,4 @@
 import 'server-only';
-import { unstable_cache } from 'next/cache';
 import { z } from 'zod';
 import { todayAmman, ymdToDmy } from './day';
 
@@ -177,30 +176,6 @@ export async function getMatchesByCompetition(sportId = 1, date?: string): Promi
     map.get(cid)!.matches.push({ id: g.id, kind, statusText: g.statusText ?? null, minute, startTime: g.startTime ?? null, home, away });
   }
   return order.map((id) => map.get(id)!);
-}
-
-// الدوريات العربية — مباريات يومٍ مُعيَّن مُجمّعة بالبطولة، مُرشَّحة لبطولات الدول العربية فقط (الفلتر على
-// **اسم دولة البطولة من المصدر** — أسماء عربيّة قصيرة كما يعيدها 365Scores بـlangId=27). يُعاد استخدامه
-// في ودجت هوم «الدوريات العربية». عزل فشل: لا بيانات ⇒ [] (لا تلفيق).
-const ARAB_COUNTRIES = new Set<string>([
-  'السعودية', 'مصر', 'العراق', 'الأردن', 'الإمارات', 'قطر', 'الكويت', 'البحرين', 'عُمان', 'عمان',
-  'سوريا', 'سورية', 'لبنان', 'فلسطين', 'اليمن', 'السودان', 'ليبيا', 'تونس', 'الجزائر', 'المغرب',
-  'موريتانيا', 'الصومال', 'جيبوتي', 'جزر القمر',
-]);
-
-// النتيجة المُرشَّحة صغيرة (≤12 بطولة) بينما استجابة allscores الخامّة >2MB فلا تُخزَّن في Data Cache
-// (Next يعجز عن تخزين إدخال >2MB ⇒ تُعاد جلباً كلّ رندر ⇒ بُطء الهوم). نلفّ المُخرَج الصغير بـ
-// unstable_cache: العمل الثقيل (الجلب + الترشيح) يجري مرّة كلّ 60s عبر كلّ الرندرات لا مرّة لكلّ طلب،
-// فتبقى الهوم سريعة. مفتاح بالتاريخ/الحدّ؛ نفس وسم الإبطال الحدثيّ sport-games.
-export async function getArabMatchesByCompetition(date?: string, limit = 12): Promise<CompetitionGroup[]> {
-  return unstable_cache(
-    async () => {
-      const all = await getMatchesByCompetition(1, date);
-      return all.filter((g) => g.country !== null && ARAB_COUNTRIES.has(g.country)).slice(0, limit);
-    },
-    ['arab-matches', date ?? 'today', String(limit)],
-    { revalidate: 60, tags: ['sport-games'] },
-  )();
 }
 
 // تجميع مباريات اليوم **بالدولة → البطولة → المباريات** (لقائمة «الدول» المنسدلة). يتبع التاريخ المختار؛ مرتّب بعدد المباريات.

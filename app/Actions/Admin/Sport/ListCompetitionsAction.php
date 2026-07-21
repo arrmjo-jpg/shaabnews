@@ -14,7 +14,7 @@ final class ListCompetitionsAction
 {
     public function handle(): JsonResponse
     {
-        $competitions = Competition::query()->orderBy('name')->get();
+        $competitions = Competition::query()->withCount('fixtures')->orderBy('name')->get();
 
         return ApiResponse::success(data: CompetitionResource::collection($competitions));
     }

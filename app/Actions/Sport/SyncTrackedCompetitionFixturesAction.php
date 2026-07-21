@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Cache;
  * show_in_match_bar): تعطيل بطولة في الشريط لا يوقف مزامنتها هنا، وتفعيلها في الشريط لا يُسرِّع
  * مزامنتها هنا — فصل بنيويّ (راجع Competition::class docblock). idempotent (updateOrCreate
  * بـ(provider, provider_id)) + قفل موزّع يمنع التداخل. يُدار عبر SchedulerRegistry.
- * لا تقليم هنا: الشريط يعرض أرشيف البطولة كاملًا (راجع BuildMatchBarAction)، فحذف مواعيد
+ * لا تقليم هنا: الأشرطة تعرض أرشيف البطولة كاملًا (راجع BuildCompetitionBarAction)، فحذف مواعيد
  * منقضية يُفقِد بيانات لا يزال العرض بحاجتها.
  *
  * @return int عدد المواعيد المُزامَنة
@@ -28,7 +28,11 @@ final class SyncTrackedCompetitionFixturesAction
 
     public function handle(): int
     {
-        $lock = Cache::lock(self::LOCK_KEY, 280);
+        // TTL مرفوع من 280 إلى 1800 ثانية (2026-07-20): قياس حقيقي أظهر أنّ دورة كاملة لـ61 بطولة
+        // متتبَعة استغرقت 469 ثانية (تتجاوز 280) — قفل أقصر من زمن التنفيذ الفعلي يسمح بتداخل
+        // دورتين، وهو بالضبط ما يُفترَض بالقفل منعه. الهامش هنا مبنيّ على توسّع النطاق لاحقًا
+        // (130 بطولة متتبَعة بعد استيراد بطولات اليوم + البطولات العربية).
+        $lock = Cache::lock(self::LOCK_KEY, 1800);
         if (! $lock->get()) {
             return 0; // تشغيل آخر جارٍ — تخطٍّ آمن
         }
@@ -71,7 +75,15 @@ final class SyncTrackedCompetitionFixturesAction
                     $synced++;
                 }
 
-                $competition->update(['last_synced_at' => now()]);
+                // logo_url يُحدَّث فقط حين يملك المزوّد صورة فعليّة لهذه البطولة — لا يُفرَغ أبدًا
+                // (لا نستبدل شعارًا مُدخَلًا يدويًّا أو مُزامَنًا سابقًا بـ null لمجرّد أنّ ردّ هذه
+                // الدورة تحديدًا لم يتضمّن meta البطولة). idempotent: نفس imageVersion ⇒ نفس الرابط.
+                $logoUrl = $this->client->competitionLogo($competition->provider_id);
+
+                $competition->update([
+                    'last_synced_at' => now(),
+                    ...($logoUrl !== null ? ['logo_url' => $logoUrl] : []),
+                ]);
             }
 
             return $synced;

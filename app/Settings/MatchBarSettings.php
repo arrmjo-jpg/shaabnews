@@ -4,17 +4,13 @@ declare(strict_types=1);
 
 namespace App\Settings;
 
-use Spatie\LaravelSettings\Settings;
-
 /**
- * إعداد شريط المباريات على مستوى الموقع. القيمة الخام (string) تُطابَق MatchBarSource
- * عند القراءة — راجع BuildMatchBarAction. لا تخزين مباشر للـenum هنا لتفادي أيّ تعقيد في
- * تحويل Spatie Settings؛ التحقّق من القيم المسموحة يقع في UpdateMatchBarSettingsRequest.
+ * إعداد شريط المباريات على مستوى الموقع — مفتاح تفعيل/تعطيل واحد فقط. أيّ بطولة تظهر
+ * أو تُخفى إنّما يُقرَّر عبر Competition::show_in_match_bar (راجع BuildCompetitionBarAction)،
+ * لا عبر إعداد هنا.
  */
-class MatchBarSettings extends Settings
+class MatchBarSettings extends BarSettings
 {
-    public string $source;
-
     public static function group(): string
     {
         return 'match_bar';

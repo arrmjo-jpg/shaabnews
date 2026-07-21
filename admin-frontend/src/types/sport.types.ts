@@ -11,11 +11,15 @@ export interface CompetitionData {
 
   is_tracked: boolean;
   last_synced_at: string | null;
+  fixtures_count: number;
 
   is_featured_tournament: boolean;
   featured_until: string | null;
   show_in_match_bar: boolean;
   match_bar_sort_order: number | null;
+
+  show_in_sports_home_bar: boolean;
+  sports_home_bar_sort_order: number | null;
 
   created_at: string | null;
 }
@@ -36,12 +40,13 @@ export interface CompetitionUpdatePayload {
   featured_until?: string | null;
   show_in_match_bar?: boolean;
   match_bar_sort_order?: number | null;
+  show_in_sports_home_bar?: boolean;
+  sports_home_bar_sort_order?: number | null;
 }
 
-export type MatchBarSource = 'disabled' | 'featured_competitions' | 'regular_leagues';
-
-export interface MatchBarSettingsData {
-  source: MatchBarSource;
+/** مشتركة بين Match Bar وSports Home Bar — نفس الشكل لكليهما. */
+export interface BarSettingsData {
+  enabled: boolean;
   eligible_competitions_count: number;
 }
 

@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\Public\Content\WriterReelController;
 use App\Http\Controllers\Api\V1\Public\Content\WriterVideoController;
 use App\Http\Controllers\Api\V1\Public\Follow\FollowController;
 use App\Http\Controllers\Api\V1\Public\MatchBarController;
+use App\Http\Controllers\Api\V1\Public\SportsHomeBarController;
 use App\Http\Controllers\Api\V1\Public\Media\WriterMediaController;
 use App\Http\Controllers\Api\V1\Public\NotificationController;
 use App\Http\Controllers\Api\V1\Public\Polls\PollController;
@@ -187,9 +188,14 @@ Route::middleware('throttle:public.read')
     ->get('/redirects/team', [TeamMemberController::class, 'redirect']);
 
 // ─── شريط المباريات (عام) — نطاق مستقل عربي فقط: لا بادئة {locale}، مثل team/broadcasts.
-// منظر مُصفّى فوق بيانات مُزامَنة أصلًا (Competition::is_tracked) — راجع BuildMatchBarAction.
+// منظر مُصفّى فوق بيانات مُزامَنة أصلًا (Competition::is_tracked) — راجع BuildCompetitionBarAction.
 Route::middleware(['public.cache', 'throttle:public.read'])
     ->get('/match-bar', [MatchBarController::class, 'show']);
+
+// ─── شريط الصفحة الرئيسية للرياضة (عام) — ميزة مستقلّة تمامًا عن شريط المباريات أعلاه، تشترك
+// معه فقط بجدول Competition كمصدر بطولات واحد ونفس BuildCompetitionBarAction بأعمدة مختلفة.
+Route::middleware(['public.cache', 'throttle:public.read'])
+    ->get('/sports-home-bar', [SportsHomeBarController::class, 'show']);
 
 // ─── البثّ العام (B4) — نطاق مستقل عربي فقط: لا بادئة {locale} ────────────
 // النوع قطعةُ مسارٍ محصورة بـ where (live|tv|radio) فلا تُلتقط كـ slug ولا تتقاطع

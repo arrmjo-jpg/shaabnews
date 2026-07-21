@@ -1,16 +1,27 @@
 import { http } from './http/client';
 import type { ApiSuccess } from '@/types/api';
 import type {
+  BarSettingsData,
   CompetitionCreatePayload,
   CompetitionData,
   CompetitionUpdatePayload,
-  MatchBarSettingsData,
-  MatchBarSource,
   SportMenuItemData,
   SportMenuItemPayload,
   SportSettingsData,
   SportSettingsPayload,
 } from '@/types/sport.types';
+
+type BarEndpoint = 'match-bar' | 'sports-home-bar';
+
+async function toggleCompetitionBar(endpoint: BarEndpoint, id: number): Promise<string> {
+  const { data } = await http.patch<ApiSuccess<CompetitionData>>(`/admin/competitions/${id}/${endpoint}`);
+  return data.message;
+}
+
+async function reorderCompetitionsBar(endpoint: BarEndpoint, ids: number[]): Promise<string> {
+  const { data } = await http.patch<ApiSuccess<unknown>>(`/admin/competitions/${endpoint}/reorder`, { ids });
+  return data.message;
+}
 
 export const competitionsService = {
   async list(): Promise<CompetitionData[]> {
@@ -32,18 +43,32 @@ export const competitionsService = {
     const { data } = await http.delete<ApiSuccess<unknown>>(`/admin/competitions/${id}`);
     return data.message;
   },
+
+  toggleMatchBar: (id: number) => toggleCompetitionBar('match-bar', id),
+  reorderMatchBar: (ids: number[]) => reorderCompetitionsBar('match-bar', ids),
+
+  toggleSportsHomeBar: (id: number) => toggleCompetitionBar('sports-home-bar', id),
+  reorderSportsHomeBar: (ids: number[]) => reorderCompetitionsBar('sports-home-bar', ids),
 };
 
-export const matchBarSettingsService = {
-  async get(): Promise<MatchBarSettingsData> {
-    const { data } = await http.get<ApiSuccess<MatchBarSettingsData>>('/admin/settings/match-bar');
-    return data.data;
-  },
+async function getBarSettings(endpoint: BarEndpoint): Promise<BarSettingsData> {
+  const { data } = await http.get<ApiSuccess<BarSettingsData>>(`/admin/settings/${endpoint}`);
+  return data.data;
+}
 
-  async update(source: MatchBarSource): Promise<string> {
-    const { data } = await http.put<ApiSuccess<MatchBarSettingsData>>('/admin/settings/match-bar', { source });
-    return data.message;
-  },
+async function updateBarSettings(endpoint: BarEndpoint, enabled: boolean): Promise<string> {
+  const { data } = await http.put<ApiSuccess<BarSettingsData>>(`/admin/settings/${endpoint}`, { enabled });
+  return data.message;
+}
+
+export const matchBarSettingsService = {
+  get: () => getBarSettings('match-bar'),
+  update: (enabled: boolean) => updateBarSettings('match-bar', enabled),
+};
+
+export const sportsHomeBarSettingsService = {
+  get: () => getBarSettings('sports-home-bar'),
+  update: (enabled: boolean) => updateBarSettings('sports-home-bar', enabled),
 };
 
 export const sportMenuItemsService = {

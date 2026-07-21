@@ -7,10 +7,11 @@ namespace App\Http\Requests\Admin\Sport;
 use App\Http\Requests\BaseFormRequest;
 
 /**
- * تحديث بطولة — يجمع بين حقلَي التغطية (is_tracked) وأعلام شريط المباريات التحريريّة عمدًا
- * في نموذج واحد للتبسيط الإداريّ (شاشة واحدة)، لكنّهما يبقيان **مستقلَّين منطقيًّا تمامًا**:
- * BuildMatchBarAction لا يقرأ is_tracked إطلاقًا، وSyncTrackedCompetitionFixturesAction لا
- * يقرأ أعلام الشريط إطلاقًا — الفصل بنيويّ في الإجراءات، لا مجرّد اصطلاح هنا.
+ * تحديث بطولة — يجمع بين حقل التغطية (is_tracked) وأعلام أشرطة البطولات التحريريّة (Match Bar
+ * وSports Home Bar) عمدًا في نموذج واحد للتبسيط الإداريّ (شاشة واحدة)، لكنّها تبقى **مستقلَّة
+ * منطقيًّا تمامًا عن بعضها**: BuildCompetitionBarAction لا يقرأ is_tracked إطلاقًا، وSync
+ * TrackedCompetitionFixturesAction لا يقرأ أعلام أيّ شريط إطلاقًا — الفصل بنيويّ في الإجراءات،
+ * لا مجرّد اصطلاح هنا.
  */
 class UpdateCompetitionRequest extends BaseFormRequest
 {
@@ -33,6 +34,8 @@ class UpdateCompetitionRequest extends BaseFormRequest
             'featured_until' => ['sometimes', 'nullable', 'date'],
             'show_in_match_bar' => ['sometimes', 'boolean'],
             'match_bar_sort_order' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:65535'],
+            'show_in_sports_home_bar' => ['sometimes', 'boolean'],
+            'sports_home_bar_sort_order' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:65535'],
         ];
     }
 }

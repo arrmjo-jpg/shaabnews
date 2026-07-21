@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Sport;
 
-use App\Enums\MatchBarSource;
 use App\Http\Requests\BaseFormRequest;
-use Illuminate\Validation\Rule;
 
-class UpdateMatchBarSettingsRequest extends BaseFormRequest
+/** مشتركة بين Match Bar وSports Home Bar — نفس شكل الطلب لكليهما. */
+class UpdateBarSettingsRequest extends BaseFormRequest
 {
     public function authorize(): bool
     {
@@ -19,7 +18,7 @@ class UpdateMatchBarSettingsRequest extends BaseFormRequest
     public function rules(): array
     {
         return [
-            'source' => ['required', 'string', Rule::in(MatchBarSource::values())],
+            'enabled' => ['required', 'boolean'],
         ];
     }
 }

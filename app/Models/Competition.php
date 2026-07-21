@@ -15,10 +15,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * بمزوّد بعينه). جذر تجميع "التغطية" فقط — ليس جذرًا واحدًا لكامل نطاق الرياضة (الفرق/اللاعبون
  * مستقلّون بهويّتهم).
  *
- * طبقتان مستقلّتان مقصودتان على هذا الموديل، بلا تأثير إحداهما على الأخرى:
+ * ثلاث طبقات مستقلّة مقصودة على هذا الموديل، بلا تأثير إحداها على الأخرى:
  *   - التغطية (نظاميّة): is_tracked + last_synced_at — الوحيدة التي تُحدِّد نطاق المزامنة.
- *   - عرض شريط المباريات (تحريريّة): is_featured_tournament/featured_until/show_in_match_bar/
- *     match_bar_sort_order — تصفية عرض فقط فوق بيانات مُزامَنة أصلًا؛ لا تؤثّر إطلاقًا فيما يُزامَن.
+ *   - شريط المباريات (تحريريّة): is_featured_tournament/featured_until/show_in_match_bar/
+ *     match_bar_sort_order — تصفية عرض فقط فوق بيانات مُزامَنة أصلًا.
+ *   - شريط الصفحة الرئيسية للرياضة (تحريريّة): show_in_sports_home_bar/sports_home_bar_sort_order
+ *     — ميزة منفصلة بالكامل عن شريط المباريات، تشترك معه فقط بهذا الجدول كمصدر بطولات واحد
+ *     (راجع BuildCompetitionBarAction الذي يبني الاثنين من نفس المنطق بأعمدة مختلفة).
  */
 class Competition extends Model
 {
@@ -32,6 +35,7 @@ class Competition extends Model
         'provider', 'provider_id', 'name', 'logo_url', 'is_active',
         'is_tracked', 'last_synced_at',
         'is_featured_tournament', 'featured_until', 'show_in_match_bar', 'match_bar_sort_order',
+        'show_in_sports_home_bar', 'sports_home_bar_sort_order',
     ];
 
     /** @var array<int,string> */
@@ -39,6 +43,7 @@ class Competition extends Model
         'name', 'is_active',
         'is_tracked',
         'is_featured_tournament', 'featured_until', 'show_in_match_bar', 'match_bar_sort_order',
+        'show_in_sports_home_bar', 'sports_home_bar_sort_order',
     ];
 
     protected function casts(): array
@@ -52,6 +57,8 @@ class Competition extends Model
             'featured_until' => 'date',
             'show_in_match_bar' => 'boolean',
             'match_bar_sort_order' => 'integer',
+            'show_in_sports_home_bar' => 'boolean',
+            'sports_home_bar_sort_order' => 'integer',
         ];
     }
 

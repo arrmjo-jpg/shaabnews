@@ -21,11 +21,15 @@ class CompetitionResource extends JsonResource
 
             'is_tracked' => $this->is_tracked,
             'last_synced_at' => $this->last_synced_at?->toISOString(),
+            'fixtures_count' => $this->whenCounted('fixtures'),
 
             'is_featured_tournament' => $this->is_featured_tournament,
             'featured_until' => $this->featured_until?->toDateString(),
             'show_in_match_bar' => $this->show_in_match_bar,
             'match_bar_sort_order' => $this->match_bar_sort_order,
+
+            'show_in_sports_home_bar' => $this->show_in_sports_home_bar,
+            'sports_home_bar_sort_order' => $this->sports_home_bar_sort_order,
 
             'created_at' => $this->created_at?->toISOString(),
         ];

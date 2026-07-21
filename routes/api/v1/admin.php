@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\V1\Admin\Sport\CompetitionController;
 use App\Http\Controllers\Api\V1\Admin\Sport\MatchBarSettingsController;
 use App\Http\Controllers\Api\V1\Admin\Sport\SportMenuItemController;
 use App\Http\Controllers\Api\V1\Admin\Sport\SportSettingsController;
+use App\Http\Controllers\Api\V1\Admin\Sport\SportsHomeBarSettingsController;
 use App\Http\Controllers\Api\V1\Admin\System\FailedJobController;
 use App\Http\Controllers\Api\V1\Admin\System\OpsController;
 use App\Http\Controllers\Api\V1\Admin\System\SystemController;
@@ -455,7 +456,28 @@ Route::prefix('competitions')->group(function (): void {
     Route::post('/', [CompetitionController::class, 'store'])
         ->middleware('permission:competitions.manage');
 
+    // إعادة الترتيب — مسار حرفيّ قبل {competition} الرقمي.
+    Route::patch('/match-bar/reorder', [CompetitionController::class, 'reorderMatchBar'])
+        ->middleware('permission:competitions.manage');
+
+    // إعادة ترتيب شريط الصفحة الرئيسية للرياضة — ميزة مستقلّة عن أعلاه، نفس Action المشترك
+    // بعمود ترتيب مختلف (راجع ReorderCompetitionsBarAction).
+    Route::patch('/sports-home-bar/reorder', [CompetitionController::class, 'reorderSportsHomeBar'])
+        ->middleware('permission:competitions.manage');
+
     Route::put('/{competition}', [CompetitionController::class, 'update'])
+        ->middleware('permission:competitions.manage')
+        ->whereNumber('competition');
+
+    // تبديل show_in_match_bar فقط — تفعيل يُلحِق البطولة بآخر القائمة تلقائيًّا (راجع
+    // ToggleCompetitionBarSelectionAction)؛ بلا جسم طلب، نمط PollController::toggleActive.
+    Route::patch('/{competition}/match-bar', [CompetitionController::class, 'toggleMatchBar'])
+        ->middleware('permission:competitions.manage')
+        ->whereNumber('competition');
+
+    // تبديل show_in_sports_home_bar فقط — ميزة مستقلّة تمامًا عن شريط المباريات أعلاه، نفس
+    // Action المشترك بعمود اختيار/ترتيب مختلفَين. راجع Competition::class docblock.
+    Route::patch('/{competition}/sports-home-bar', [CompetitionController::class, 'toggleSportsHomeBar'])
         ->middleware('permission:competitions.manage')
         ->whereNumber('competition');
 
@@ -464,11 +486,19 @@ Route::prefix('competitions')->group(function (): void {
         ->whereNumber('competition');
 });
 
-// ─── إعدادات شريط المباريات — وضع واحد حصريّ (MatchBarSource). القراءة مصادَقة عامّة؛
-// التبديل settings.edit (مطابق لنمط NewspaperSettingsController). ────────────────────
+// ─── إعدادات شريط المباريات — مفتاح تفعيل/تعطيل واحد. القراءة مصادَقة عامّة؛ التبديل
+// settings.edit (مطابق لنمط NewspaperSettingsController). ────────────────────────────
 Route::prefix('settings/match-bar')->group(function (): void {
     Route::get('/', [MatchBarSettingsController::class, 'show']);
     Route::put('/', [MatchBarSettingsController::class, 'update'])
+        ->middleware('permission:settings.edit');
+});
+
+// ─── إعدادات شريط الصفحة الرئيسية للرياضة — ميزة مستقلّة تمامًا عن شريط المباريات أعلاه،
+// تشترك معه فقط بجدول Competition كمصدر بطولات واحد. نفس نمط المسارات أعلاه بالضبط. ──────
+Route::prefix('settings/sports-home-bar')->group(function (): void {
+    Route::get('/', [SportsHomeBarSettingsController::class, 'show']);
+    Route::put('/', [SportsHomeBarSettingsController::class, 'update'])
         ->middleware('permission:settings.edit');
 });
 

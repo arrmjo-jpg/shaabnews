@@ -15,10 +15,93 @@ use Throwable;
  */
 final class Sport365Client
 {
+    /** الدول العربية بمعرّفات 365Scores الثابتة (مصدر: web/competitions/?sports=1 ⇒ countries[]). */
+    private const ARAB_COUNTRY_IDS = [
+        122, // السعودية
+        131, // مصر
+        119, // الأردن
+        123, // لبنان
+        114, // العراق
+        126, // الكويت
+        115, // قطر
+        124, // الإمارات
+        116, // البحرين
+        117, // عمان
+        127, // المغرب
+        139, // الجزائر
+        135, // تونس
+        161, // ليبيا
+        125, // سوريا
+        226, // فلسطين
+        130, // السودان
+        170, // اليمن
+    ];
+
+    /**
+     * meta بطولات تراكميّ (imageVersion/countryId) من مصفوفة `competitions[]` — موجودة أصلًا بكلّ
+     * استجابات `games/*` بجانب `games[]`، مُتجاهَلة سابقًا. تُملأ انتهازيًّا داخل get() من أيّ نداء
+     * (fixtures/results) بلا أيّ طلب HTTP إضافي؛ عمر الذاكرة = عمر الكائن (طلب/دورة مزامنة واحدة).
+     *
+     * @var array<int,array{image_version:int|null,country_id:int|null}>
+     */
+    private array $competitionMeta = [];
+
     /** مواعيد بطولة (كلّ مبارياتها القادمة) — `web/games/fixtures/?competitions={id}`. */
     public function fixturesByCompetition(int $competitionId): array
     {
         return $this->fixturesFrom($this->get('games/fixtures/', ['competitions' => $competitionId]));
+    }
+
+    /**
+     * بطولات صاحبة مباريات اليوم — **نفس** `web/games/allscores/?sports={id}` الذي يستدعيه الفرونت
+     * إند العام حرفيًّا لصفحة المباريات (frontend/src/lib/sport/games.ts: fetchAllScores/getCompetitions)
+     * — مصدر واحد لا مصدر ثانٍ، بعكس كتالوج `web/competitions/` المرفوض (يشمل مئات البطولات
+     * الخاملة/خارج الموسم). القائمة تتغيّر يوميًّا بتغيّر جدول المباريات، تمامًا كما تراها صفحة
+     * المباريات العامة كل يوم.
+     *
+     * @return array<int,array{id:int,name:string}>
+     */
+    public function todaysCompetitions(int $sportId = 1): array
+    {
+        $json = $this->get('games/allscores/', ['sports' => $sportId]);
+        $competitions = is_array($json['competitions'] ?? null) ? $json['competitions'] : [];
+
+        $out = [];
+        foreach ($competitions as $c) {
+            if (! is_array($c) || ! isset($c['id'], $c['name'])) {
+                continue;
+            }
+            $out[] = ['id' => (int) $c['id'], 'name' => (string) $c['name']];
+        }
+
+        return $out;
+    }
+
+    /**
+     * كل بطولات كرة القدم لدول عربية معروفة عند 365Scores — بعكس todaysCompetitions() لا تُحصَر
+     * بمباريات اليوم (أغلب الدوريات العربية بعطلة صيفية بهذا التاريخ فلا تظهر بذاك المصدر رغم
+     * كونها حقيقية ومستخدَمة بأماكن أخرى بالموقع العام، كقائمة الهدّافين). كتالوج **مُقيَّد بالدول**
+     * لا كتالوج عالميّ (بعكس الكتالوج الكامل المرفوض سابقًا — 804 بطولة أغلبها بلا صلة).
+     *
+     * @return array<int,array{id:int,name:string}>
+     */
+    public function arabCompetitions(int $sportId = 1): array
+    {
+        $json = $this->get('competitions/', ['sports' => $sportId]);
+        $competitions = is_array($json['competitions'] ?? null) ? $json['competitions'] : [];
+
+        $out = [];
+        foreach ($competitions as $c) {
+            if (! is_array($c) || ! isset($c['id'], $c['name'], $c['countryId'])) {
+                continue;
+            }
+            if (! in_array((int) $c['countryId'], self::ARAB_COUNTRY_IDS, true)) {
+                continue;
+            }
+            $out[] = ['id' => (int) $c['id'], 'name' => (string) $c['name']];
+        }
+
+        return $out;
     }
 
     /**
@@ -155,8 +238,26 @@ final class Sport365Client
         }
 
         $json = $response->json();
+        $json = is_array($json) ? $json : [];
 
-        return is_array($json) ? $json : [];
+        $this->collectCompetitionMeta($json);
+
+        return $json;
+    }
+
+    /** يلتقط `competitions[].{imageVersion,countryId}` إن وُجدت بهذا الرد — انتهازيّ، بلا فرض. */
+    private function collectCompetitionMeta(array $json): void
+    {
+        $competitions = is_array($json['competitions'] ?? null) ? $json['competitions'] : [];
+        foreach ($competitions as $c) {
+            if (! is_array($c) || ! isset($c['id'])) {
+                continue;
+            }
+            $this->competitionMeta[(int) $c['id']] = [
+                'image_version' => isset($c['imageVersion']) ? (int) $c['imageVersion'] : null,
+                'country_id' => isset($c['countryId']) ? (int) $c['countryId'] : null,
+            ];
+        }
     }
 
     /** @return array<string,int|string> */
@@ -244,6 +345,29 @@ final class Sport365Client
             'https://imagecache.365scores.com/image/upload/f_png,w_64,h_64,c_limit,q_auto:eco,dpr_2,d_Competitors:default1.png/v%d/Competitors/%d',
             (int) $version,
             $id,
+        );
+    }
+
+    /**
+     * شعار بطولة — نفس صيغة الفرونت إند العام حرفيًّا (frontend/src/lib/sport/games.ts:101-105)،
+     * مبنيّ من meta التُقطت سابقًا بهذا الكائن (راجع collectCompetitionMeta) — لا نداء HTTP هنا.
+     * null إن لم تُشاهَد هذه البطولة بأيّ رد بعد، أو بلا imageVersion (لا صورة عند المزوّد).
+     * الفشل الرمزيّ (علم دولة مستدير) عند غياب countryId — نفس اختيار الفرونت إند بالضبط.
+     */
+    public function competitionLogo(int $competitionId): ?string
+    {
+        $meta = $this->competitionMeta[$competitionId] ?? null;
+        if ($meta === null || $meta['image_version'] === null) {
+            return null;
+        }
+
+        $fallback = $meta['country_id'] !== null ? "Countries:Round:{$meta['country_id']}" : 'Competitions:default1';
+
+        return sprintf(
+            'https://imagecache.365scores.com/image/upload/f_png,w_48,h_48,c_limit,q_auto:eco,dpr_2,d_%s.png/v%d/Competitions/%d',
+            $fallback,
+            $meta['image_version'],
+            $competitionId,
         );
     }
 

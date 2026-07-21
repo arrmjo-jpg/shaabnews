@@ -4,12 +4,13 @@ import {
   matchBarSettingsService,
   sportMenuItemsService,
   sportSettingsService,
+  sportsHomeBarSettingsService,
 } from '@/services/sport.service';
 import { useToast } from '@/hooks/useToast';
 import type {
+  BarSettingsData,
   CompetitionCreatePayload,
   CompetitionUpdatePayload,
-  MatchBarSource,
   SportMenuItemPayload,
   SportSettingsPayload,
 } from '@/types/sport.types';
@@ -60,6 +61,83 @@ export function useDeleteCompetition() {
     },
     onError: (e: NormalizedError) => error(e.message),
   });
+}
+
+/** مشترك بين toggle Match Bar وSports Home Bar — نفس منطق invalidate/error. */
+function useToggleCompetitionBar(mutationFn: (id: number) => Promise<string>) {
+  const qc = useQueryClient();
+  const { error } = useToast();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...SPORT, 'competitions'] });
+    },
+    onError: (e: NormalizedError) => error(e.message),
+  });
+}
+
+/** مشترك بين reorder Match Bar وSports Home Bar. */
+function useReorderCompetitionsBar(mutationFn: (ids: number[]) => Promise<string>) {
+  const qc = useQueryClient();
+  const { error } = useToast();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...SPORT, 'competitions'] });
+    },
+    onError: (e: NormalizedError) => error(e.message),
+  });
+}
+
+export function useToggleCompetitionMatchBar() {
+  return useToggleCompetitionBar((id) => competitionsService.toggleMatchBar(id));
+}
+
+export function useReorderCompetitionsMatchBar() {
+  return useReorderCompetitionsBar((ids) => competitionsService.reorderMatchBar(ids));
+}
+
+export function useToggleCompetitionSportsHomeBar() {
+  return useToggleCompetitionBar((id) => competitionsService.toggleSportsHomeBar(id));
+}
+
+export function useReorderCompetitionsSportsHomeBar() {
+  return useReorderCompetitionsBar((ids) => competitionsService.reorderSportsHomeBar(ids));
+}
+
+/** مشترك بين قراءة إعدادات Match Bar وSports Home Bar. */
+function useBarSettings(queryKey: string, queryFn: () => Promise<BarSettingsData>) {
+  return useQuery({ queryKey: [...SPORT, queryKey], queryFn });
+}
+
+/** مشترك بين تحديث إعدادات Match Bar وSports Home Bar. */
+function useUpdateBarSettings(queryKey: string, mutationFn: (enabled: boolean) => Promise<string>) {
+  const qc = useQueryClient();
+  const { success, error } = useToast();
+  return useMutation({
+    mutationFn,
+    onSuccess: (message) => {
+      success(message);
+      void qc.invalidateQueries({ queryKey: [...SPORT, queryKey] });
+    },
+    onError: (e: NormalizedError) => error(e.message),
+  });
+}
+
+export function useMatchBarSettings() {
+  return useBarSettings('match-bar-settings', () => matchBarSettingsService.get());
+}
+
+export function useUpdateMatchBarSettings() {
+  return useUpdateBarSettings('match-bar-settings', (enabled) => matchBarSettingsService.update(enabled));
+}
+
+export function useSportsHomeBarSettings() {
+  return useBarSettings('sports-home-bar-settings', () => sportsHomeBarSettingsService.get());
+}
+
+export function useUpdateSportsHomeBarSettings() {
+  return useUpdateBarSettings('sports-home-bar-settings', (enabled) => sportsHomeBarSettingsService.update(enabled));
 }
 
 export function useSportMenuItems() {
@@ -130,23 +208,6 @@ export function useUpdateSportSettings() {
     onSuccess: (message) => {
       success(message);
       void qc.invalidateQueries({ queryKey: [...SPORT, 'settings'] });
-    },
-    onError: (e: NormalizedError) => error(e.message),
-  });
-}
-
-export function useMatchBarSettings() {
-  return useQuery({ queryKey: [...SPORT, 'match-bar-settings'], queryFn: () => matchBarSettingsService.get() });
-}
-
-export function useUpdateMatchBarSettings() {
-  const qc = useQueryClient();
-  const { success, error } = useToast();
-  return useMutation({
-    mutationFn: (source: MatchBarSource) => matchBarSettingsService.update(source),
-    onSuccess: (message) => {
-      success(message);
-      void qc.invalidateQueries({ queryKey: [...SPORT, 'match-bar-settings'] });
     },
     onError: (e: NormalizedError) => error(e.message),
   });

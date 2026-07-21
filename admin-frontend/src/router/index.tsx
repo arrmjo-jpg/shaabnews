@@ -17,6 +17,7 @@ import AnalyticsSettingsPage from '@/features/settings/pages/AnalyticsSettingsPa
 import MediaStorageSettingsPage from '@/features/settings/pages/MediaStorageSettingsPage';
 import NewspaperSettingsPage from '@/features/settings/pages/NewspaperSettingsPage';
 import MatchBarSettingsPage from '@/features/sport/pages/MatchBarSettingsPage';
+import SportsHomeBarSettingsPage from '@/features/sport/pages/SportsHomeBarSettingsPage';
 import SportSettingsPage from '@/features/sport/pages/SportSettingsPage';
 import CompetitionsPage from '@/features/sport/pages/CompetitionsPage';
 import SportMenuPage from '@/features/sport/pages/SportMenuPage';
@@ -258,6 +259,7 @@ export const router = createBrowserRouter([
           { path: paths.settingsMediaStorage, element: <MediaStorageSettingsPage /> },
           { path: paths.settingsNewspaper, element: <NewspaperSettingsPage /> },
           { path: paths.settingsMatchBar, element: <MatchBarSettingsPage /> },
+          { path: paths.settingsSportsHomeBar, element: <SportsHomeBarSettingsPage /> },
           { path: paths.settingsSport, element: <SportSettingsPage /> },
         ],
       },

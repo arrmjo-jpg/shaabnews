@@ -27,6 +27,7 @@ export const paths = {
   settingsMediaStorage: '/settings/media-storage',
   settingsNewspaper: '/settings/newspaper',
   settingsMatchBar: '/settings/match-bar',
+  settingsSportsHomeBar: '/settings/sports-home-bar',
   settingsSport: '/settings/sport',
   competitions: '/competitions',
   sportMenu: '/sport-menu',
