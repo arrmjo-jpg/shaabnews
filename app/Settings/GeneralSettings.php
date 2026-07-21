@@ -64,6 +64,11 @@ class GeneralSettings extends Settings
 
     public ?string $logo_dark_en;
 
+    // شعار قسم الرياضة (فاتح/داكن) — عربي/إنجليزي مشترك، لا نسخة منفصلة بالإنجليزيّة حالياً.
+    public ?string $logo_light_sports;
+
+    public ?string $logo_dark_sports;
+
     public ?string $favicon;
 
     // العلامة المائية
