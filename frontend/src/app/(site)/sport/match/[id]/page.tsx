@@ -1,4 +1,3 @@
-import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
@@ -15,15 +14,20 @@ import { MatchShotMap } from '@/components/sport/match-shot-map';
 import { MatchStats } from '@/components/sport/match-stats';
 import { MatchTopPerformers } from '@/components/sport/match-top-performers';
 import { MatchTrendsView } from '@/components/sport/match-trends';
+import { SportBreadcrumb } from '@/components/sport/sport-breadcrumb';
 import { SportNews } from '@/components/sport/sport-news';
 import { StandingsTable } from '@/components/sport/standings-table';
-import { getCompetitionMatchList, getGameDetail, getGameStats, getH2H, getMatchTrends, getPreGameStats, getShotMap } from '@/lib/sport/games';
+import { env } from '@/lib/env';
 import { buildMetadata } from '@/lib/seo';
-import { getCompetitionMeta, getStandings } from '@/lib/sport/stats';
+import { getMatchPageData, type MatchPageTab } from '@/lib/sport/application/queries/getMatchPageData';
+import type { Standing } from '@/lib/sport/domain/entities';
 
 // صفحة تفاصيل المباراة (نمط 365 game-center) — عمودان: يمين شريط مباريات الدوري (`CompetitionMatchesSidebar` نفسه،
 // بكلّ تبويباته) + يسار تفاصيل المباراة: ترويسة متدرّجة + **كلّ التبويبات** (المباراة/التشكيلة المتوقعة/الإحصائيات/
 // شائع/أخبار/المواجهات المباشرة) محفوظة دائماً، بحالة صادقة عند غياب البيانات. المصدر `web/game` + `web/trends` + CMS.
+// Phase 1.4 Step 2 — تستورد حصريًّا من `application/queries/*` (لا `games.ts`/`stats.ts` مباشرة)، طبقًا لـ §34.
+const PROVIDER = '365scores';
+
 const TABS = [
   { id: 'overview', label: 'المباراة' },
   { id: 'lineup', label: 'التشكيلة المتوقعة' },
@@ -33,15 +37,26 @@ const TABS = [
   { id: 'h2h', label: 'المواجهات المباشرة' },
 ] as const;
 
-const EMPTY_LIST = { today: [], upcoming: [], recent: [], fixtures: [], results: [] };
+function resolveTab(raw: string | undefined): MatchPageTab {
+  return TABS.some((t) => t.id === raw) ? (raw as MatchPageTab) : 'overview';
+}
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const { id } = await params;
   const gameId = Number(id);
   if (!Number.isInteger(gameId) || gameId <= 0) {
     return buildMetadata({ title: 'المباراة', path: `/sport/match/${id}` });
   }
-  const d = await getGameDetail(gameId);
+  const sp = await searchParams;
+  const tab = resolveTab(sp.tab);
+  const { data } = await getMatchPageData(PROVIDER, gameId, { tab });
+  const d = data.match;
   if (!d) return buildMetadata({ title: 'المباراة', path: `/sport/match/${id}` });
 
   return buildMetadata({
@@ -63,36 +78,33 @@ export default async function MatchPage({
   const sp = await searchParams;
   const gameId = Number(id);
   if (!Number.isInteger(gameId) || gameId <= 0) notFound();
-  const d = await getGameDetail(gameId);
+
+  const active = resolveTab(sp.tab);
+  const { data } = await getMatchPageData(PROVIDER, gameId, { tab: active });
+  const d = data.match;
   if (!d) notFound();
 
-  const active = TABS.some((t) => t.id === sp.tab) ? sp.tab! : 'overview';
-  const cid = d.competitionId;
-
-  // سياق البطولة من معرّف المباراة (لا ثوابت) + شريط مباريات الدوري (يمين) + بيانات التبويب النشط فقط.
-  const [compMeta, matchList, standings, shotMap, stats, preGame, trends, h2h] = await Promise.all([
-    cid ? getCompetitionMeta(cid) : Promise.resolve(null),
-    cid ? getCompetitionMatchList(cid) : Promise.resolve(EMPTY_LIST),
-    active === 'overview' && cid ? getStandings(cid) : Promise.resolve(null),
-    active === 'overview' ? getShotMap(gameId) : Promise.resolve(null),
-    active === 'stats' ? getGameStats(gameId) : Promise.resolve([]),
-    active === 'stats' ? getPreGameStats(gameId) : Promise.resolve(null),
-    active === 'trends' ? getMatchTrends(gameId) : Promise.resolve(null),
-    active === 'h2h' || active === 'overview' ? getH2H(gameId) : Promise.resolve(null),
-  ]);
+  const { competitionMeta: compMeta, matchList, standings, shotMap, stats, preGame, trends, h2h } = data;
   const matchTeamIds = [d.homeId, d.awayId].filter((x): x is number => x != null);
+
+  const siteUrl = env.siteUrl || '';
+  const matchJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `${d.home.name} ضد ${d.away.name}`,
+    url: `${siteUrl}/sport/match/${gameId}`,
+    ...(d.startTime ? { startDate: d.startTime } : {}),
+    ...(d.venue ? { location: { '@type': 'Place', name: d.venue } } : {}),
+    homeTeam: { '@type': 'SportsTeam', name: d.home.name, ...(d.home.logo ? { logo: d.home.logo } : {}) },
+    awayTeam: { '@type': 'SportsTeam', name: d.away.name, ...(d.away.logo ? { logo: d.away.logo } : {}) },
+  };
 
   return (
     <div className="bg-surface-2">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(matchJsonLd) }} />
       {compMeta && <CompetitionHeader meta={compMeta} />}
       <Container className="py-6">
-        <Link
-          href="/sport"
-          className="mb-4 inline-flex items-center gap-1 text-sm font-bold text-muted transition-colors hover:text-fg"
-        >
-          <ChevronRight className="size-4" />
-          الرياضة
-        </Link>
+        <SportBreadcrumb items={[{ name: `${d.home.name} ضد ${d.away.name}` }]} />
 
         {/* عمودان (نمط 365): يمين مباريات الدوري، يسار تفاصيل المباراة. */}
         <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
@@ -207,10 +219,7 @@ export default async function MatchPage({
 }
 
 // ترتيب الفريقين: نُظهر مجموعتهما فقط (بطولة مجموعات) — نمط 365 «ترتيب الفريقين». دوري أحاديّ ⇒ الجدول كما هو.
-function groupOfTeams(
-  standings: NonNullable<Awaited<ReturnType<typeof getStandings>>>,
-  teamIds: number[],
-): NonNullable<Awaited<ReturnType<typeof getStandings>>> {
+function groupOfTeams(standings: Standing, teamIds: number[]): Standing {
   if (standings.groups.length <= 1) return standings;
   const row = standings.rows.find((r) => teamIds.includes(r.team.id));
   if (!row || row.groupNum == null) return standings;

@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import type { ShotMap, ShotMapShot } from '@/lib/sport/games';
+import type { ShotChart, ShotChartEntry } from '@/lib/sport/domain/entities';
 
 // «خريطة التسديد» (نسخة طبق‑الأصل من 365 game-shot-chart) — لوحة داكنة بعمودين: يسار منتقٍ (لاعب + أسهم +
 // مرمى يُظهر موضع الكرة + بطاقات الوضعية/طريقة التسديد/xG/xGOT) ويمين الملعب بكلّ التسديدات (نقاط بيضاء بحدّ
@@ -14,13 +14,13 @@ const SCALE = 0.959; // side/line (0..100) → نسبة الموضع على ال
 const GOAL_FRAME =
   'https://imagecache.365scores.com/image/upload/f_png,c_limit,q_auto:eco,dpr_2/v18/Website/AssetsSVGNewBrand/Goalmounth_dark';
 
-export function MatchShotMap({ data }: { data: ShotMap }) {
+export function MatchShotMap({ data }: { data: ShotChart }) {
   const goalIdx = data.shots.findIndex((s) => s.isGoal);
   const [idx, setIdx] = useState(goalIdx >= 0 ? goalIdx : 0);
   const [playing, setPlaying] = useState(true); // تشغيل تلقائيّ كـ365 (يتنقّل بين التسديدات وحده)
   const [hover, setHover] = useState(false); // يتوقّف عند المرور بالماوس لتأمّل تسديدة
   const sel = data.shots[idx];
-  const colorOf = (s: ShotMapShot) => (s.isHome ? data.home.color : data.away.color);
+  const colorOf = (s: ShotChartEntry) => (s.isHome ? data.home.color : data.away.color);
 
   // الحلقة التلقائيّة: تتقدّم تسديدةً كلّ ~1.8ث ما لم يوقفها المستخدم أو يمرّ بالماوس.
   useEffect(() => {

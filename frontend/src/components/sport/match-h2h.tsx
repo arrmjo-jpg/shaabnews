@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
-import type { H2H, H2HFormGame, H2HMeeting } from '@/lib/sport/games';
+import type { HeadToHead, HeadToHeadFormGame, HeadToHeadMeeting } from '@/lib/sport/domain/entities';
 
 type Mode = 'all' | 'venue';
 
@@ -10,7 +10,7 @@ type Mode = 'all' | 'venue';
 // + مواجهات سابقة + أداء كلّ فريق (آخر مبارياته بـف/ت/خ). الفلتر «على أرضه/خارج أرضه» يُظهر فقط ما يطابق إعداد
 // المباراة الحالية: المواجهات حيث كان المضيف الحاليّ صاحب الأرض، وأداء المضيف على أرضه + أداء الضيف خارج أرضه؛
 // ويعيد حساب السجلّ. كلّ صفّ رابط لمباراته، وترويسة كلّ فريق رابط له. حالة صادقة عند الفراغ (كـ365).
-export function MatchH2H({ data }: { data: H2H }) {
+export function MatchH2H({ data }: { data: HeadToHead }) {
   const [mode, setMode] = useState<Mode>('all');
   const homeId = data.homeTeam.id;
 
@@ -98,7 +98,7 @@ export function MatchH2H({ data }: { data: H2H }) {
 }
 
 // السجلّ نسبةً للمضيف الحاليّ: نحدّد جانبه في كلّ مواجهة عبر `homeId` (لأنّ بعض المواجهات لعبها على أرض الخصم).
-function computeRecord(meetings: H2HMeeting[], homeTeamId: number): { homeWins: number; draws: number; awayWins: number } {
+function computeRecord(meetings: HeadToHeadMeeting[], homeTeamId: number): { homeWins: number; draws: number; awayWins: number } {
   let homeWins = 0;
   let draws = 0;
   let awayWins = 0;
@@ -151,7 +151,7 @@ function Stat({ n, label }: { n: number; label: string }) {
   );
 }
 
-function MeetingRow({ m }: { m: H2HMeeting }) {
+function MeetingRow({ m }: { m: HeadToHeadMeeting }) {
   return (
     <li>
       <Link
@@ -171,13 +171,13 @@ function MeetingRow({ m }: { m: H2HMeeting }) {
   );
 }
 
-const FORM: Record<H2HFormGame['outcome'], { label: string; cls: string }> = {
+const FORM: Record<HeadToHeadFormGame['outcome'], { label: string; cls: string }> = {
   W: { label: 'ف', cls: 'bg-emerald-600' },
   D: { label: 'ت', cls: 'bg-zinc-400' },
   L: { label: 'خ', cls: 'bg-red-500' },
 };
 
-function FormRow({ g }: { g: H2HFormGame }) {
+function FormRow({ g }: { g: HeadToHeadFormGame }) {
   const o = FORM[g.outcome];
   return (
     <li>

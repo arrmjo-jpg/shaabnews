@@ -1,4 +1,4 @@
-import type { PreGameStats } from '@/lib/sport/games';
+import type { PreGameComparison } from '@/lib/sport/domain/entities';
 
 // مقارنة ما قبل المباراة (نمط 365 pre-game-stats) — مجموعات (كل المسابقات % + معدّل الإحصائيات)، كلّ صفّ ثلاثيّ:
 // قيمة المضيف (يمين) · اسم المقياس (وسط) · قيمة الضيف (يسار). القيمة المظلَّلة (`marked`) تأخذ لون الفريق.
@@ -7,7 +7,7 @@ export function MatchPreGameStats({
   homeColor,
   awayColor,
 }: {
-  data: PreGameStats;
+  data: PreGameComparison;
   homeColor: string | null;
   awayColor: string | null;
 }) {

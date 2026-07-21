@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { FollowButton } from '@/components/sport/follow-button';
-import type { MatchSide, SportMatch } from '@/lib/sport/games';
+import type { MatchListItem, MatchSideSummary } from '@/lib/sport/domain/entities';
 
 // بطاقة مباراة — وفق مواصفة game-card 365 (بكودنا، هويّة الموقع). صفّ مضغوط، حدّ سفليّ، Hover خفيف، خلفيّة بيضاء.
 // **الصفّ كلّه رابط** لصفحة التفاصيل `/sport/match/{id}` (مثل الهيرو).
 // RTL: اسم المضيف (يملأ، محاذاة خارجيّة) + شعار(32px) داخليّ | المركز نتيجة/وقت (16px/500) | شعار الضيف داخليّ + اسمه (يملأ، خارجيّة).
-export function MatchRow({ match }: { match: SportMatch }) {
+export function MatchRow({ match }: { match: MatchListItem }) {
   const isLive = match.kind === 'live';
   const hasScore = match.home.score !== null && match.away.score !== null;
 
@@ -49,7 +49,7 @@ export function MatchRow({ match }: { match: SportMatch }) {
   );
 }
 
-function TeamLogo({ side }: { side: MatchSide }) {
+function TeamLogo({ side }: { side: MatchSideSummary }) {
   if (side.logo) {
     // eslint-disable-next-line @next/next/no-img-element -- شعار 365 من CDN
     return <img src={side.logo} alt="" loading="lazy" decoding="async" className="size-8 shrink-0 object-contain" />;

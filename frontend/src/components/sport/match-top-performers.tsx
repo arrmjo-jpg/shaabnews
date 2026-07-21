@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import type { TopPerfCategory, TopPerfPlayer } from '@/lib/sport/games';
+import type { TopPerformerCategory, TopPerformerPlayer } from '@/lib/sport/domain/entities';
 
 // «أهم اللاعبين» (نمط 365 top-performers) — فئات (الهجوم/الوسط/الدفاع)، لكلّ فئة لاعب المضيف (يمين) ولاعب الضيف
 // (يسار) مع إحصاءاتهما المتقابلة. كلّ لاعب رابطٌ لملفّه. بيانات حقيقيّة من `game.topPerformers` (لا تلفيق).
-export function MatchTopPerformers({ categories }: { categories: TopPerfCategory[] }) {
+export function MatchTopPerformers({ categories }: { categories: TopPerformerCategory[] }) {
   return (
     <section dir="rtl" className="border border-border bg-white">
       <div className="border-b border-border px-4 py-2.5">
@@ -18,7 +18,7 @@ export function MatchTopPerformers({ categories }: { categories: TopPerfCategory
   );
 }
 
-function Category({ c }: { c: TopPerfCategory }) {
+function Category({ c }: { c: TopPerformerCategory }) {
   const base = c.home?.stats.length ? c.home.stats : (c.away?.stats ?? []);
   return (
     <div className="px-4 py-3">
@@ -42,7 +42,7 @@ function Category({ c }: { c: TopPerfCategory }) {
   );
 }
 
-function PlayerHead({ p, align }: { p: TopPerfPlayer | null; align: 'start' | 'end' }) {
+function PlayerHead({ p, align }: { p: TopPerformerPlayer | null; align: 'start' | 'end' }) {
   if (!p) return <div className="min-w-0 flex-1" />;
   const dir = align === 'end' ? 'flex-row-reverse text-end' : 'text-start';
   return (

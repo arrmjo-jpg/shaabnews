@@ -1,15 +1,15 @@
 import Link from 'next/link';
-import type { H2HFormGame, H2HTeamForm } from '@/lib/sport/games';
+import type { HeadToHeadFormGame, HeadToHeadTeamForm } from '@/lib/sport/domain/entities';
 
 // «الأداء» (آخر ٥) لتبويب المباراة — لكلّ فريق شارات نتائجه الخمس الأخيرة (ف/ت/خ) + روابط لكلّ مباراة. يعيد استخدام
 // بيانات `getH2H().forms` (recentGames). صورة مصغّرة من الأداء الكامل في تبويب «المواجهات المباشرة».
-const FORM: Record<H2HFormGame['outcome'], { label: string; cls: string }> = {
+const FORM: Record<HeadToHeadFormGame['outcome'], { label: string; cls: string }> = {
   W: { label: 'ف', cls: 'bg-emerald-600' },
   D: { label: 'ت', cls: 'bg-zinc-400' },
   L: { label: 'خ', cls: 'bg-red-500' },
 };
 
-export function MatchRecentForm({ forms }: { forms: H2HTeamForm[] }) {
+export function MatchRecentForm({ forms }: { forms: HeadToHeadTeamForm[] }) {
   return (
     <section dir="rtl" className="border border-border bg-white">
       <div className="border-b border-border px-4 py-2.5">

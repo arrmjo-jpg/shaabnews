@@ -1,8 +1,8 @@
-import type { GameDetail } from '@/lib/sport/games';
+import type { MatchDetail } from '@/lib/sport/domain/entities';
 
 // قسم «معلومات المباراة» (نمط 365 game-info) — بطولة/جولة + موعد + ملعب + حكم + حالة. يظهر لكلّ مباراة (يملأ صفحة
 // المباريات المقبلة). صفوف ذات بيانات فقط — لا تلفيق.
-export function MatchInfo({ d }: { d: GameDetail }) {
+export function MatchInfo({ d }: { d: MatchDetail }) {
   const rows: { label: string; value: string }[] = [];
   if (d.competition) rows.push({ label: 'البطولة', value: d.round ? `${d.competition} · ${d.round}` : d.competition });
   const when = formatWhen(d.startTime);

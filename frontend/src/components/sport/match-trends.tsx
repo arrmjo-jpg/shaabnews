@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import type { MatchTrends } from '@/lib/sport/games';
+import type { MatchTrendsSummary } from '@/lib/sport/domain/entities';
 
 // «شائع» لصفحة المباراة (نمط 365 trends-widget) — قسم «أفضل تريند» (مظلَّل بشعار الفريق) + قسم «شائع» مُجمَّع بالفريق
 // (شعار+اسم رابط للفريق + قائمة تريندات إحصائيّة، 🔥 للعالية). مُجرَّد تماماً من «X يفوز»/odds (العقد).
-export function MatchTrendsView({ data }: { data: MatchTrends }) {
+export function MatchTrendsView({ data }: { data: MatchTrendsSummary }) {
   return (
     <div className="flex flex-col gap-6">
       {data.top && data.top.lines.length > 0 && (

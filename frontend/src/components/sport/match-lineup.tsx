@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import type { LineupPlayer, TeamLineup } from '@/lib/sport/games';
+import type { LineupMember, TeamLineupSummary } from '@/lib/sport/domain/entities';
 
 // تبويب «التشكيلة المتوقعة» (نسخة طبق‑الأصل من 365) — تبويبا فريقين (المضيف أوّلاً يميناً) + ملعب 365 رأسيّ لفريق
 // واحد: صورة اللاعب الدائريّة + رقم القميص + شعار ناديه + الاسم، والحارس أسفل والمهاجم أعلى (عبر yardFormation).
@@ -20,8 +20,8 @@ export function MatchLineup({
   homeLogo,
   awayLogo,
 }: {
-  home: TeamLineup | null;
-  away: TeamLineup | null;
+  home: TeamLineupSummary | null;
+  away: TeamLineupSummary | null;
   homeTeam: string;
   awayTeam: string;
   homeColor: string | null;
@@ -120,7 +120,7 @@ function luminance(hex: string | null): number | null {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
 
-function Marker({ p }: { p: LineupPlayer }) {
+function Marker({ p }: { p: LineupMember }) {
   // fieldSide=العرض (x) · fieldLine=العمق (y، 0=حارس أسفل). هامش حتى لا تتجاوز العلامات الحواف.
   const left = 8 + (p.x ?? 50) * 0.84;
   const bottom = 6 + (p.y ?? 50) * 0.84;
@@ -152,7 +152,7 @@ function Marker({ p }: { p: LineupPlayer }) {
   );
 }
 
-function Bench({ players }: { players: LineupPlayer[] }) {
+function Bench({ players }: { players: LineupMember[] }) {
   return (
     <div className="border-t border-border">
       <div className="bg-surface-2 px-4 py-2 text-[13px] font-extrabold text-fg">البدلاء</div>

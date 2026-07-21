@@ -4,6 +4,10 @@
 // Match = FeaturedMatch (وليس SportMatch) لأنه الشكل الذي تُرجعه getFeaturedMatches فعلاً،
 // وهو ما تستهلكه getSportHomeData. SportMatch يخدم دوال أخرى غير مُستخدَمة في هذه المرحلة.
 import type {
+  CommentaryEvent,
+  CommentaryPlayer,
+  CommentaryStage,
+  CommentaryType,
   CompetitionGames,
   CompetitionInsights,
   CompetitionItem,
@@ -12,12 +16,24 @@ import type {
   FeaturedMatch,
   GameDetail,
   H2H,
+  H2HFormGame,
+  H2HMeeting,
+  H2HTeamForm,
+  LineupPlayer,
+  MatchEvent,
+  MatchEventType,
+  MatchGroup,
+  MatchSide,
   MatchStat,
   MatchTrends,
   PreGameStats,
   ShotMap,
+  ShotMapShot,
   SportMatch,
   TeamItem,
+  TeamLineup,
+  TopPerfCategory,
+  TopPerfPlayer,
   TrendLine,
 } from '../games';
 import type { CareerSection, PlayerCareerData, PlayerCompetition, PlayerGame, PlayerProfile, PlayerStat, PlayerTeam, SquadPlayer, TrophyGroup } from '../player';
@@ -70,6 +86,26 @@ export type PlayerTrophy = TrophyGroup;
 export type PlayerCompetitionRef = PlayerCompetition;
 export type PlayerCareerSection = CareerSection;
 export type PlayerClubRef = PlayerTeam;
+
+// Phase 1.4 Step 2 (Match page) §34 fix — same pattern: match-* components were importing
+// provider-named sub-types straight from games.ts. Aliases match each component's actual concept,
+// not just the provider's internal name.
+export type MatchSideSummary = MatchSide;
+export type MatchGroupSummary = MatchGroup;
+export type MatchTimelineEvent = MatchEvent;
+export type MatchTimelineEventType = MatchEventType;
+export type LineupMember = LineupPlayer;
+export type TeamLineupSummary = TeamLineup;
+export type TopPerformerPlayer = TopPerfPlayer;
+export type TopPerformerCategory = TopPerfCategory;
+export type CommentaryEventType = CommentaryType;
+export type CommentaryPlayerRef = CommentaryPlayer;
+export type CommentaryEntry = CommentaryEvent;
+export type CommentaryStageGroup = CommentaryStage;
+export type HeadToHeadMeeting = H2HMeeting;
+export type HeadToHeadFormGame = H2HFormGame;
+export type HeadToHeadTeamForm = H2HTeamForm;
+export type ShotChartEntry = ShotMapShot;
 
 // لا شكل مطابق موجود اليوم — بديل أدنى (stub) غير مُستخدَم بعد، حتى تحتاجه حالة استخدام لاحقة.
 export interface Season {

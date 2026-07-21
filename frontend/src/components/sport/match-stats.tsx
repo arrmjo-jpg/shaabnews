@@ -1,14 +1,14 @@
-import type { MatchStat } from '@/lib/sport/games';
+import type { MatchStatRow } from '@/lib/sport/domain/entities';
 
 // تبويب الإحصائيات — كلّ الإحصائيّات مُجمّعة بالفئة (categoryName)؛ لكلّ واحدة: قيمة المضيف (يمين) | الاسم | قيمة الضيف
 // (يسار) + شريط مقارنة (المضيف أحمر يمين / الضيف رماديّ يسار). غير المصنّفة (الرئيسيّة) أوّلاً. RTL.
-export function MatchStats({ stats }: { stats: MatchStat[] }) {
+export function MatchStats({ stats }: { stats: MatchStatRow[] }) {
   if (!stats.length) {
     return (
       <div className="border border-border bg-white p-8 text-center text-sm text-muted">الإحصائيات غير متاحة لهذه المباراة.</div>
     );
   }
-  const groups: { category: string | null; rows: MatchStat[] }[] = [];
+  const groups: { category: string | null; rows: MatchStatRow[] }[] = [];
   const idx = new Map<string, number>();
   for (const s of stats) {
     const key = s.category ?? '';

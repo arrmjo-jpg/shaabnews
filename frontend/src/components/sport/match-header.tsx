@@ -1,6 +1,6 @@
 import { MapPin } from 'lucide-react';
 import { FollowButton } from '@/components/sport/follow-button';
-import type { GameDetail, MatchSide } from '@/lib/sport/games';
+import type { MatchDetail, MatchSideSummary } from '@/lib/sport/domain/entities';
 
 // رأس المباراة: خلفيّة متدرّجة بألوان الفريقين (داكنة) + المجموعة/الجولة + شعاران + نتيجة/موعد/عدّاد
 // + ملعب/حكم. سياق البطولة (شعار/اسم/تبويبات) في CompetitionHeader أعلى الصفحة — لا يُكرَّر هنا. RTL.
@@ -10,7 +10,7 @@ function tint(c: string | null): string | null {
   return c && /^#[0-9a-fA-F]{6}$/.test(c) ? `${c}66` : null;
 }
 
-export function MatchHeader({ d }: { d: GameDetail }) {
+export function MatchHeader({ d }: { d: MatchDetail }) {
   const isLive = d.kind === 'live';
   const hasScore = d.home.score !== null && d.away.score !== null;
 
@@ -75,7 +75,7 @@ export function MatchHeader({ d }: { d: GameDetail }) {
   );
 }
 
-function HeaderTeam({ side }: { side: MatchSide }) {
+function HeaderTeam({ side }: { side: MatchSideSummary }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center gap-3 text-center">
       {side.logo ? (

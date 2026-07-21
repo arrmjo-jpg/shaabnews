@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MatchRow } from '@/components/sport/match-row';
-import type { MatchGroup } from '@/lib/sport/games';
+import type { MatchGroupSummary } from '@/lib/sport/domain/entities';
 
 // الشريط الجانبيّ لصفحة البطولة (نمط 365) — ٣ تبويبات: كل المباريات / نتائج / جدول المباريات. «كل المباريات»
 // يبدأ بأقسام معنونة: مباريات اليوم ← جدول المباريات ← النتائج الأخيرة (ترتيب 365). كلّ مباراة مُجمَّعة
@@ -15,7 +15,7 @@ const TABS = [
 
 interface Section {
   title: string | null;
-  groups: MatchGroup[];
+  groups: MatchGroupSummary[];
 }
 
 export function CompetitionMatchesSidebar({
@@ -25,11 +25,11 @@ export function CompetitionMatchesSidebar({
   fixtures,
   results,
 }: {
-  today: MatchGroup[];
-  upcoming: MatchGroup[];
-  recent: MatchGroup[];
-  fixtures: MatchGroup[];
-  results: MatchGroup[];
+  today: MatchGroupSummary[];
+  upcoming: MatchGroupSummary[];
+  recent: MatchGroupSummary[];
+  fixtures: MatchGroupSummary[];
+  results: MatchGroupSummary[];
 }) {
   const [tab, setTab] = useState<string>('all');
 

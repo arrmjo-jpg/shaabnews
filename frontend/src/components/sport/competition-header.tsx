@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Container } from '@/components/layout/container';
 import { FollowButton } from '@/components/sport/follow-button';
-import type { CompetitionMeta } from '@/lib/sport/stats';
+import type { CompetitionProfile } from '@/lib/sport/domain/entities';
 
 export interface CompetitionTab {
   id: string;
@@ -33,7 +33,7 @@ export function CompetitionHeader({
   meta,
   activeTab = null,
 }: {
-  meta: CompetitionMeta;
+  meta: CompetitionProfile;
   activeTab?: string | null;
 }) {
   const base = `/sport/competition/${meta.id}`;
