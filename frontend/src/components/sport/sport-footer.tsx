@@ -24,7 +24,10 @@ export async function SportFooter() {
           <span className="text-base font-extrabold text-fg">الرياضة</span>
         )}
         <p className="text-xs text-muted">{copyright}</p>
-        <Link href="/" className="text-xs font-bold text-muted transition-colors hover:text-fg">
+        <Link
+          href="/"
+          className="rounded-sm text-xs font-bold text-muted outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none"
+        >
           العودة إلى الرئيسية
         </Link>
       </Container>

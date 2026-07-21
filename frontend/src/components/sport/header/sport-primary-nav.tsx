@@ -12,7 +12,10 @@ export async function SportPrimaryNav() {
 
   return (
     <nav aria-label="تنقّل الرياضة" className="hidden items-center gap-5 md:flex">
-      <Link href="/" className="text-sm font-bold text-muted transition-colors hover:text-fg">
+      <Link
+        href="/"
+        className="rounded-sm text-sm font-bold text-muted outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none"
+      >
         الرئيسية
       </Link>
       <SportSectionsDropdown items={items} />

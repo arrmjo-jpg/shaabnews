@@ -12,7 +12,7 @@ export function SportHeaderActions({ allowThemeSwitch }: { allowThemeSwitch: boo
         type="button"
         disabled
         aria-label="البحث (قريبًا)"
-        className="flex size-9 items-center justify-center rounded-md text-muted disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex size-9 items-center justify-center rounded-md text-muted outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <SearchIcon className="size-[18px]" aria-hidden />
       </button>
@@ -21,7 +21,7 @@ export function SportHeaderActions({ allowThemeSwitch }: { allowThemeSwitch: boo
           type="button"
           disabled
           aria-label="تبديل المظهر (قريبًا)"
-          className="flex size-9 items-center justify-center rounded-md text-muted disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex size-9 items-center justify-center rounded-md text-muted outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span
             className="block size-4 rounded-full border border-current"
