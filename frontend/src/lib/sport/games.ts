@@ -658,7 +658,10 @@ const GameStage = z
   .passthrough();
 const Member = z
   .object({
-    id: z.number(),
+    // ليس دائمًا موجودًا (فجوة بيانات حقيقيّة من 365 لبعض اللاعبين — راجع تحقيق مباراة 4747697).
+    // athleteId هو الهويّة المُعتمَدة عند التطبيع؛ id هو مفتاح الربط المحليّ لهذه المباراة فقط
+    // (يطابق LineupMember.id وGameEvent.playerId — ليس athleteId، تحقّق حيّ لا افتراض).
+    id: z.number().nullish(),
     athleteId: z.number().nullish(),
     name: z.string().nullish(),
     shortName: z.string().nullish(),
@@ -668,7 +671,8 @@ const Member = z
   .passthrough();
 const LineupMember = z
   .object({
-    id: z.number(),
+    // نفس فجوة Member.id أعلاه — مفتاح ربط محليّ قد يغيب لنفس السبب.
+    id: z.number().nullish(),
     status: z.number().nullish(), // 1 = أساسيّ
     position: z.object({ name: z.string().nullish() }).passthrough().nullish(),
     ranking: z.number().nullish(),
@@ -865,13 +869,27 @@ export async function getGameDetail(gameId: number): Promise<GameDetail | null> 
     const kind = classify(g.statusGroup, home, away);
     const compMeta = (parsed.data.competitions ?? []).find((c) => c.id === g.competitionId);
     const memberInfo = new Map<number, { athleteId: number; name: string; jersey: number | null; photo: string | null }>();
-    for (const mm of g.members ?? [])
-      memberInfo.set(mm.id, {
-        athleteId: mm.athleteId ?? mm.id,
-        name: mm.shortName || mm.name || '',
-        jersey: mm.jerseyNumber ?? null,
-        photo: athletePhoto(mm.athleteId ?? mm.id, mm.imageVersion ?? null),
-      });
+    for (const mm of g.members ?? []) {
+      // المعرّف الكنّونيّ (canonical) لهذا اللاعب: athleteId إن وُجد وإلّا id. لاعب بلا كليهما
+      // يُتجاوَز هو وحده (لا تفشل المباراة كاملة) — راجع تحقيق مباراة 4747697.
+      const playerId = mm.athleteId ?? mm.id;
+      if (playerId == null) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[sport/games] عضو بلا id ولا athleteId — تجاوَزناه', mm);
+        }
+        continue;
+      }
+      // مفتاح الخريطة يبقى id المحليّ عمدًا (لا playerId): هو ما يطابقه LineupMember.id
+      // وGameEvent.playerId فعليًّا (تحقّق حيّ)، وليس athleteId — تبديله يكسر كلّ ربط تشكيلة/مجريات.
+      if (mm.id != null) {
+        memberInfo.set(mm.id, {
+          athleteId: playerId,
+          name: mm.shortName || mm.name || '',
+          jersey: mm.jerseyNumber ?? null,
+          photo: athletePhoto(playerId, mm.imageVersion ?? null),
+        });
+      }
+    }
     const events: MatchEvent[] = [];
     for (const e of g.events ?? []) {
       const type = eventKind(e.eventType?.id);
@@ -885,23 +903,33 @@ export async function getGameDetail(gameId: number): Promise<GameDetail | null> 
     }
     const buildLineup = (lu: z.infer<typeof Lineups> | null | undefined): TeamLineup | null => {
       if (!lu?.members?.length) return null;
-      const rows = lu.members.map((mm) => {
-        const info = memberInfo.get(mm.id);
-        return {
-          player: {
-            id: info?.athleteId ?? mm.id,
-            name: info?.name ?? '',
-            jersey: info?.jersey ?? null,
-            position: mm.position?.name ?? null,
-            ranking: mm.ranking ?? null,
-            photo: info?.photo ?? null,
-            clubLogo: mm.competitorId != null ? competitorLogoSimple(mm.competitorId) : null,
-            x: mm.yardFormation?.fieldSide ?? null,
-            y: mm.yardFormation?.fieldLine ?? null,
-          } satisfies LineupPlayer,
-          starting: mm.status === 1,
-        };
-      });
+      const rows = lu.members
+        .map((mm) => {
+          const info = mm.id != null ? memberInfo.get(mm.id) : undefined;
+          // نفس التطبيع الكنّونيّ: athleteId (عبر memberInfo) إن وُجد، وإلّا id المحليّ.
+          const playerId = info?.athleteId ?? mm.id;
+          if (playerId == null) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn('[sport/games] لاعب تشكيلة بلا id ولا athleteId — تجاوَزناه', mm);
+            }
+            return null;
+          }
+          return {
+            player: {
+              id: playerId,
+              name: info?.name ?? '',
+              jersey: info?.jersey ?? null,
+              position: mm.position?.name ?? null,
+              ranking: mm.ranking ?? null,
+              photo: info?.photo ?? null,
+              clubLogo: mm.competitorId != null ? competitorLogoSimple(mm.competitorId) : null,
+              x: mm.yardFormation?.fieldSide ?? null,
+              y: mm.yardFormation?.fieldLine ?? null,
+            } satisfies LineupPlayer,
+            starting: mm.status === 1,
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null);
       return {
         formation: lu.formation ?? null,
         starters: rows.filter((r) => r.starting).map((r) => r.player),
@@ -1455,8 +1483,12 @@ export async function getShotMap(gameId: number): Promise<ShotMap | null> {
     const typeMap = new Map<number, string>();
     for (const t of ce.eventTypes ?? []) if (t.name) typeMap.set(t.value, t.name);
     const members = new Map<number, { name: string | null; photo: string | null }>();
-    for (const m of g.members ?? [])
-      members.set(m.id, { name: m.shortName || m.name || null, photo: athletePhoto(m.athleteId ?? m.id, m.imageVersion ?? null) });
+    for (const m of g.members ?? []) {
+      // نفس تطبيع Member في getGameDetail: تجاوَز فقط عند غياب id وathleteId معًا.
+      const playerId = m.athleteId ?? m.id;
+      if (playerId == null || m.id == null) continue;
+      members.set(m.id, { name: m.shortName || m.name || null, photo: athletePhoto(playerId, m.imageVersion ?? null) });
+    }
 
     const shots: ShotMapShot[] = ce.events
       .filter((e) => typeof e.side === 'number' && typeof e.line === 'number')
