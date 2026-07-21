@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Settings\GeneralSettings;
 use App\Settings\NewspaperSettings;
+use App\Settings\SportSettings;
 use App\Support\Media\MediaUrl;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +16,7 @@ use Illuminate\Http\Request;
 
 class SiteController extends Controller
 {
-    public function settings(Request $request, GeneralSettings $settings, NewspaperSettings $newspaper): JsonResponse
+    public function settings(Request $request, GeneralSettings $settings, NewspaperSettings $newspaper, SportSettings $sport): JsonResponse
     {
         $locale = (string) $request->query('locale', 'ar');
         if (! in_array($locale, Category::LOCALES, true)) {
@@ -95,6 +96,19 @@ class SiteController extends Controller
             'nav_categories' => $navCategories,
             // بوّابة المنتج: تظهر «الجريدة الرقمية» في الواجهة فقط عند تفعيلها.
             'newspaper_enabled' => $newspaper->enabled,
+            // Phase 2.1 — حقول الثيم فقط + شعارَي الرياضة (من GeneralSettings، لا SportSettings،
+            // راجع SportSettings.php:14). لا نكشف هنا sport_default_*/feature-flags: لا مستهلك
+            // فعليّ لها اليوم (Header/Footer لا تحتاجها) — تُضاف فقط حين تحتاجها مرحلة لاحقة
+            // فعليّة (Search/Prediction)، لا استباقًا.
+            'sport' => [
+                'primary_color' => $sport->sport_primary_color,
+                'secondary_color' => $sport->sport_secondary_color,
+                'default_theme' => $sport->sport_default_theme,
+                'allow_theme_switch' => $sport->sport_allow_theme_switch,
+                'theme_cookie' => $sport->sport_theme_cookie,
+                'logo_light' => $logoUrl($settings->logo_light_sports),
+                'logo_dark' => $logoUrl($settings->logo_dark_sports),
+            ],
         ]);
     }
 }

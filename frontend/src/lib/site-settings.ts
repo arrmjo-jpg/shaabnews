@@ -30,6 +30,34 @@ const NavCategorySchema = z
   })
   .passthrough();
 
+// Phase 2.1 — حقول ثيم الرياضة + شعاراها فقط (لا feature flags/defaults، لا مستهلك فعليّ
+// لها اليوم — تُضاف حين تحتاجها مرحلة لاحقة فعليّة، لا استباقًا). راجع SportSettings.php
+// وSiteController::settings() للحقول المطابقة تمامًا.
+export interface SportPublicSettings {
+  primary_color: string | null;
+  secondary_color: string | null;
+  default_theme: string | null;
+  allow_theme_switch: boolean | null;
+  theme_cookie: string | null;
+  logo_light: string | null;
+  logo_dark: string | null;
+}
+
+// لا .passthrough() هنا خلافاً للمخطط الأعلى (فلسفة forward-compat موثَّقة صراحةً هناك) —
+// sport عقد Backend↔Frontend صغير ومحدَّد، لا استجابة عامة؛ نفس اتفاقية analytics/verification
+// أدناه (partial() فقط). حقل غير مُعرَّف يُسقَط بصمت بدل أن يُمرَّر ويظهر في التطبيق دون تنبّه أحد.
+const SportPublicSettingsSchema = z
+  .object({
+    primary_color: z.string().nullish(),
+    secondary_color: z.string().nullish(),
+    default_theme: z.string().nullish(),
+    allow_theme_switch: z.boolean().nullish(),
+    theme_cookie: z.string().nullish(),
+    logo_light: z.string().nullish(),
+    logo_dark: z.string().nullish(),
+  })
+  .partial();
+
 const SiteSettingsSchema = z
   .object({
     site_name: z.string().default(''),
@@ -47,6 +75,7 @@ const SiteSettingsSchema = z
     nav_categories: z.array(NavCategorySchema).nullish(),
     // بوّابة الجريدة الرقمية (تظهر في شريط الأقسام فقط عند التفعيل).
     newspaper_enabled: z.boolean().nullish(),
+    sport: SportPublicSettingsSchema.nullish(),
 
     // ── Forward-compat (absent today; rendered only when present) ──
     meta_title: z.string().nullish(),
