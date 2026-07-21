@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRef } from 'react';
-import type { PlayerCompetition } from '@/lib/sport/player';
+import type { PlayerCompetitionRef } from '@/lib/sport/domain/entities';
 
 // محوّل بطولات اللاعب (نمط 365 horizontal-arrows-menu-bar) — **كروسل بسهمين** يُمرّر شريط البطولات، لا تمرير حرّ.
 // كلّ عنصر رابط `?competitionId=` (يحفظ التبويب). RTL: سهم يمين→نحو البداية، سهم يسار→نحو النهاية.
@@ -12,7 +12,7 @@ export function CompetitionCarousel({
   activeId,
   baseHref,
 }: {
-  competitions: PlayerCompetition[];
+  competitions: PlayerCompetitionRef[];
   activeId: number | null;
   baseHref: string;
 }) {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { Standings } from '@/lib/sport/stats';
+import type { Standing } from '@/lib/sport/domain/entities';
 
 // جدول الترتيب (نمط 365) — مركز + لون منطقة + شعار/اسم (+ تاج البطل) + لعب + له:عليه + فارق + نقاط + ف/ت/خ + آخر ٥.
 // أعمدة متجاوبة (الجوّال = مركز/فريق/لعب/نقاط فقط ⇒ بلا سكرول). شارات الفورم روابط لصفحة المباراة. مربّع.
@@ -9,7 +9,7 @@ export function StandingsTable({
   highlightIds,
   limit,
 }: {
-  data: Standings;
+  data: Standing;
   showLegend?: boolean;
   highlightIds?: number[];
   limit?: number;

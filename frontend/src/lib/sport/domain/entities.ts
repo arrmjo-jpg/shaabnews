@@ -20,7 +20,7 @@ import type {
   TeamItem,
   TrendLine,
 } from '../games';
-import type { PlayerCareerData, PlayerGame, PlayerProfile, PlayerStat, SquadPlayer, TrophyGroup } from '../player';
+import type { CareerSection, PlayerCareerData, PlayerCompetition, PlayerGame, PlayerProfile, PlayerStat, PlayerTeam, SquadPlayer, TrophyGroup } from '../player';
 import type { BracketStageView, ChampionRow, CompetitionMeta, CompetitionStats, ScorerCompetition, Standings, TeamLite, TeamPage } from '../stats';
 
 export type Match = FeaturedMatch;
@@ -63,6 +63,13 @@ export type CompetitionBracketStage = BracketStageView;
 export type PlayerRecentMatch = PlayerGame;
 export type PlayerCareer = PlayerCareerData;
 export type PlayerTrophy = TrophyGroup;
+
+// §34 layer-boundary fix (evidence: standings-table.tsx/player-stats.tsx/player-widgets.tsx were
+// importing provider-named types straight from stats.ts/player.ts) — two more aliases these shared
+// components need so they can import from domain/entities like every other sport component.
+export type PlayerCompetitionRef = PlayerCompetition;
+export type PlayerCareerSection = CareerSection;
+export type PlayerClubRef = PlayerTeam;
 
 // لا شكل مطابق موجود اليوم — بديل أدنى (stub) غير مُستخدَم بعد، حتى تحتاجه حالة استخدام لاحقة.
 export interface Season {

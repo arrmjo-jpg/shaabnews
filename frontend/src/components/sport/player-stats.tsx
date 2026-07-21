@@ -1,5 +1,5 @@
 import { CompetitionCarousel } from '@/components/sport/competition-carousel';
-import type { PlayerCompetition, PlayerStat } from '@/lib/sport/player';
+import type { PlayerCompetitionRef, PlayerStatLine } from '@/lib/sport/domain/entities';
 
 // بطاقة إحصاء اللاعب (نمط 365 athlete highlight-stats) — محوّل بطولات أفقيّ (روابط `?competitionId=`، يحفظ التبويب)
 // + شبكة بطاقات مقاييس (أهداف/صناعة/تقييم/جزاء/بطاقات). البيانات الفعليّة فقط — حالة فارغة صادقة بلا تلفيق.
@@ -9,9 +9,9 @@ export function PlayerStats({
   stats,
   baseHref,
 }: {
-  competitions: PlayerCompetition[];
+  competitions: PlayerCompetitionRef[];
   activeId: number | null;
-  stats: PlayerStat[];
+  stats: PlayerStatLine[];
   baseHref: string;
 }) {
   return (

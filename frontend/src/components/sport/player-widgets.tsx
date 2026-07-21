@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import type { CareerSection, PlayerGame, TrophyGroup } from '@/lib/sport/player';
+import type { PlayerCareerSection, PlayerRecentMatch, PlayerTrophy } from '@/lib/sport/domain/entities';
 
 // مكوّنات صفحة اللاعب (نمط 365 athlete-widget) — تُعرَض دائمًا (هيكل 365)، وتملأ ببيانات 365 الفعليّة أو حالة فارغة صادقة.
 
 // «المباريات الأخيرة» (نمط 365) — صفّ مرتّب: [تاريخ] [فريقان بعرض ثابت] [نتيجة ملتصقة] [دقائق/أهداف] … [تقييم يسار].
 // الفرق بعرض ثابت كي تلتصق النتيجة بالاسم (لا تتمدّد فجوة)، و`flex-1` يدفع التقييم لأقصى اليسار كـ365.
-export function PlayerLastMatches({ matches, moreHref }: { matches: PlayerGame[]; moreHref?: string }) {
+export function PlayerLastMatches({ matches, moreHref }: { matches: PlayerRecentMatch[]; moreHref?: string }) {
   return (
     <section dir="rtl" className="border border-border bg-white">
       <div className="border-b border-border px-4 py-2.5">
@@ -83,7 +83,7 @@ function TeamLine({ name, logo }: { name: string; logo: string | null }) {
 }
 
 // «مسيرة اللاعب» — مسيرته بالإحصاء (athletes/career): قسم لكلّ فئة (نادٍ/منتخب)، وجدول بطولاتها بإحصاءاته فيها.
-export function PlayerCareer({ sections }: { sections: CareerSection[] }) {
+export function PlayerCareer({ sections }: { sections: PlayerCareerSection[] }) {
   return (
     <section dir="rtl" className="border border-border bg-white">
       <div className="border-b border-border px-4 py-2.5">
@@ -129,7 +129,7 @@ export function PlayerCareer({ sections }: { sections: CareerSection[] }) {
 }
 
 // «الألقاب» — ألقاب اللاعب (athletes/trophies/stats): مجموعة لكلّ بطولة فاز بها، وصفوف (الفريق/الموسم/مشاركات/أهداف).
-export function PlayerTrophies({ groups }: { groups: TrophyGroup[] }) {
+export function PlayerTrophies({ groups }: { groups: PlayerTrophy[] }) {
   return (
     <section dir="rtl" className="border border-border bg-white">
       <div className="border-b border-border px-4 py-2.5">

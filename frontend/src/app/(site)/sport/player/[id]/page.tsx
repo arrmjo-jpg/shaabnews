@@ -1,42 +1,60 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { FollowButton } from '@/components/sport/follow-button';
 import { PlayerStats } from '@/components/sport/player-stats';
 import { PlayerCareer, PlayerLastMatches, PlayerTrophies } from '@/components/sport/player-widgets';
+import { SportBreadcrumb } from '@/components/sport/sport-breadcrumb';
+import { env } from '@/lib/env';
 import { buildMetadata } from '@/lib/seo';
-import {
-  getPlayer,
-  getPlayerCareerData,
-  getPlayerLastMatches,
-  getPlayerStats,
-  getPlayerTrophies,
-  getTeamSquad,
-  type PlayerTeam,
-  type SquadPlayer,
-} from '@/lib/sport/player';
+import { getPlayerPageData, type PlayerPageTab } from '@/lib/sport/application/queries/getPlayerPageData';
+import type { PlayerClubRef, SquadMember } from '@/lib/sport/domain/entities';
 
 // صفحة اللاعب `/sport/player/[id]` (نمط 365 athlete) — ترويسة (صورة/اسم/مركز/نبذة) + ٣ تبويبات: ملف اللاعب /
 // المباريات / الإحصائيات (محفوظة دائماً) + شريط جانبيّ «قد تكون مهتمًا بـ». كلّ البيانات من نقاط 365 الداخليّة
 // المكتشفة (athletes/games·career·trophies/stats·squads·stats) — مفحوصة حيًّا، بلا تلفيق. المسار «player» ثابت.
+// Phase 1.4 Step 2 — تستورد حصريًّا من `application/queries/*` (لا `player.ts` مباشرة)، طبقًا لـ §34.
+const PROVIDER = '365scores';
+
 const TABS = [
   { id: 'profile', label: 'ملف اللاعب' },
   { id: 'matches', label: 'المباريات' },
   { id: 'stats', label: 'الإحصائيات' },
 ] as const;
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+function resolveTab(raw: string | undefined): PlayerPageTab {
+  return TABS.some((t) => t.id === raw) ? (raw as PlayerPageTab) : 'profile';
+}
+
+function resolveCompetitionId(raw: string | undefined): number | undefined {
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 ? n : undefined;
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string; competitionId?: string }>;
+}) {
   const { id } = await params;
   const pid = Number(id);
   if (!Number.isInteger(pid) || pid <= 0) return buildMetadata({ title: 'اللاعب', path: `/sport/player/${id}` });
-  const p = await getPlayer(pid);
+
+  const sp = await searchParams;
+  const tab = resolveTab(sp.tab);
+  const competitionId = resolveCompetitionId(sp.competitionId);
+  const { data } = await getPlayerPageData(PROVIDER, pid, { tab, competitionId });
+  const p = data.profile;
   if (!p) return buildMetadata({ title: 'اللاعب', path: `/sport/player/${pid}` });
 
   return buildMetadata({
     title: p.name,
     description: `ملف وإحصائيات اللاعب ${p.name}`,
     path: `/sport/player/${pid}`,
+    image: p.photo ?? undefined,
     type: 'website',
   });
 }
@@ -52,40 +70,34 @@ export default async function PlayerPage({
   const sp = await searchParams;
   const pid = Number(id);
   if (!Number.isInteger(pid) || pid <= 0) notFound();
-  const p = await getPlayer(pid);
+
+  const tab = resolveTab(sp.tab);
+  const competitionId = resolveCompetitionId(sp.competitionId);
+  const { data } = await getPlayerPageData(PROVIDER, pid, { tab, competitionId });
+  const p = data.profile;
   if (!p) notFound();
 
-  const tab = TABS.some((t) => t.id === sp.tab) ? sp.tab! : 'profile';
-  const compId = Number(sp.competitionId) || p.competitions[0]?.id || null;
-  const squadTeamId = p.club?.id ?? p.nationalTeam?.id ?? null;
-  const needProfile = tab === 'profile';
-  const needMatches = tab === 'profile' || tab === 'matches';
-
-  const [stats, lastMatches, squad, career] = await Promise.all([
-    (needProfile || tab === 'stats') && compId ? getPlayerStats(pid, compId) : Promise.resolve([]),
-    needMatches ? getPlayerLastMatches(pid, tab === 'matches' ? 20 : 5) : Promise.resolve([]),
-    squadTeamId ? getTeamSquad(squadTeamId) : Promise.resolve([]),
-    needProfile ? getPlayerCareerData(pid) : Promise.resolve({ sections: [], competitions: [] }),
-  ]);
-  // اللاعب نفسه ضمن تشكيلة ناديه ⇒ منه الطول/القميص/الميلاد (غير المتوفّرة في نقطة اللاعب)؛ والبقيّة زملاؤه.
-  const self = squad.find((s) => s.id === pid) ?? null;
-  const teammates = squad.filter((s) => s.id !== pid);
-  // الألقاب: تُستعلَم لكلّ بطولات مسيرته (مكتشَفة من مسح ١٠ مواسم) ⇒ تشمل بطولات قديمة فاز بها خارج موسمه الحاليّ.
-  const trophies = needProfile ? await getPlayerTrophies(pid, career.competitions) : [];
+  const compId = competitionId ?? p.competitions[0]?.id ?? null;
+  const { stats, lastMatches, self, teammates, career, trophies } = data;
 
   const bio = buildBio(p);
   const statsHref = `/sport/player/${pid}?tab=${tab}`;
 
+  const siteUrl = env.siteUrl || '';
+  const playerJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: p.name,
+    url: `${siteUrl}/sport/player/${pid}`,
+    ...(p.photo ? { image: p.photo } : {}),
+    ...(p.nationality ? { nationality: p.nationality } : {}),
+  };
+
   return (
     <div className="bg-surface-2">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }} />
       <Container className="py-6">
-        <Link
-          href="/sport"
-          className="mb-4 inline-flex items-center gap-1 text-sm font-bold text-muted transition-colors hover:text-fg"
-        >
-          <ChevronRight className="size-4" />
-          الرياضة
-        </Link>
+        <SportBreadcrumb items={[{ name: p.name }]} />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
           <main className="flex min-w-0 flex-col gap-6">
@@ -156,7 +168,7 @@ export default async function PlayerPage({
   );
 }
 
-function buildBio(p: { name: string; nationality: string | null; age: number | null; club: PlayerTeam | null }): string {
+function buildBio(p: { name: string; nationality: string | null; age: number | null; club: PlayerClubRef | null }): string {
   const who = [p.nationality, p.age != null ? `${p.age} سنة` : null].filter(Boolean).join('، ');
   const head = who ? `${p.name} (${who})` : p.name;
   return `${head} لاعب كرة قدم${p.club ? `، يلعب حاليّاً لصالح ${p.club.name}` : ''}.`;
@@ -171,15 +183,15 @@ function PlayerInfoCard({
   jersey,
   birthdate,
 }: {
-  nationalTeam: PlayerTeam | null;
-  club: PlayerTeam | null;
+  nationalTeam: PlayerClubRef | null;
+  club: PlayerClubRef | null;
   age: number | null;
   nationality: string | null;
   height: number | null;
   jersey: number | null;
   birthdate: string | null;
 }) {
-  const teamCards: { team: PlayerTeam; role: string }[] = [];
+  const teamCards: { team: PlayerClubRef; role: string }[] = [];
   if (nationalTeam) teamCards.push({ team: nationalTeam, role: 'المنتخب' });
   if (club) teamCards.push({ team: club, role: 'النادي' });
 
@@ -238,7 +250,7 @@ function formatDob(iso: string): string {
   return `${d}/${m}/${y.slice(2)}`;
 }
 
-function RelatedSidebar({ teammates, teams }: { teammates: SquadPlayer[]; teams: PlayerTeam[] }) {
+function RelatedSidebar({ teammates, teams }: { teammates: SquadMember[]; teams: PlayerClubRef[] }) {
   // «قد تكون مهتمًا بـ» = **لاعبون** (زملاء الفريق، طلب صريح) ثمّ فرقه — لا دوريات.
   const items = [
     ...teammates.slice(0, 12).map((t) => ({ key: `p${t.id}`, href: `/sport/player/${t.id}`, name: t.name, logo: t.photo, sub: t.position, round: true })),
