@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\V1\Public\Media\WriterMediaController;
 use App\Http\Controllers\Api\V1\Public\NotificationController;
 use App\Http\Controllers\Api\V1\Public\Polls\PollController;
 use App\Http\Controllers\Api\V1\Public\SiteController;
+use App\Http\Controllers\Api\V1\Public\SportMenuController;
 use App\Http\Controllers\Api\V1\Public\Team\TeamMemberController;
 use App\Http\Controllers\Api\V1\Public\VideoLibrary\PlaylistController;
 use App\Http\Controllers\Api\V1\Public\VideoLibrary\VideoController;
@@ -52,6 +53,12 @@ use Illuminate\Support\Facades\Route;
 // ─── إعدادات الموقع العامة — بدون بادئة locale (مستقلّة عن اللغة) ──────────
 Route::middleware(['public.cache', 'throttle:public.read'])
     ->get('/site', [SiteController::class, 'settings']);
+
+// ─── قائمة "أقسام الرياضة" العامّة (Header 1 Sections dropdown) — قراءة فقط، مفعَّلة+بلغة الطلب
+// فقط عبر ?locale=، نفس نمط /site تمامًا (لا بادئة {locale} في المسار). راجع
+// ListPublicSportMenuAction لسبب فصلها عن نظيرتها الإداريّة.
+Route::middleware(['public.cache', 'throttle:public.read'])
+    ->get('/sport-menu', [SportMenuController::class, 'index']);
 
 // ─── Guest — قراءة عامة بادئة {locale} للتوجيه ومفاتيح الكاش الموحّدة ──
 // throttle:public.read — حارس إساءة/DoS لكل عميل/دقيقة على كامل سطح القراءة العام.
