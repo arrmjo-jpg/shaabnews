@@ -24,6 +24,8 @@ class UploadBrandingMediaAction
         'logo_dark' => 'branding/logos',
         'logo_light_en' => 'branding/logos',
         'logo_dark_en' => 'branding/logos',
+        'logo_light_sports' => 'branding/logos',
+        'logo_dark_sports' => 'branding/logos',
         'favicon' => 'branding/favicon',
         'watermark_image' => 'branding/watermarks',
     ];

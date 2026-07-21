@@ -58,6 +58,28 @@ it('uploads branding successfully and creates a media asset', function (): void 
     expect(app(GeneralSettings::class)->logo_light)->toBe($asset->path);
 });
 
+it('uploads sports logo branding and persists it in general settings', function (): void {
+    [, $token] = mediaAdminToken();
+
+    $response = $this->withToken($token)->post('/api/v1/admin/settings/media/branding', [
+        'logo_light_sports' => UploadedFile::fake()->image('sports-light.png'),
+        'logo_dark_sports' => UploadedFile::fake()->image('sports-dark.png'),
+    ], ['Accept' => 'application/json']);
+
+    $response->assertOk();
+    assertSuccessContract($response);
+
+    $lightAsset = MediaAsset::where('metadata->field', 'logo_light_sports')->first();
+    $darkAsset = MediaAsset::where('metadata->field', 'logo_dark_sports')->first();
+
+    expect($lightAsset)->not->toBeNull();
+    expect($darkAsset)->not->toBeNull();
+    Storage::disk('public')->assertExists($lightAsset->path);
+    Storage::disk('public')->assertExists($darkAsset->path);
+    expect(app(GeneralSettings::class)->logo_light_sports)->toBe($lightAsset->path);
+    expect(app(GeneralSettings::class)->logo_dark_sports)->toBe($darkAsset->path);
+});
+
 it('rejects invalid branding payload', function (): void {
     [, $token] = mediaAdminToken();
 

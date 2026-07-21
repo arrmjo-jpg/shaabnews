@@ -28,6 +28,8 @@ export interface GeneralSiteData {
   logo_dark: string | null;
   logo_light_en: string | null;
   logo_dark_en: string | null;
+  logo_light_sports: string | null;
+  logo_dark_sports: string | null;
   favicon: string | null;
   watermark_enabled: boolean;
   watermark_image: string | null;

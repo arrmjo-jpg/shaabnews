@@ -80,6 +80,8 @@
     "logo_dark": "Dark logo",
     "logo_light_en": "Light logo (English)",
     "logo_dark_en": "Dark logo (English)",
+    "logo_light_sports": "Light logo (Sports)",
+    "logo_dark_sports": "Dark logo (Sports)",
     "favicon": "Favicon",
     "watermark_image": "Watermark image",
     "dropHint": "Drag a file here or click to choose",

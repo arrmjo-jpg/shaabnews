@@ -51,6 +51,8 @@ class GeneralSettingsResource extends JsonResource
                 'logo_dark' => $s->logo_dark,
                 'logo_light_en' => $s->logo_light_en,
                 'logo_dark_en' => $s->logo_dark_en,
+                'logo_light_sports' => $s->logo_light_sports,
+                'logo_dark_sports' => $s->logo_dark_sports,
                 'favicon' => $s->favicon,
                 'watermark_enabled' => $s->watermark_enabled,
                 'watermark_image' => $s->watermark_image,
