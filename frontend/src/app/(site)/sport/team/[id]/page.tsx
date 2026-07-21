@@ -1,26 +1,33 @@
-import { ChevronRight } from 'lucide-react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { EntityListBlock } from '@/components/sport/entity-list-block';
 import { FollowButton } from '@/components/sport/follow-button';
+import { SportBreadcrumb } from '@/components/sport/sport-breadcrumb';
 import { StandingsTable } from '@/components/sport/standings-table';
+import { env } from '@/lib/env';
 import { buildMetadata } from '@/lib/seo';
-import { getStandings, getTeam } from '@/lib/sport/stats';
+import { getTeamPageData } from '@/lib/sport/application/queries/getTeamPageData';
 
 // صفحة الفريق `/sport/team/[id]` (مثل 365 `/team/{id}`) — ترويسة + ترتيب دوريه الرئيس (صفّ الفريق مُميَّز) + بطولاته
 // (روابط لصفحة البطولة). لا fixtures (نقطة مباريات الفريق لا تعمل) ⇒ لا تلفيق. الثابت «team» يسبق `[sport]`.
+// Phase 1.4 Step 2 — أوّل صفحة عرض تُبنى: تستورد حصريًّا من `application/queries/*` (لا `stats.ts`
+// ولا `infrastructure/*` مباشرة)، طبقًا لـ §34. مزوّد واحد مسجَّل اليوم فقط، فالسلسلة الحرفية هنا
+// مقبولة (لا تجريد سابق لأوانه لمزوّد ثانٍ غير موجود).
+const PROVIDER = '365scores';
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const tid = Number(id);
   if (!Number.isInteger(tid) || tid <= 0) return buildMetadata({ title: 'الفريق', path: `/sport/team/${id}` });
-  const team = await getTeam(tid);
+  const { data } = await getTeamPageData(PROVIDER, tid);
+  const team = data.profile;
   if (!team) return buildMetadata({ title: 'الفريق', path: `/sport/team/${tid}` });
 
   return buildMetadata({
     title: team.name,
     description: `ترتيب وبطولات فريق ${team.name}`,
     path: `/sport/team/${tid}`,
+    image: team.logo ?? undefined,
     type: 'website',
   });
 }
@@ -29,20 +36,25 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const tid = Number(id);
   if (!Number.isInteger(tid) || tid <= 0) notFound();
-  const team = await getTeam(tid);
+  const { data } = await getTeamPageData(PROVIDER, tid);
+  const team = data.profile;
   if (!team) notFound();
-  const standings = team.mainCompetitionId ? await getStandings(team.mainCompetitionId) : null;
+  const standings = data.standings;
+
+  const siteUrl = env.siteUrl || '';
+  const teamJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsTeam',
+    name: team.name,
+    url: `${siteUrl}/sport/team/${tid}`,
+    ...(team.logo ? { logo: team.logo } : {}),
+  };
 
   return (
     <div className="bg-surface-2">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(teamJsonLd) }} />
       <Container className="py-6">
-        <Link
-          href="/sport"
-          className="mb-4 inline-flex items-center gap-1 text-sm font-bold text-muted transition-colors hover:text-fg"
-        >
-          <ChevronRight className="size-4" />
-          الرياضة
-        </Link>
+        <SportBreadcrumb items={[{ name: team.name }]} />
 
         <div className="mb-6 flex items-center gap-3">
           {team.logo && (
