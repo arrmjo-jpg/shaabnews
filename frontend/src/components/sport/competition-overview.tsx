@@ -4,8 +4,14 @@ import { FeaturedMatchWidget } from '@/components/sport/featured-match-widget';
 import { MatchRow } from '@/components/sport/match-row';
 import { SportNews } from '@/components/sport/sport-news';
 import { StandingsPreview } from '@/components/sport/standings-view';
-import type { GameDetail, SportMatch } from '@/lib/sport/games';
-import type { ChampionRow, CompetitionMeta, Standings, StatLeader } from '@/lib/sport/stats';
+import type {
+  CompetitionChampion,
+  CompetitionProfile,
+  CompetitionStatLeader,
+  MatchDetail,
+  MatchListItem,
+  Standing,
+} from '@/lib/sport/domain/entities';
 
 // تبويب «التفاصيل» — نظرة عامّة **متكيّفة حسب البطولة** (الفكرة لا الشكل): تعرض ما لدى البطولة فقط — مباراة
 // قادمة + معاينة ترتيب (إن وُجد) + أبرز هدّافين (إن وُجدت إحصاءات، روابط لصفحة اللاعب) + عن البطولة + أخبار
@@ -20,14 +26,14 @@ export function CompetitionOverview({
   scorersUnit,
   champion,
 }: {
-  meta: CompetitionMeta;
-  featured: GameDetail | null;
+  meta: CompetitionProfile;
+  featured: MatchDetail | null;
   trends: TrendCard[];
-  nextMatch: SportMatch | null;
-  standings: Standings | null;
-  scorers: StatLeader[];
+  nextMatch: MatchListItem | null;
+  standings: Standing | null;
+  scorers: CompetitionStatLeader[];
   scorersUnit: string | null;
-  champion: ChampionRow | null;
+  champion: CompetitionChampion | null;
 }) {
   const holder = champion?.winner ?? null;
   const base = `/sport/competition/${meta.id}`;

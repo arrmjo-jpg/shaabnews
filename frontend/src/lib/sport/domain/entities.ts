@@ -19,6 +19,7 @@ import type {
   H2HFormGame,
   H2HMeeting,
   H2HTeamForm,
+  InsightGame,
   LineupPlayer,
   MatchEvent,
   MatchEventType,
@@ -37,7 +38,19 @@ import type {
   TrendLine,
 } from '../games';
 import type { CareerSection, PlayerCareerData, PlayerCompetition, PlayerGame, PlayerProfile, PlayerStat, PlayerTeam, SquadPlayer, TrophyGroup } from '../player';
-import type { BracketStageView, ChampionRow, CompetitionMeta, CompetitionStats, ScorerCompetition, Standings, TeamLite, TeamPage } from '../stats';
+import type {
+  BracketMatch,
+  BracketParticipant,
+  BracketStageView,
+  ChampionRow,
+  CompetitionMeta,
+  CompetitionStats,
+  ScorerCompetition,
+  StatLeader,
+  Standings,
+  TeamLite,
+  TeamPage,
+} from '../stats';
 
 export type Match = FeaturedMatch;
 export type Competition = CompetitionItem;
@@ -106,6 +119,13 @@ export type HeadToHeadMeeting = H2HMeeting;
 export type HeadToHeadFormGame = H2HFormGame;
 export type HeadToHeadTeamForm = H2HTeamForm;
 export type ShotChartEntry = ShotMapShot;
+
+// Phase 1.4 Step 2 (Competition page) §34 fix — same pattern again: competition-* components
+// were importing provider-named sub-types straight from games.ts/stats.ts.
+export type CompetitionInsightGame = InsightGame;
+export type CompetitionStatLeader = StatLeader;
+export type CompetitionBracketMatch = BracketMatch;
+export type CompetitionBracketParticipant = BracketParticipant;
 
 // لا شكل مطابق موجود اليوم — بديل أدنى (stub) غير مُستخدَم بعد، حتى تحتاجه حالة استخدام لاحقة.
 export interface Season {

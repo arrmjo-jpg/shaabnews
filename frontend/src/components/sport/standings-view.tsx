@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { StandingsTable } from '@/components/sport/standings-table';
-import type { Standings } from '@/lib/sport/stats';
+import type { Standing } from '@/lib/sport/domain/entities';
 
 // عرض الترتيب المتكيّف: بطولات المجموعات (كأس عالم — `groups.length > 1`) ⇒ جدول لكلّ مجموعة بعنوانها («المجموعة أ»)،
 // والدوريات أحاديّة الجدول ⇒ جدول واحد مسطّح. يعيد استخدام `StandingsTable` كما هو (صفوف مُرشَّحة بـ`groupNum`).
-export function StandingsView({ data, showLegend = false }: { data: Standings; showLegend?: boolean }) {
+export function StandingsView({ data, showLegend = false }: { data: Standing; showLegend?: boolean }) {
   const groups = data.groups.filter((g) => data.rows.some((r) => r.groupNum === g.num));
 
   if (groups.length <= 1) {
@@ -39,7 +39,7 @@ export function StandingsPreview({
   data,
   meta,
 }: {
-  data: Standings;
+  data: Standing;
   meta: { id: number; name: string; logo: string | null };
 }) {
   const groups = data.groups.filter((g) => data.rows.some((r) => r.groupNum === g.num));

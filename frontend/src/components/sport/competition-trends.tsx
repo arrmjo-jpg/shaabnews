@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import type { SportMatch, TrendLine } from '@/lib/sport/games';
+import type { FixtureTrend, MatchListItem } from '@/lib/sport/domain/entities';
 
 // «الأكثر شيوعاً» (نمط 365 top-trends) — صفّ بطاقات أفقيّ، كلّ بطاقة مباراة قادمة: شارة موعد + مؤشّر ثقة (لهب من
 // `percentage`) + الفريقان (VS، رابط للمباراة) + أسطر إحصائيّة واقعيّة (`text`). **مُجرَّد من المراهنات/odds/betCTA
 // تماماً** (العقد). البطاقة كلّها رابط لصفحة المباراة. تُخفى البطولات بلا مباريات قادمة (بلا تلفيق).
 export interface TrendCard {
-  match: SportMatch;
-  trends: TrendLine[];
+  match: MatchListItem;
+  trends: FixtureTrend[];
 }
 
 export function CompetitionTrends({ cards }: { cards: TrendCard[] }) {
@@ -57,13 +57,13 @@ function TeamLogo({ src }: { src: string | null }) {
   return <img src={src} alt="" loading="lazy" className="size-4 shrink-0 object-contain" />;
 }
 
-function flames(trends: TrendLine[]): string {
+function flames(trends: FixtureTrend[]): string {
   const top = Math.max(0, ...trends.map((t) => t.percentage ?? 0));
   const n = top >= 0.9 ? 3 : top >= 0.75 ? 2 : 1;
   return '🔥'.repeat(n);
 }
 
-function trendDay(match: SportMatch): string {
+function trendDay(match: MatchListItem): string {
   if (!match.startTime) return '';
   try {
     const d = new Date(match.startTime);

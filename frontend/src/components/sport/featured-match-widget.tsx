@@ -1,13 +1,12 @@
 import { BarChart3, LayoutGrid, Trophy, Users } from 'lucide-react';
 import Link from 'next/link';
-import type { GameDetail } from '@/lib/sport/games';
-import type { CompetitionMeta } from '@/lib/sport/stats';
+import type { CompetitionProfile, MatchDetail } from '@/lib/sport/domain/entities';
 
 // ودجت «أبرز المباريات» (نمط 365 featured-games) — بطاقة المباراة المميّزة للبطولة الحاليّة: ترويسة (شعار+اسم
 // البطولة+المجموعة، رابط للبطولة) + شارة موعد (اليوم/غدًا/تاريخ/مباشر)، صفّ الفريقين بخلفيّة ألوانهما الحقيقيّة
 // (مع تباين نصّ مقروء محسوب) + VS/النتيجة، وصف (تاريخ|وقت|ملعب)، و٤ أزرار تعمل: صفحة المباراة·تشكيلة الفريقين·
 // الإحصائيات → صفحة المباراة، المجموعات → ترتيب البطولة. كلّ البيانات من تفاصيل المباراة الفعليّة — بلا تلفيق.
-export function FeaturedMatchWidget({ detail, meta }: { detail: GameDetail; meta: CompetitionMeta }) {
+export function FeaturedMatchWidget({ detail, meta }: { detail: MatchDetail; meta: CompetitionProfile }) {
   const matchHref = `/sport/match/${detail.id}`;
   const home = readable(detail.home.color);
   const away = readable(detail.away.color);
@@ -81,7 +80,7 @@ export function FeaturedMatchWidget({ detail, meta }: { detail: GameDetail; meta
   );
 }
 
-function Team({ side, colors }: { side: GameDetail['home']; colors: { bg: string; fg: string } }) {
+function Team({ side, colors }: { side: MatchDetail['home']; colors: { bg: string; fg: string } }) {
   return (
     <div
       className="flex flex-col items-center justify-center gap-2 px-3 py-4"
@@ -123,7 +122,7 @@ function ymdAmman(d: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Amman', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
 }
 
-function dayBadge(detail: GameDetail): string {
+function dayBadge(detail: MatchDetail): string {
   if (detail.kind === 'live') return detail.minute ?? 'مباشر';
   if (detail.kind === 'finished') return 'انتهت';
   if (!detail.startTime) return '';
@@ -133,7 +132,7 @@ function dayBadge(detail: GameDetail): string {
   return fmt(detail.startTime, { day: '2-digit', month: '2-digit' });
 }
 
-function description(detail: GameDetail): string {
+function description(detail: MatchDetail): string {
   if (!detail.startTime) return detail.venue ?? '';
   const date = fmt(detail.startTime, { weekday: 'long', day: 'numeric', month: 'long' });
   const time = fmt(detail.startTime, { hour: '2-digit', minute: '2-digit' });

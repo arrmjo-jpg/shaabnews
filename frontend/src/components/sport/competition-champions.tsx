@@ -1,11 +1,11 @@
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import type { ChampionRow } from '@/lib/sport/stats';
+import type { CompetitionChampion } from '@/lib/sport/domain/entities';
 
 // تبويب «الأبطال» (نمط 365 entity-history-widget) — جدول مواسم، كلّ صفّ: شعار البطل + الإصدار «قطر 2022» + اسم البطل
 // + سطر النتيجة الجاهز «فرنسا 4-2 (بعد ضربات الترجيح)»، ورابطٌ لمباراة النهائيّ (سهم). الأحدث أوّلاً. المصدر
 // `competitions/history` (appTypeId=5). بلا تلفيق — صفوف بلا بطل مُستبعَدة، وسطر النتيجة/الرابط يظهران فقط عند توفّرهما.
-export function CompetitionChampions({ rows, title }: { rows: ChampionRow[]; title?: string }) {
+export function CompetitionChampions({ rows, title }: { rows: CompetitionChampion[]; title?: string }) {
   if (!rows.length) {
     return <div className="border border-border bg-white p-8 text-center text-sm text-muted">لا بيانات أبطال متاحة.</div>;
   }
@@ -25,7 +25,7 @@ export function CompetitionChampions({ rows, title }: { rows: ChampionRow[]; tit
   );
 }
 
-function Row({ r }: { r: ChampionRow }) {
+function Row({ r }: { r: CompetitionChampion }) {
   const inner = (
     <>
       <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden">

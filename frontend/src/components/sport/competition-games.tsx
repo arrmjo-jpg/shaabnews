@@ -1,8 +1,8 @@
 import { MatchRow } from '@/components/sport/match-row';
-import type { SportMatch } from '@/lib/sport/games';
+import type { MatchListItem } from '@/lib/sport/domain/entities';
 
 // تبويب «المباريات» لصفحة البطولة — جدول المباريات (قادمة) + النتائج الأخيرة، كلّ صفّ `MatchRow` رابط لتفاصيل المباراة.
-export function CompetitionGamesView({ fixtures, results }: { fixtures: SportMatch[]; results: SportMatch[] }) {
+export function CompetitionGamesView({ fixtures, results }: { fixtures: MatchListItem[]; results: MatchListItem[] }) {
   if (!fixtures.length && !results.length) {
     return (
       <div className="border border-border bg-white p-8 text-center text-sm text-muted">
@@ -18,7 +18,7 @@ export function CompetitionGamesView({ fixtures, results }: { fixtures: SportMat
   );
 }
 
-function GamesBlock({ title, games }: { title: string; games: SportMatch[] }) {
+function GamesBlock({ title, games }: { title: string; games: MatchListItem[] }) {
   return (
     <section dir="rtl" className="border border-border bg-white">
       <div className="border-b border-border px-4 py-2.5">

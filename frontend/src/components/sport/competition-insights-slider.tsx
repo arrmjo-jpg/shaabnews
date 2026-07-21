@@ -3,12 +3,12 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRef } from 'react';
-import type { InsightGame } from '@/lib/sport/games';
+import type { CompetitionInsightGame } from '@/lib/sport/domain/entities';
 
 // سلايدر «أبرز التريندات» (نمط 365 top-trends-widget) — كروسل بطاقات بسهمين. كلّ بطاقة مباراة قادمة لها تريندات
 // بارزة: موعد + لهبان (دلالة «بارز») + الفريقان (VS، شعارات، رابط للمباراة) + أسطر التريند البارزة (`text` إحصائيّ).
 // **بلا أيّ مراهنات/odds/betCTA** (العقد). RTL: سهم يمين→البداية، سهم يسار→النهاية.
-export function CompetitionInsightsSlider({ games }: { games: InsightGame[] }) {
+export function CompetitionInsightsSlider({ games }: { games: CompetitionInsightGame[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const nudge = (delta: number) => ref.current?.scrollBy({ left: delta, behavior: 'smooth' });
 

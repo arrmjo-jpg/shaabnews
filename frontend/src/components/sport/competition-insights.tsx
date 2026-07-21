@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import type { CompetitionInsights, InsightGame } from '@/lib/sport/games';
+import type { CompetitionInsightGame, CompetitionInsightsSummary } from '@/lib/sport/domain/entities';
 import { CompetitionInsightsSlider } from './competition-insights-slider';
 
 // «ملاحظات» البطولة (نمط 365 insights-page) — سلايدر «أبرز التريندات» (البارزة isTop) + قائمة «شائع» مُجمَّعة
 // بالمباراة (ترويسة الفريقين رابطٌ للمباراة + أسطر التريند، لهب🔥 للبارز). كلّها إحصاءات واقعيّة من `text`،
 // **مُجرَّدة تماماً من المراهنات/odds/betCTA** (العقد). الموعد مُهيّأ خادميّاً (لا منطق تاريخ في العميل).
-export function CompetitionInsightsView({ data }: { data: CompetitionInsights }) {
+export function CompetitionInsightsView({ data }: { data: CompetitionInsightsSummary }) {
   return (
     <div className="flex flex-col gap-6">
       {data.top.length > 0 && (
@@ -33,7 +33,7 @@ export function CompetitionInsightsView({ data }: { data: CompetitionInsights })
   );
 }
 
-function GameTrends({ g }: { g: InsightGame }) {
+function GameTrends({ g }: { g: CompetitionInsightGame }) {
   return (
     <div>
       <Link

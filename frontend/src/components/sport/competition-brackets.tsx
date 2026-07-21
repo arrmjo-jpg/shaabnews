@@ -1,6 +1,6 @@
 import { Trophy } from 'lucide-react';
 import Link from 'next/link';
-import type { BracketMatch, BracketParticipant, BracketStageView } from '@/lib/sport/stats';
+import type { CompetitionBracketMatch, CompetitionBracketParticipant, CompetitionBracketStage } from '@/lib/sport/domain/entities';
 
 // خروج المغلوب — رسم شجرة الأدوار (لوحة داكنة نمط 365): عمود لكلّ دور، يمين→يسار (RTL) حتى النهائي،
 // مع خطوط ربط (موصِّلات) بين الأدوار. كلّ مواجهة = مشاركان + موعد. المشاركون بصيغة التأهّل («1 ه»/«الفائز
@@ -10,7 +10,7 @@ export function CompetitionBrackets({
   title,
   logo,
 }: {
-  stages: BracketStageView[];
+  stages: CompetitionBracketStage[];
   title?: string;
   logo?: string | null;
 }) {
@@ -79,7 +79,7 @@ export function CompetitionBrackets({
   );
 }
 
-function MatchCell({ m }: { m: BracketMatch }) {
+function MatchCell({ m }: { m: CompetitionBracketMatch }) {
   const body = (
     <div className="border border-white/10 bg-white/[0.04]">
       {m.date && <div className="px-2.5 pt-1.5 text-[10px] font-bold text-white/45">{formatWhen(m.date)}</div>}
@@ -97,7 +97,7 @@ function MatchCell({ m }: { m: BracketMatch }) {
   );
 }
 
-function ParticipantRow({ p }: { p: BracketParticipant | null }) {
+function ParticipantRow({ p }: { p: CompetitionBracketParticipant | null }) {
   if (!p) return <div className="px-2.5 py-2 text-xs text-white/40">—</div>;
   return (
     <div className="flex items-center gap-2 px-2.5 py-2">

@@ -1,8 +1,8 @@
-import type { CompetitionStats } from '@/lib/sport/stats';
+import type { CompetitionStatsSummary } from '@/lib/sport/domain/entities';
 
 // تبويب «الإحصائيات» لصفحة البطولة — شبكة بطاقات لكلّ فئة (هدّافون/صنّاع/بطاقات/شباك نظيفة…)،
 // كلّ بطاقة = ترتيب + صورة لاعب دائريّة + اسم + مركز·فريق + القيمة (مع الوحدة). مربّع؛ الصور `.avatar`. لا تلفيق.
-export function CompetitionStatsView({ data }: { data: CompetitionStats }) {
+export function CompetitionStatsView({ data }: { data: CompetitionStatsSummary }) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {data.categories.map((cat) => (

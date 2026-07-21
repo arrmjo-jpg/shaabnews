@@ -1,5 +1,3 @@
-import { ChevronRight } from 'lucide-react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { CompetitionBrackets } from '@/components/sport/competition-brackets';
@@ -10,28 +8,39 @@ import { CompetitionInsightsView } from '@/components/sport/competition-insights
 import { CompetitionMatchesSidebar } from '@/components/sport/competition-matches-sidebar';
 import { CompetitionOverview } from '@/components/sport/competition-overview';
 import { CompetitionStatsView } from '@/components/sport/competition-stats';
+import { SportBreadcrumb } from '@/components/sport/sport-breadcrumb';
 import { SportNews } from '@/components/sport/sport-news';
 import { StandingsView } from '@/components/sport/standings-view';
-import { getCompetitionGames, getCompetitionInsights, getCompetitionMatchList, getGameDetail, getGameTrends } from '@/lib/sport/games';
+import { env } from '@/lib/env';
 import { buildMetadata } from '@/lib/seo';
-import {
-  getCompetitionBrackets,
-  getCompetitionHistory,
-  getCompetitionMeta,
-  getCompetitionStats,
-  getStandings,
-} from '@/lib/sport/stats';
+import { getCompetitionPageData, type CompetitionPageTab } from '@/lib/sport/application/queries/getCompetitionPageData';
 
 // صفحة البطولة (نمط 365 `/league/{id}`) — كلّ الأقسام في الهيدر (`?tab=`): التفاصيل (الافتراضيّ) · المباريات ·
 // المجموعات · أخبار (CMS موقعنا) · خروج المغلوب · الإحصائيات · ملاحظات · الأبطال. الأقسام بلا بيانات في الـAPI
 // العامّ (ملاحظات، وتفاصيل مواجهات خروج المغلوب) تعرض حالة صادقة بلا تلفيق. الهيدر مُعاد الاستخدام (CompetitionHeader).
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+// Phase 1.4 Step 2 — تستورد حصريًّا من `application/queries/*` (لا `games.ts`/`stats.ts` مباشرة)، طبقًا لـ §34.
+const PROVIDER = '365scores';
+
+function resolveTab(raw: string | undefined): CompetitionPageTab {
+  return COMPETITION_TABS.some((t) => t.id === raw) ? (raw as CompetitionPageTab) : 'overview';
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const { id } = await params;
   const cid = Number(id);
   if (!Number.isInteger(cid) || cid <= 0) {
     return buildMetadata({ title: 'البطولة', path: `/sport/competition/${id}` });
   }
-  const meta = await getCompetitionMeta(cid);
+  const sp = await searchParams;
+  const tab = resolveTab(sp.tab);
+  const { data } = await getCompetitionPageData(PROVIDER, cid, { tab });
+  const meta = data.meta;
   if (!meta) return buildMetadata({ title: 'البطولة', path: `/sport/competition/${cid}` });
 
   return buildMetadata({
@@ -53,44 +62,31 @@ export default async function CompetitionPage({
   const sp = await searchParams;
   const cid = Number(id);
   if (!Number.isInteger(cid) || cid <= 0) notFound();
-  const meta = await getCompetitionMeta(cid);
+
+  const active = resolveTab(sp.tab);
+  const { data } = await getCompetitionPageData(PROVIDER, cid, { tab: active });
+  const meta = data.meta;
   if (!meta) notFound();
 
-  const active = COMPETITION_TABS.some((t) => t.id === sp.tab) ? sp.tab! : 'overview';
-
-  // التفاصيل (overview) = نظرة عامّة متكيّفة ⇒ تجلب ما تتيحه أعلام البطولة بالتوازي. باقي التبويبات: بياناتها فقط.
-  const isOverview = active === 'overview';
-  const [games, stats, champions, standings, brackets, insights, matchList] = await Promise.all([
-    active === 'matches' || isOverview ? getCompetitionGames(cid) : Promise.resolve(null),
-    active === 'stats' || (isOverview && meta.hasStats) ? getCompetitionStats(cid) : Promise.resolve(null),
-    active === 'champions' || (isOverview && meta.hasHistory) ? getCompetitionHistory(cid) : Promise.resolve([]),
-    active === 'standings' || (isOverview && meta.hasStandings) ? getStandings(cid) : Promise.resolve(null),
-    active === 'brackets' ? getCompetitionBrackets(cid) : Promise.resolve([]),
-    active === 'insights' ? getCompetitionInsights(cid) : Promise.resolve(null),
-    getCompetitionMatchList(cid),
-  ]);
+  const { games, stats, champions, standings, brackets, insights, matchList, featured, trendCards } = data;
   const goalsCat = stats?.categories.find((c) => c.title === 'الأهداف') ?? stats?.categories[0] ?? null;
   const nextMatch = games ? (games.fixtures[0] ?? games.results[0] ?? null) : null;
-  // للتفاصيل فقط: المباراة المميّزة (تفاصيل أوّل مباراة قادمة) + Trends لأقرب ٦ مباريات قادمة — بالتوازي.
-  const featuredId = isOverview ? (nextMatch?.id ?? null) : null;
-  const trendFixtures = isOverview && games ? games.fixtures.slice(0, 6) : [];
-  const [featured, trendLists] = await Promise.all([
-    featuredId ? getGameDetail(featuredId) : Promise.resolve(null),
-    Promise.all(trendFixtures.map((m) => getGameTrends(m.id))),
-  ]);
-  const trendCards = trendFixtures.map((match, i) => ({ match, trends: trendLists[i] })).filter((c) => c.trends.length > 0);
+
+  const siteUrl = env.siteUrl || '';
+  const competitionJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsOrganization',
+    name: meta.name,
+    url: `${siteUrl}/sport/competition/${cid}`,
+    ...(meta.logo ? { logo: meta.logo } : {}),
+  };
 
   return (
     <div className="bg-surface-2">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(competitionJsonLd) }} />
       <CompetitionHeader meta={meta} activeTab={active} />
       <Container className="py-6">
-        <Link
-          href="/sport"
-          className="mb-4 inline-flex items-center gap-1 text-sm font-bold text-muted transition-colors hover:text-fg"
-        >
-          <ChevronRight className="size-4" />
-          الرياضة
-        </Link>
+        <SportBreadcrumb items={[{ name: meta.name }]} />
 
         {/* تخطيط 365: شريط جانبيّ بمباريات البطولة (يمين RTL) + المحتوى (التبويب النشط). مربوط بالبطولة الحاليّة. */}
         <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
