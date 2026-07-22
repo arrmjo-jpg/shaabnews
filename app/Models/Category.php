@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\CategoryScope;
 use App\Enums\CategoryStatus;
+use App\Enums\SectionLayoutType;
 use App\Support\Audit\AuditsChanges;
 use App\Support\Content\SlugGenerator;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -42,6 +43,7 @@ class Category extends Model
         'parent_id', 'locale', 'scope', 'name', 'slug', 'description',
         'icon', 'status', 'show_in_header', 'show_in_body',
         'show_in_footer', 'sort_order',
+        'banner_media_id', 'show_title', 'layout_type',
         'provider', 'external_id',
     ];
 
@@ -59,6 +61,10 @@ class Category extends Model
         'show_in_body',
         'show_in_footer',
         'sort_order',
+        'banner_media_id',
+        'show_title',
+        'layout_type',
+        'appearance',
         'provider',
         'external_id',
         'provider_metadata',
@@ -73,6 +79,10 @@ class Category extends Model
             'show_in_body' => 'boolean',
             'show_in_footer' => 'boolean',
             'sort_order' => 'integer',
+            'banner_media_id' => 'integer',
+            'show_title' => 'boolean',
+            'layout_type' => SectionLayoutType::class,
+            'appearance' => 'array',
             'provider_metadata' => 'array',
         ];
     }
@@ -102,7 +112,10 @@ class Category extends Model
     }
 
     /**
-     * تقييد فرادة الـ slug ضمن نفس اللغة فقط (ADR slug per-locale).
+     * تقييد فرادة الـ slug ضمن نفس اللغة **ونفس الأب** (2026-07-18، كان
+     * per-locale فقط سابقاً). ضروريّ لسلامة المسار المتداخل الجديد
+     * /news/category/{...}: لولا هذا القيد لأمكن تصنيفَين تحت أبوين مختلفين
+     * أن يتشاركا نفس الـ slug فيتعذّر تمييز مسارهما.
      */
     protected function scopeWithUniqueSlugConstraints(
         Builder $query,
@@ -111,7 +124,12 @@ class Category extends Model
         array $config,
         string $slug
     ): Builder {
-        return $query->where('locale', $model->locale);
+        return $query->where('locale', $model->locale)
+            ->when(
+                $model->parent_id === null,
+                fn (Builder $q): Builder => $q->whereNull('parent_id'),
+                fn (Builder $q): Builder => $q->where('parent_id', $model->parent_id),
+            );
     }
 
     // ─── Relationships ──────────────────────────────────────────────
@@ -136,6 +154,12 @@ class Category extends Model
     public function primaryArticles(): HasMany
     {
         return $this->hasMany(Article::class, 'primary_category_id');
+    }
+
+    /** صورة بانر القسم (Section Design System) — نفس نمط Broadcast/Article.ogImage. */
+    public function bannerMedia(): BelongsTo
+    {
+        return $this->belongsTo(MediaAsset::class, 'banner_media_id');
     }
 
     // ─── Scopes ─────────────────────────────────────────────────────
@@ -196,5 +220,31 @@ class Category extends Model
         }
 
         return false;
+    }
+
+    // ─── Canonical URL foundation (2026-07-18) ──────────────────────
+
+    /**
+     * المسار القانوني: /news/category/{ancestor-slug}/.../{slug} — يصعد سلسلة
+     * الآباء (نفس نمط depth() أعلاه، حدّ أمان MAX_DEPTH+1 لمنع حلقة لا نهائية
+     * على بيانات تالفة) ثم يبني المسار من الجذر نزولاً. بلا بادئة لغة (يطابق
+     * مسار الواجهة الفعليّ locale-less، مرآة Article::canonicalPath()).
+     */
+    public function canonicalPath(): string
+    {
+        $segments = [$this->slug];
+        $node = $this;
+        $hops = 0;
+
+        while ($node->parent_id !== null && $hops <= self::MAX_DEPTH + 1) {
+            $node = $node->parent()->first();
+            if ($node === null) {
+                break;
+            }
+            $segments[] = $node->slug;
+            $hops++;
+        }
+
+        return '/news/category/'.implode('/', array_reverse($segments));
     }
 }
