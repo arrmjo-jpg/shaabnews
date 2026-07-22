@@ -800,7 +800,7 @@
     "by": "By",
     "clearBreaking": "Clear all breaking",
     "clearPinned": "Clear all pinned",
-    "pagination_out_of_range": "The requested page doesn't exist — moved to page 1",
+    "pagination_out_of_range": "The requested page isn't available — moved to the last allowed page",
     "stats": {
       "total": "Total articles",
       "published": "Published",
