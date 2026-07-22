@@ -4,6 +4,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 vi.mock('@/components/sections/renderers/FeaturedRenderer', () => ({
   FeaturedRenderer: vi.fn(() => <div data-testid="featured-renderer-called" />),
 }));
+vi.mock('@/components/sections/renderers/MagazineRenderer', () => ({
+  MagazineRenderer: vi.fn(() => <div data-testid="magazine-renderer-called" />),
+}));
 vi.mock('@/components/category/category-featured-grid', () => ({
   CategoryFeaturedGrid: vi.fn(() => <div data-testid="category-featured-grid-called" />),
 }));
@@ -11,6 +14,7 @@ vi.mock('@/components/category/category-featured-grid', () => ({
 // يجب الاستيراد بعد vi.mock (hoisted تلقائيًّا بواسطة vitest، لكن الترتيب هنا للوضوح فقط).
 import { SectionRenderer } from './SectionRenderer';
 import { FeaturedRenderer } from '@/components/sections/renderers/FeaturedRenderer';
+import { MagazineRenderer } from '@/components/sections/renderers/MagazineRenderer';
 import { CategoryFeaturedGrid } from '@/components/category/category-featured-grid';
 import type { CategoryRef, FeedItem } from '@/lib/feed';
 
@@ -44,7 +48,7 @@ function makeCategory(layout: 'default' | 'hero' | 'magazine' | 'featured'): Cat
 }
 
 describe('SectionRenderer dispatch — single dispatch point, per layout (Renderer Consolidation)', () => {
-  it('invokes FeaturedRenderer exactly once and never CategoryFeaturedGrid when layout is "featured"', () => {
+  it('invokes FeaturedRenderer exactly once and nothing else when layout is "featured"', () => {
     vi.clearAllMocks();
     renderToStaticMarkup(
       <SectionRenderer category={makeCategory('featured')} items={items} page={1}>
@@ -53,10 +57,24 @@ describe('SectionRenderer dispatch — single dispatch point, per layout (Render
     );
 
     expect(FeaturedRenderer).toHaveBeenCalledTimes(1);
+    expect(MagazineRenderer).not.toHaveBeenCalled();
     expect(CategoryFeaturedGrid).not.toHaveBeenCalled();
   });
 
-  it('invokes CategoryFeaturedGrid exactly once and never FeaturedRenderer when layout is "hero"', () => {
+  it('invokes MagazineRenderer exactly once and nothing else when layout is "magazine"', () => {
+    vi.clearAllMocks();
+    renderToStaticMarkup(
+      <SectionRenderer category={makeCategory('magazine')} items={items} page={1}>
+        {() => null}
+      </SectionRenderer>,
+    );
+
+    expect(MagazineRenderer).toHaveBeenCalledTimes(1);
+    expect(FeaturedRenderer).not.toHaveBeenCalled();
+    expect(CategoryFeaturedGrid).not.toHaveBeenCalled();
+  });
+
+  it('invokes CategoryFeaturedGrid exactly once and nothing else when layout is "hero"', () => {
     vi.clearAllMocks();
     renderToStaticMarkup(
       <SectionRenderer category={makeCategory('hero')} items={items} page={1}>
@@ -66,21 +84,10 @@ describe('SectionRenderer dispatch — single dispatch point, per layout (Render
 
     expect(CategoryFeaturedGrid).toHaveBeenCalledTimes(1);
     expect(FeaturedRenderer).not.toHaveBeenCalled();
+    expect(MagazineRenderer).not.toHaveBeenCalled();
   });
 
-  it('invokes CategoryFeaturedGrid exactly once and never FeaturedRenderer when layout is "magazine"', () => {
-    vi.clearAllMocks();
-    renderToStaticMarkup(
-      <SectionRenderer category={makeCategory('magazine')} items={items} page={1}>
-        {() => null}
-      </SectionRenderer>,
-    );
-
-    expect(CategoryFeaturedGrid).toHaveBeenCalledTimes(1);
-    expect(FeaturedRenderer).not.toHaveBeenCalled();
-  });
-
-  it('invokes neither renderer when layout is "default" (unreachable branch, see B2.4 plan)', () => {
+  it('invokes no renderer when layout is "default" (unreachable branch, see B2.4 plan)', () => {
     vi.clearAllMocks();
     renderToStaticMarkup(
       <SectionRenderer category={makeCategory('default')} items={items} page={1}>
@@ -89,10 +96,11 @@ describe('SectionRenderer dispatch — single dispatch point, per layout (Render
     );
 
     expect(FeaturedRenderer).not.toHaveBeenCalled();
+    expect(MagazineRenderer).not.toHaveBeenCalled();
     expect(CategoryFeaturedGrid).not.toHaveBeenCalled();
   });
 
-  it('invokes neither renderer on page 2, even for a live layout (featured only shows on page 1)', () => {
+  it('invokes no renderer on page 2, even for a live layout (featured only shows on page 1)', () => {
     vi.clearAllMocks();
     renderToStaticMarkup(
       <SectionRenderer category={makeCategory('featured')} items={items} page={2}>
@@ -101,6 +109,7 @@ describe('SectionRenderer dispatch — single dispatch point, per layout (Render
     );
 
     expect(FeaturedRenderer).not.toHaveBeenCalled();
+    expect(MagazineRenderer).not.toHaveBeenCalled();
     expect(CategoryFeaturedGrid).not.toHaveBeenCalled();
   });
 });

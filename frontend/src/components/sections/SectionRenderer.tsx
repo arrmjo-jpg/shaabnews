@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { AdZone } from '@/components/ads/ad-zone';
 import { CategoryFeaturedGrid } from '@/components/category/category-featured-grid';
 import { FeaturedRenderer } from '@/components/sections/renderers/FeaturedRenderer';
+import { MagazineRenderer } from '@/components/sections/renderers/MagazineRenderer';
 import type { CategoryRef, FeedItem } from '@/lib/feed';
 
 // نقطة الدخول الوحيدة لعرض القسم (Section Rendering Unification — Phase B1). تقرأ
@@ -11,9 +12,9 @@ import type { CategoryRef, FeedItem } from '@/lib/feed';
 // المنطق تمامًا (نفس أعداد التقطيع، نفس شرط page===1)، فقط نُقل مكانه إلى هنا.
 //
 // Phase B2 (Renderer Consolidation) بدأت بتفكيك layout==='featured' إلى FeaturedRenderer
-// المستقلّ (B2.1) — نقطة التوزيع الوحيدة على layout تبقى هنا فقط، لا تتكرّر داخل أيّ Renderer.
-// hero/magazine ما زالا يمرّان عبر CategoryFeaturedGrid (System B) ريثما يُستخرجان بدورهما
-// (B2.2/B2.3) بنفس الطريقة.
+// المستقلّ (B2.1)، ثمّ layout==='magazine' إلى MagazineRenderer (B2.2) — نقطة التوزيع الوحيدة
+// على layout تبقى هنا فقط، لا تتكرّر داخل أيّ Renderer. hero ما زال يمرّ عبر CategoryFeaturedGrid
+// (System B) ريثما يُستخرج بدوره (B2.3) بنفس الطريقة.
 //
 // children كـ render-prop لا ReactNode عاديّ: القسم المميّز (featured) وبقيّة التغذية
 // (feedItems) يعتمدان على نفس قرار التقسيم، ولا يمكن لهذا المكوّن حساب feedItems وتمريرها
@@ -55,6 +56,8 @@ export function SectionRenderer({
         <>
           {layout === 'featured' ? (
             <FeaturedRenderer items={featured} />
+          ) : layout === 'magazine' ? (
+            <MagazineRenderer items={featured} />
           ) : (
             <CategoryFeaturedGrid items={featured} layout={layout} category={category} />
           )}
