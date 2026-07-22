@@ -78,7 +78,8 @@ it('purge URL set covers article page, list, homepage, category and API endpoint
     $urls = collect(Cache::get('cdn:purge:buffer', []));
     $catSlug = $article->primaryCategory->slug;
 
-    expect($urls->contains(fn (string $u): bool => str_contains($u, "/ar/articles/{$article->id}-")))->toBeTrue();
+    // /news/dd/mm/yyyy/{id}/ (2026-07-18) — id-only canonical, no slug.
+    expect($urls->contains(fn (string $u): bool => str_contains($u, $article->fresh()->canonicalPath())))->toBeTrue();
     expect($urls->contains(fn (string $u): bool => str_ends_with($u, '/ar/articles')))->toBeTrue();
     expect($urls->contains(fn (string $u): bool => str_contains($u, 'api/v1/ar/articles/'.$article->slug)))->toBeTrue();
     expect($urls->contains(fn (string $u): bool => str_contains($u, 'api/v1/ar/homepage')))->toBeTrue();

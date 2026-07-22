@@ -186,11 +186,15 @@ class PublicArticleSeoTest extends TestCase
         $article = $this->createPublishedArticle();
         $seo = PublicSeoBuilder::build($article)->toArray();
 
-        $expectedCanonical = 'http://localhost:3000/ar/articles/'.$article->id.'-'.$article->slug;
+        // القانونيّ الجديد (2026-07-18): /news/dd/mm/yyyy/{id} من published_at — بلا
+        // slug إطلاقاً (زخرفيّ بالكامل الآن)، وبلا شرطة مائلة زائدة (راجع تعليق
+        // Article::canonicalPath() نفسه لسبب عدمها).
+        $expectedCanonical = 'http://localhost:3000'.$article->canonicalPath();
 
         $this->assertEquals($expectedCanonical, $seo['canonical_url']);
         $this->assertEquals($expectedCanonical, $seo['og']['url']);
         $this->assertEquals($expectedCanonical, $seo['structured_data']['mainEntityOfPage']['@id']);
+        $this->assertMatchesRegularExpression('#^/news/\d{2}/\d{2}/\d{4}/'.$article->id.'$#', $article->canonicalPath());
     }
 
     public function test_twitter_metadata(): void

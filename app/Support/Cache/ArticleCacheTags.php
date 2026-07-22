@@ -92,7 +92,13 @@ final class ArticleCacheTags
 
     /**
      * الوسوم الواجب إبطالها عند كتابة/تحوّل مقال — feed لغته + تفاصيله + تصنيفاته،
-     * وعند تغيّر اللغة/الـ slug/التصنيفات يشمل القديم أيضاً.
+     * وعند تغيّر اللغة/التصنيفات يشمل القديم أيضاً.
+     *
+     * $oldSlug مُستبقًى في التوقيع لتوافق مواقع الاستدعاء القائمة (توجيهات
+     * CDN/تاريخ الروابط لا تزال تستخدمه) لكنه **لا يُغذّي وسم التفاصيل أدناه
+     * إطلاقاً بعد الآن** — وسم التفاصيل يُبنى من id المقال حصراً (2026-07-18،
+     * إصلاح جذريّ لتضارب الكاش)، والـ id ثابت لا يتغيّر أبداً فلا يوجد "id قديم"
+     * يستوجب وسماً إضافياً كما كان الحال مع الـ slug سابقاً.
      *
      * @param  array<int,string>  $categorySlugs  تصنيفات المقال الحالية (slugs)
      * @param  array<int,string>  $oldCategorySlugs  تصنيفات قديمة (عند تغيّرها)
@@ -127,10 +133,12 @@ final class ArticleCacheTags
     ): array {
         return self::scheme()->invalidationTags(
             dimension: $article->locale,
-            slug: (string) $article->slug,
+            slug: (string) $article->id,
             categorySlugs: $categorySlugs,
             oldDimension: $oldLocale,
-            oldSlug: $oldSlug,
+            // عمداً: لا تُمرَّر oldSlug هنا — id لا "قديم" له، فتُترَك تُطابق
+            // القيمة الحالية تلقائياً (الافتراضي داخل CacheTagScheme) بدل بناء
+            // وسم "articles:detail:{locale}:{old-slug}" لن يُطابقه شيء أبداً.
             oldCategorySlugs: $oldCategorySlugs,
         );
     }

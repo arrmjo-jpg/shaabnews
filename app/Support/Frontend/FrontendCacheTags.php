@@ -23,28 +23,30 @@ use App\Models\VideoCategory;
 final class FrontendCacheTags
 {
     /**
-     * وسوم المقال: الخلاصات المتأثّرة فعلاً + صفحة المقال + تصنيفاته (+ سلَغ قديم عند التغيير).
+     * وسوم المقال: الخلاصات المتأثّرة فعلاً + صفحة المقال + تصنيفاته.
      *
      * إبطال محلّيّ (لا زائد): hero/header يُطلقان فقط إن كان المقال ضمن الكتلة (أو خرج منها
      * للتوّ — wasChanged بعد الحفظ)؛ تعديل مقال عاديّ لا يعيد بناء كتلتي الهوم هاتين.
      * latest/most_read دائمان (كلّ مقال منشور مرشّح فيهما).
      *
+     * وسم صفحة المقال (article:{id}) صار مبنيّاً من id المقال حصراً (2026-07-18،
+     * إصلاح جذريّ لتضارب الكاش — راجع docs/architecture/CACHE-INVALIDATION.md §11).
+     * الـ id ثابت لا يتغيّر أبداً، فلا حاجة لتتبّع "قديم" كما كان الحال مع الـ slug
+     * (الذي بات زخرفياً بالكامل في الرابط العامّ الجديد /news/dd/mm/yyyy/{id}/).
+     *
      * @return array<int,string>
      */
     public static function article(
         Article $article,
-        ?string $oldSlug = null,
         array $oldCategorySlugs = [],
         array $oldTags = [],
         ?int $oldAuthorId = null,
     ): array {
-        $slug = (string) $article->slug;
-
         $tags = [
             'homepage',        // getHomepageFeed (Hero, Latest, Breaking, Editors Pick)
             'feed:latest',     // getLatestFeed (قسم /latest + الشريط الإخباري)
             'feed:most_read',  // getMostReadFeed («الأكثر قراءة» + /trending)
-            "article:{$slug}", // getArticle (صفحة تفاصيل المقال)
+            "article:{$article->id}", // getArticle (صفحة تفاصيل المقال) — بالـ id فقط
             // P0 (Cache Invalidation Audit): searchArticles() تستخدم هذا الوسم لكنه لم يكن
             // يُبطَل إطلاقًا — نتيجة بحث لمقال جديد/محذوف كانت تنتظر سقف revalidate=60 فقط.
             'search',
@@ -66,12 +68,7 @@ final class FrontendCacheTags
             $tags[] = 'feed:breaking';
         }
 
-        // 2. Slug transition
-        if ($oldSlug !== null && $oldSlug !== '' && $oldSlug !== $slug) {
-            $tags[] = "article:{$oldSlug}";
-        }
-
-        // 3. Category transitions
+        // 2. Category transitions
         $article->loadMissing(['primaryCategory:id,slug', 'categories:id,slug']);
         $categorySlugs = collect([$article->primaryCategory])
             ->merge($article->categories)
@@ -85,7 +82,7 @@ final class FrontendCacheTags
             $tags[] = "category:{$categorySlug}";
         }
 
-        // 4. Author transitions
+        // 3. Author transitions
         $authorId = $article->author_id;
         if ($authorId) {
             $tags[] = "author_articles:{$authorId}";
@@ -94,7 +91,7 @@ final class FrontendCacheTags
             $tags[] = "author_articles:{$oldAuthorId}";
         }
 
-        // 5. Tag transitions
+        // 4. Tag transitions
         $article->loadMissing('tags');
         $currentTags = $article->tags->pluck('name')->all();
         $allTags = collect($currentTags)->merge($oldTags)->filter()->unique();

@@ -164,7 +164,9 @@ final class PublicSeoBuilder
                 '@type' => 'ListItem',
                 'position' => $position++,
                 'name' => $article->primaryCategory->name,
-                'item' => self::absoluteUrl($locale.'/'.$article->primaryCategory->slug),
+                // مسار قسم بنائي واحد (Category::canonicalPath()) بدل بناء يدويّ مسطّح
+                // مخالف — كان لا يعكس التداخل (2026-07-18).
+                'item' => self::absoluteUrl($article->primaryCategory->canonicalPath()),
             ];
         }
 

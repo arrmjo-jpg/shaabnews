@@ -49,9 +49,8 @@ final class ArticleCdnPurge
     ): void {
         // إخطار واجهة Next بإبطال الوسوم — مستقلّ عن إعداد الـ CDN أدناه (بوابته الخاصّة:
         // FRONTEND_REVALIDATE_URL/secret) ومُجدوَل ومعزول الفشل. يسبق بوابة الـ CDN عمداً.
-        // السلَغ القديم يُشتقّ من oldPath (canonical = /{locale}/articles/{id}-{slug}) ليُبطَل وسمه أيضاً.
-        $oldSlug = $oldPath !== null ? preg_replace('/^\d+-/', '', basename($oldPath)) : null;
-        FrontendRevalidate::tags(FrontendCacheTags::article($article, $oldSlug, $oldCategorySlugs, $oldTags, $oldAuthorId));
+        // وسم article:{id} ثابت بثبات id المقال (2026-07-18) — لا حاجة لاشتقاق سلَغ قديم بعد الآن.
+        FrontendRevalidate::tags(FrontendCacheTags::article($article, $oldCategorySlugs, $oldTags, $oldAuthorId));
 
         // إخطار محركات البحث بتحديث الخريطة عند تغيّر مقال منشور (بوابته SEARCH_PING_ENABLED).
         if ($article->status->value === 'published') {
@@ -86,7 +85,9 @@ final class ArticleCdnPurge
      */
     private static function urlsFor(Article $article): array
     {
-        $article->loadMissing(['primaryCategory:id,slug', 'categories:id,slug']);
+        // parent_id: مطلوب لـ Category::canonicalPath() (مسار متداخل) — بلا هذا العمود
+        // يُعامَل كل قسم كجذر.
+        $article->loadMissing(['primaryCategory:id,slug,parent_id', 'categories:id,slug,parent_id']);
 
         $locale = $article->locale;
         $slug = (string) $article->slug;
@@ -104,17 +105,16 @@ final class ArticleCdnPurge
             PublicSeoBuilder::absoluteUrl($apiBase.'/feed/latest'),
         ];
 
-        // صفحات التصنيفات (أساسي + ثانوية) — واجهة + API.
-        $categorySlugs = collect([$article->primaryCategory])
+        // صفحات التصنيفات (أساسي + ثانوية) — واجهة (مسار متداخل واحد عبر
+        // canonicalPath()، بدل بناء يدويّ مسطّح كان لا يعكس التداخل) + API.
+        $categories = collect([$article->primaryCategory])
             ->merge($article->categories)
             ->filter()
-            ->map(fn ($c): ?string => $c->slug)
-            ->filter()
-            ->unique();
+            ->unique('id');
 
-        foreach ($categorySlugs as $catSlug) {
-            $urls[] = PublicSeoBuilder::absoluteUrl($locale.'/categories/'.$catSlug);
-            $urls[] = PublicSeoBuilder::absoluteUrl($apiBase.'/categories/'.$catSlug);
+        foreach ($categories as $category) {
+            $urls[] = PublicSeoBuilder::absoluteUrl($category->canonicalPath());
+            $urls[] = PublicSeoBuilder::absoluteUrl($apiBase.'/categories/'.$category->slug);
         }
 
         return $urls;

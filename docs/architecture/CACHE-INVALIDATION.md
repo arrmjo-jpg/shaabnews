@@ -82,7 +82,7 @@ Every tag string that exists anywhere in the system, where it's produced, where 
 | `feed:editors_pick` | `FrontendCacheTags::article()` — if `is_editor_pick` set or changed | *(none — see §8 Reserved)* | No Editor's Pick section exists in the frontend yet |
 | `search` | `FrontendCacheTags::article()` — always *(added `b8e734cc2b`)* | `lib/search.ts: searchArticles()` | Site search results |
 | `articles` | `FrontendCacheTags::category()` — only on category slug change | `lib/feed.ts` (hero/header/breaking/latest/most_read/category-feed), `lib/articles.ts: getArticle()`, `lib/search.ts` | Broad umbrella; intentionally used sparingly backend-side (see the class doc-comment) — most of its frontend consumers are already covered by their own specific tag |
-| `article:{slug}` | `FrontendCacheTags::article()` — current + old slug on rename | `lib/articles.ts: getArticle()` | Single article page |
+| `article:{id}` | `FrontendCacheTags::article()` — always (2026-07-18: id-keyed, was slug-keyed — see §12) | `lib/articles.ts: getArticle()` | Single article page |
 | `category:{slug}` | `FrontendCacheTags::article()` (current + old categories on change), `FrontendCacheTags::category()` (current + old slug on rename) | `lib/feed.ts: getCategoryFeed()`, `getCategoryFeaturedGrid()`, `getCategoryPage()`, `getCategoryById()`/`getCategoryBySlug()`/`getCategoryAncestry()` (via the shared `categories` tag) | Category listing/landing pages |
 | `categories` | `FrontendCacheTags::category()` — always | `lib/feed.ts` (nav/category-tree lookups), `lib/categories.ts: getCategories()` *(dead — no caller)* | Category tree/nav |
 | `author_articles:{id}` | `FrontendCacheTags::article()` — current + old author on change | *(none — see §8 Reserved)* | No author-article-listing page exists in the frontend |
@@ -179,7 +179,7 @@ sport match-bar) keep their pre-existing tiered, genuinely time-based values
 | `feed.ts: getMostReadFeed` | `articles`, `feed:most_read` | 36000 |
 | `feed.ts: getCategoryById/BySlug/Ancestry` | `categories` | 36000 |
 | `feed.ts: getCategoryFeed/FeaturedGrid/Page` | `articles`, `category:{slug}` | 36000 |
-| `articles.ts: getArticle` | `articles`, `article:{slug}` | 36000 |
+| `articles.ts: getArticle` | `articles`, `article:{id}` (2026-07-18 — must be called with a bare numeric id, never a real slug string) | 36000 |
 | `articles.ts: getLiveUpdates` | `live_updates`, `live:{slug}` | 36000 |
 | `videos.ts` (latest/featured/trending/most-viewed/related/by-category/playlists index) | `video-feed:{locale}` (+ `video-category:*` where relevant) | 36000 |
 | `videos.ts: getVideo` | `video:{locale}:{slug}` | 36000 |
@@ -507,3 +507,96 @@ SEO, public API contracts, and business logic were left untouched per the
 task's explicit constraints — every change in this section is either a
 numeric `revalidate` value, a new `FrontendRevalidate::tags()` call site, or
 a `generateStaticParams()` addition using the exact pre-existing pattern.
+
+---
+
+## 12. Public URL restructuring — id-based canonical scheme (2026-07-18)
+
+### The bug this closes permanently
+
+`ShowPublicArticleAction`'s Laravel-side detail cache (`CachedRead::remember()`)
+was keyed and tagged from the **raw incoming URL segment** — whichever string
+the client sent (bare id, id-slug, or bare slug). `UpdateArticleAction`'s
+invalidation always targeted the tag built from the article's **real DB
+slug**. Any request shape that didn't match that exact slug string created an
+orphaned cache entry that no write ever invalidated — proven live on article
+343745 (`/articles/343745` kept serving a title from two edits prior, while
+`/articles/343745-{real-slug}` updated correctly). See the live-trace evidence
+earlier in this session's transcript for the full reproduction.
+
+Fix: article identity for caching purposes is now **the id alone, resolved
+before any cache lookup happens** — never the raw request string. This
+closes the entire class of bug, not just this one instance, because there is
+no longer any string variant to key by.
+
+### New canonical URL shapes
+
+- **Article**: `/news/{dd}/{mm}/{yyyy}/{id}/` — date from `published_at`
+  only (never `updated_at`), id-only, slug never present. Old:
+  `/{locale}/articles/{id}` (already id-only, but locale-prefixed and not
+  date-based).
+- **Category**: `/news/category/{slug}` or nested
+  `/news/category/{ancestor}/.../{slug}` (new capability — categories had no
+  `canonicalPath()` or nested-path resolution before this). Old: flat
+  `/{locale}/{slug}`, hand-built ad hoc in three different places (sitemap,
+  breadcrumbs, CDN purge) with three slightly different shapes — now all
+  three converge on `Category::canonicalPath()`.
+- **Writer / Search / Live / Videos**: moved from `/writer`, `/search`,
+  `/live(/[slug])`, `/videos(/[idslug])` to the `/news/` prefix. No DB
+  dependency for these, so old paths redirect via static `next.config.ts`
+  rules rather than a Server Component.
+
+### Cache-key changes (the actual fix)
+
+- `app/Actions/Public/Content/ShowPublicArticleAction.php` — resolves the
+  numeric id first (regex `^(\d+)-`, `is_numeric`, or a cheap indexed
+  `->value('id')` for a legacy bare-slug request), *then* builds the
+  `CachedRead` key/tags from that id. The expensive relation-hydrated query
+  only ever runs once per id, regardless of which URL shape reached it.
+- `app/Support/Cache/ArticleCacheTags.php` (`writeTags()`) — tag built from
+  `(string) $article->id` instead of `(string) $article->slug`. This is the
+  single line that made write-side invalidation miss non-canonical-slug
+  cache entries.
+- `app/Support/Frontend/FrontendCacheTags.php` (`article()`) — tag is now
+  `"article:{$article->id}"`; the old "slug transition" branch (re-tagging
+  an old slug on rename) is dead code and removed, since id never changes.
+- `frontend/src/lib/articles.ts` (`getArticle()`) — fetch tag is
+  `article:{id}`; **every call site must pass a bare numeric id**, never a
+  real slug string, or the same class of bug reappears at this layer.
+- New gap found and closed: `TransitionArticleStatusAction` (draft→scheduled)
+  can change `published_at`, which now changes the canonical URL even though
+  the id doesn't — this action never captured an old path for CDN purge
+  before (only `UpdateArticleAction`'s slug/locale-change path did). Fixed
+  by threading `$oldPath` through `ArticleStatusChanged` →
+  `PurgeArticleCdnOnStatusChanged` → `ArticleCdnPurge::purge()`, mirroring
+  the existing pattern.
+
+### Backward compatibility
+
+Every legacy shape (`/articles/{id}`, `/articles/{id}-{slug}`,
+`/news/{wrong-date}/{id}(-slug)?`, `/category/{slug}`, `/writer/{id}`,
+`/search`, `/live(/*)`, `/videos(/*)`) 301s to the true canonical, computed
+**live** from the record's current state — no dependency on a lookup table
+for the id→date or category-nesting cases. `ArticleUrlHistory`/
+`ArticleRedirectResolver` still exist and still work, but only for the
+narrower case of an actual slug rename affecting the pre-2026-07-18 legacy
+`/articles/{slug}` lookup path — not for resolving the new canonical shape.
+
+### Verified
+
+Real production build (`next build` + `tsc --noEmit`) confirms every new
+route compiles and classifies correctly (SSG where `generateStaticParams()`
+is present, matching the established pattern from this session's earlier ISR
+work). Backend: existing Pest suites updated for the new canonical assertion
+shape, plus two new regression tests in
+`tests/Feature/Public/Content/ArticleCacheKeyByIdTest.php` — one reproduces
+the exact 343745 live-trace as an automated test (hit the same article via
+three URL shapes, update it, confirm all three reflect the update
+immediately), the other asserts the write-side tag is id-based, not
+slug-based.
+
+### Descoped
+
+Tag (`/news/tag/{slug}`) and photo-gallery (`/news/gallery`) public routes —
+neither has a model, endpoint, or design today; explicitly deferred to a
+separate future migration per the team's decision.

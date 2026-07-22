@@ -104,8 +104,9 @@ it('canonical uses the stable id path', function (): void {
 
     $res = $this->getJson("/api/v1/ar/articles/{$a->slug}")->assertOk();
 
-    // id-only, no slug (ADR A3.6): the id never changes, unlike the slug.
-    expect($res->json('data.seo.canonical_url'))->toEndWith("/ar/articles/{$a->id}");
+    // /news/dd/mm/yyyy/{id}/ (2026-07-18): id-only, no slug — the id never changes,
+    // unlike the slug; date comes from published_at only.
+    expect($res->json('data.seo.canonical_url'))->toEndWith($a->fresh()->canonicalPath());
 });
 
 it('includes an x-default hreflang entry', function (): void {
@@ -126,9 +127,10 @@ it('news sitemap includes recent articles and excludes stale ones', function ():
 
     $xml = $this->get('/sitemap-news-ar.xml')->assertOk()->getContent();
 
-    // <loc> is id-only (no slug, ADR A3.6) — assert on <news:title> instead, and on the id-based URL.
-    expect($xml)->toContain("/ar/articles/{$recent->id}");
+    // <loc> is /news/dd/mm/yyyy/{id}/ (2026-07-18, id-only, no slug) — assert on
+    // <news:title> too, and on the id-based canonical URL.
+    expect($xml)->toContain($recent->fresh()->canonicalPath());
     expect($xml)->toContain($recent->title);
-    expect($xml)->not->toContain("/ar/articles/{$old->id}");
+    expect($xml)->not->toContain($old->fresh()->canonicalPath());
     expect($xml)->not->toContain($old->title);
 });

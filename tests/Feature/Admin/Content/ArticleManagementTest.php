@@ -423,7 +423,7 @@ it('rejects a malformed manual slug', function (): void {
 
 // ─── Update + revision + URL history (ADR A4) ──────────────────────────
 
-it('captures URL history when the slug changes', function (): void {
+it('does not capture URL history on a slug change (canonical path is id+date only since 2026-07-18)', function (): void {
     [, $token] = articleAdminToken();
     $cat = makeCat(['name' => 'قسم']);
     $id = $this->withToken($token)->postJson('/api/v1/admin/articles', adminArticlePayload($cat))
@@ -433,7 +433,10 @@ it('captures URL history when the slug changes', function (): void {
     $this->withToken($token)->putJson("/api/v1/admin/articles/{$id}", ['slug' => 'مسار-جديد'])
         ->assertOk();
 
-    expect(ArticleUrlHistory::where('old_path', $old)->exists())->toBeTrue();
+    // القانونيّ الجديد /news/dd/mm/yyyy/{id}/ لا يتضمّن slug إطلاقاً — تغييره لا يُغيّر
+    // المسار، فلا سجلّ تاريخ مطلوب (خلافاً للسلوك القديم قبل 2026-07-18).
+    expect(Article::find($id)->canonicalPath())->toBe($old);
+    expect(ArticleUrlHistory::where('old_path', $old)->exists())->toBeFalse();
     expect(ArticleRevision::where('article_id', $id)->count())->toBe(2);
 });
 

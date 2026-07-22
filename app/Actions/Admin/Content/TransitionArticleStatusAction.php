@@ -8,6 +8,7 @@ use App\Enums\ArticleStatus;
 use App\Events\Content\ArticleStatusChanged;
 use App\Http\Resources\Admin\Content\ArticleResource;
 use App\Models\Article;
+use App\Models\ArticleUrlHistory;
 use App\Models\User;
 use App\Support\Content\ArticleRevisionRecorder;
 use App\Support\Content\ArticleWorkflowGuard;
@@ -35,7 +36,12 @@ class TransitionArticleStatusAction
 
         $from = $article->status;
 
-        $article = DB::transaction(function () use ($article, $actor, $target, $scheduledAt): Article {
+        // المسار القانوني قبل الانتقال — published_at قد يتغيّر (draft→scheduled/published)
+        // فيتغيّر المسار (يُضمِّن التاريخ)، رغم ثبات id. مرآة UpdateArticleAction (ADR A4).
+        $oldPath = $article->canonicalPath();
+        $oldLocale = $article->locale;
+
+        $article = DB::transaction(function () use ($article, $actor, $target, $scheduledAt, $oldPath, $oldLocale): Article {
             $article->status = $target->value;
 
             if ($target === ArticleStatus::Published) {
@@ -47,6 +53,14 @@ class TransitionArticleStatusAction
 
             $article->save();
 
+            $newPath = $article->fresh()->canonicalPath();
+            if ($newPath !== $oldPath) {
+                ArticleUrlHistory::firstOrCreate(
+                    ['locale' => $oldLocale, 'old_path' => $oldPath],
+                    ['article_id' => $article->id, 'reason' => 'canonical_change']
+                );
+            }
+
             ArticleRevisionRecorder::snapshot($article, $actor->id);
 
             return $article;
@@ -54,7 +68,7 @@ class TransitionArticleStatusAction
 
         // حدث نطاقيّ (ADR-E2): يستبدل 3 نداءات أمريّة (كاش/CDN/إشعار) بمستمعين متزامنين
         // — نفس التوقيت والتسلسل والسلوك تماماً، بعد commit وخارج أي transaction.
-        event(new ArticleStatusChanged($article, $from, $target, $actor));
+        event(new ArticleStatusChanged($article, $from, $target, $actor, $oldPath));
 
         return ApiResponse::success(
             __('article.status_changed'),

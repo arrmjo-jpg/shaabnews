@@ -24,7 +24,15 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Wave C2: لا انتقالات حالة (status/published_at غير مقبولة).
- * يلتقط تاريخ المسار القانوني (ADR A4) عند تغيّر slug أو التصنيف الرئيسي.
+ *
+ * يلتقط تاريخ المسار القانوني (ADR A4) عند تغيّره فعلياً — منطق دفاعيّ عامّ لا
+ * يفترض أيّ حقل بعينه. **ملاحظة صدق (2026-07-18)**: منذ تحوّل canonicalPath() إلى
+ * /news/dd/mm/yyyy/{id}/ (id + published_at فقط، بلا slug/locale)، لا حقل يقبله
+ * هذا الأكشن (slug/locale/primary_category_id) يُغيِّر المسار القانوني عملياً بعد
+ * الآن — status/published_at غير مقبولين هنا أصلاً (أعلاه). فالكتلة أدناه تبقى صحيحة
+ * ومُفعَّلة لكنها لا تُنتج سجلّ تاريخ جديد من هذا الأكشن تحديداً؛ التغيير الوحيد الذي
+ * يُحرِّك canonicalPath() اليوم هو published_at عبر TransitionArticleStatusAction
+ * (مُعالَج بنفس النمط هناك).
  */
 class UpdateArticleAction
 {

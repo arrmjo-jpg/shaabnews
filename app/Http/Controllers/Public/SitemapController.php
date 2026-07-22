@@ -179,7 +179,9 @@ class SitemapController extends Controller
 
                 foreach ($categories as $cat) {
                     $sitemap->add(
-                        Url::create(PublicSeoBuilder::absoluteUrl("/{$locale}/{$cat->slug}"))
+                        // مسار متداخل واحد (Category::canonicalPath()) بدل بناء مسطّح يدويّ
+                        // كان لا يعكس التداخل ولا يطابق /news/category/{...} الجديد (2026-07-18).
+                        Url::create(PublicSeoBuilder::absoluteUrl($cat->canonicalPath()))
                             ->setLastModificationDate($cat->updated_at ?? $cat->created_at)
                             ->setChangeFrequency(Url::CHANGE_FREQUENCY_WEEKLY)
                             ->setPriority(0.6)

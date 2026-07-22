@@ -17,6 +17,12 @@ use App\Models\User;
  * مستمعوه (app/Listeners/Content) متزامنون عمداً — لا يُحوَّلون لطابور دون
  * قرار معماريّ صريح جديد، لأنّ ذلك يغيّر توقيت الاستجابة الملحوظ (السلوك
  * الحاليّ: الاستجابة لا تُعاد إلا بعد اكتمال الإبطال/الإشعار).
+ *
+ * $oldPath (2026-07-18): المسار القانوني قبل الانتقال — الرابط الجديد
+ * /news/dd/mm/yyyy/{id}/ يُضمِّن published_at، فتغيير الجدولة (draft→scheduled
+ * بتاريخ جديد) يُغيِّر المسار القانوني رغم ثبات id. يُستهلَك في
+ * PurgeArticleCdnOnStatusChanged لتمريره إلى ArticleCdnPurge::purge()، مرآةً
+ * لنمط UpdateArticleAction القائم (ADR A4).
  */
 final class ArticleStatusChanged
 {
@@ -25,5 +31,6 @@ final class ArticleStatusChanged
         public readonly ArticleStatus $from,
         public readonly ArticleStatus $to,
         public readonly User $actor,
+        public readonly ?string $oldPath = null,
     ) {}
 }

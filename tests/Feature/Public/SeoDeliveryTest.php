@@ -91,7 +91,7 @@ it('lists published articles in the locale sitemap', function (): void {
     expect($res->headers->get('Content-Type'))->toContain('application/xml');
     $body = $res->getContent();
     expect($body)->toContain('<urlset');
-    // Hybrid canonical path: /{locale}/articles/{id}-{slug}
+    // /news/dd/mm/yyyy/{id}/ (2026-07-18) — id-only, date from published_at.
     expect($body)->toContain($a->canonicalPath());
     // Drafts must never reach the sitemap
     expect(substr_count($body, '<url>'))->toBe(1);
@@ -166,10 +166,11 @@ it('exposes a full SEO payload on the article detail endpoint', function (): voi
     expect($seo['title'])->toBe('العنوان');
     expect($seo['description'])->toBe('الملخّص');
 
-    // Canonical URL is absolute, derived from canonical_path — id-only, no slug (ADR A3.6:
-    // the id never changes, unlike the slug, so it's the stable part of the canonical URL).
+    // Canonical URL is absolute, derived from canonical_path — /news/dd/mm/yyyy/{id}/
+    // (2026-07-18): id-only, no slug, date from published_at (the id never changes,
+    // unlike the slug, so it's the stable part of the canonical URL).
     expect($seo['canonical_url'])->toStartWith('http');
-    expect($seo['canonical_url'])->toContain('/articles/'.$a->id);
+    expect($seo['canonical_url'])->toContain($a->fresh()->canonicalPath());
 
     // OpenGraph + Twitter + JSON-LD blocks
     expect($seo['og']['type'])->toBe('article');

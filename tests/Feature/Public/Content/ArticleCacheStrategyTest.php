@@ -77,12 +77,14 @@ it('caches a null result (no recompute storm on 404/redirect paths)', function (
 // ─── TASK 2: granular invalidation (isolation) ──────────────────────────────
 
 it('granular invalidation flushes only the impacted article/feed/category tags', function (): void {
+    // 2026-07-18: detail tag is keyed by article id, not slug (root-cause fix for the
+    // orphaned-cache bug — see docs/architecture/CACHE-INVALIDATION.md §12). Prime the
+    // cache the way the real read path (ShowPublicArticleAction) does now: by id.
     $a = csArticle('a-slug', 'ar', 'cat-a');
-    csArticle('b-slug', 'ar', 'cat-b');
+    $b = csArticle('b-slug', 'ar', 'cat-b');
 
-    // Prime cache entries the way the real read paths tag them.
-    Cache::tags(ArticleCacheTags::detailTags('ar', 'a-slug'))->put('k_detail_a', ['v' => 1], 300);
-    Cache::tags(ArticleCacheTags::detailTags('ar', 'b-slug'))->put('k_detail_b', ['v' => 1], 300);
+    Cache::tags(ArticleCacheTags::detailTags('ar', (string) $a->id))->put('k_detail_a', ['v' => 1], 300);
+    Cache::tags(ArticleCacheTags::detailTags('ar', (string) $b->id))->put('k_detail_b', ['v' => 1], 300);
     Cache::tags(ArticleCacheTags::feedTags('ar'))->put('k_feed_ar', ['v' => 1], 300);
     Cache::tags(ArticleCacheTags::feedTags('en'))->put('k_feed_en', ['v' => 1], 300);
     Cache::tags(ArticleCacheTags::categoryTags('ar', 'cat-a'))->put('k_cat_a', ['v' => 1], 300);
@@ -91,23 +93,27 @@ it('granular invalidation flushes only the impacted article/feed/category tags',
     (new DeleteArticleAction)->handle($a); // writes article A (ar, slug a-slug, cat-a)
 
     // Impacted → flushed:
-    expect(Cache::tags(ArticleCacheTags::detailTags('ar', 'a-slug'))->get('k_detail_a'))->toBeNull();
+    expect(Cache::tags(ArticleCacheTags::detailTags('ar', (string) $a->id))->get('k_detail_a'))->toBeNull();
     expect(Cache::tags(ArticleCacheTags::feedTags('ar'))->get('k_feed_ar'))->toBeNull();
     expect(Cache::tags(ArticleCacheTags::categoryTags('ar', 'cat-a'))->get('k_cat_a'))->toBeNull();
 
     // Unrelated → intact (the whole point of granularity):
-    expect(Cache::tags(ArticleCacheTags::detailTags('ar', 'b-slug'))->get('k_detail_b'))->toBe(['v' => 1]);
+    expect(Cache::tags(ArticleCacheTags::detailTags('ar', (string) $b->id))->get('k_detail_b'))->toBe(['v' => 1]);
     expect(Cache::tags(ArticleCacheTags::feedTags('en'))->get('k_feed_en'))->toBe(['v' => 1]);
     expect(Cache::tags(ArticleCacheTags::categoryTags('ar', 'cat-b'))->get('k_cat_b'))->toBe(['v' => 1]);
 });
 
-it('builds slug-change invalidation tags including the old detail tag', function (): void {
+it('builds invalidation tags keyed by the article id, unaffected by slug rename', function (): void {
+    // 2026-07-18: the detail tag is id-based now, so a slug rename produces the SAME
+    // detail tag before and after — there is no "old detail tag" to also invalidate
+    // (unlike locale, where the old locale's feed tag still matters — see the next test).
     $a = csArticle('new-slug', 'ar', 'cat-a');
 
     $tags = ArticleCacheTags::invalidationTags($a, 'ar', 'old-slug', ['cat-a']);
 
-    expect($tags)->toContain(ArticleCacheTags::detail('ar', 'new-slug'));
-    expect($tags)->toContain(ArticleCacheTags::detail('ar', 'old-slug'));
+    expect($tags)->toContain(ArticleCacheTags::detail('ar', (string) $a->id));
+    expect($tags)->not->toContain(ArticleCacheTags::detail('ar', 'old-slug'));
+    expect($tags)->not->toContain(ArticleCacheTags::detail('ar', 'new-slug'));
     expect($tags)->toContain(ArticleCacheTags::feed('ar'));
 });
 
