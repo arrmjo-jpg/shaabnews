@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/useToast';
 import { useCreateCategory, useUpdateCategory } from '../hooks';
+import { OgImagePicker } from './OgImagePicker';
 import type {
   CategoryData,
   CategoryScope,
   CategoryStatus,
   ContentLocale,
+  SectionLayoutType,
 } from '@/types/content.types';
 
 const selectCls =
@@ -45,6 +47,14 @@ interface FormState {
   show_in_header: boolean;
   show_in_body: boolean;
   show_in_footer: boolean;
+  banner_media_id: number | null;
+  banner_url: string | null;
+  show_title: boolean;
+  layout_type: SectionLayoutType;
+  border_enabled: boolean;
+  border_width: number;
+  border_radius: number;
+  border_color: string;
   provider: string;
   external_id: string;
 }
@@ -61,6 +71,14 @@ function emptyState(parent: CategoryData | null | undefined): FormState {
     show_in_header: false,
     show_in_body: true,
     show_in_footer: false,
+    banner_media_id: null,
+    banner_url: null,
+    show_title: true,
+    layout_type: 'default',
+    border_enabled: false,
+    border_width: 2,
+    border_radius: 0,
+    border_color: '#E5E7EB',
     provider: '',
     external_id: '',
   };
@@ -96,6 +114,14 @@ export function CategoryFormModal({
         show_in_header: category.show_in_header,
         show_in_body: category.show_in_body,
         show_in_footer: category.show_in_footer,
+        banner_media_id: category.banner_media_id,
+        banner_url: category.banner_url ?? null,
+        show_title: category.show_title,
+        layout_type: category.layout_type,
+        border_enabled: category.appearance?.border?.enabled ?? false,
+        border_width: category.appearance?.border?.width ?? 2,
+        border_radius: category.appearance?.border?.radius ?? 0,
+        border_color: category.appearance?.border?.color ?? '#E5E7EB',
         provider: category.provider ?? '',
         external_id: category.external_id ?? '',
       });
@@ -170,6 +196,17 @@ export function CategoryFormModal({
       show_in_header: form.show_in_header,
       show_in_body: form.show_in_body,
       show_in_footer: form.show_in_footer,
+      banner_media_id: form.banner_media_id,
+      show_title: form.show_title,
+      layout_type: form.layout_type,
+      appearance: {
+        border: {
+          enabled: form.border_enabled,
+          width: form.border_width,
+          radius: form.border_radius,
+          color: form.border_color,
+        },
+      },
       ...(isSportCategory
         ? {
             provider: form.provider.trim() ? form.provider.trim() : null,
@@ -327,6 +364,93 @@ export function CategoryFormModal({
               <span>{t(`categories.form.${k}`)}</span>
             </label>
           ))}
+        </div>
+
+        <div className="space-y-4 border-t border-border pt-4">
+          <p className="text-sm font-medium text-foreground">{t('categories.form.design.title')}</p>
+
+          <OgImagePicker
+            value={form.banner_url}
+            label={t('categories.form.design.banner.label')}
+            hint={t('categories.form.design.banner.hint')}
+            onChange={(id) =>
+              patch({ banner_media_id: id, banner_url: id === null ? null : form.banner_url })
+            }
+          />
+
+          <label className="inline-flex cursor-pointer items-center gap-2 border border-border bg-background px-3 py-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.show_title}
+              onChange={(e) => patch({ show_title: e.target.checked })}
+              className="h-4 w-4"
+            />
+            <span>{t('categories.form.design.showTitle')}</span>
+          </label>
+
+          <div>
+            <Label htmlFor="cat-layout-type">{t('categories.form.design.layoutType')}</Label>
+            <select
+              id="cat-layout-type"
+              value={form.layout_type}
+              onChange={(e) => patch({ layout_type: e.target.value as SectionLayoutType })}
+              className={selectCls}
+            >
+              <option value="default">{t('categories.layoutType.default')}</option>
+              <option value="hero">{t('categories.layoutType.hero')}</option>
+              <option value="magazine">{t('categories.layoutType.magazine')}</option>
+              <option value="featured">{t('categories.layoutType.featured')}</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 border border-border bg-background px-3 py-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.border_enabled}
+                onChange={(e) => patch({ border_enabled: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <span>{t('categories.form.design.border.enabled')}</span>
+            </label>
+
+            {form.border_enabled ? (
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div>
+                  <Label htmlFor="cat-border-width">{t('categories.form.design.border.width')}</Label>
+                  <Input
+                    id="cat-border-width"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={form.border_width}
+                    onChange={(e) => patch({ border_width: Number(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cat-border-radius">{t('categories.form.design.border.radius')}</Label>
+                  <Input
+                    id="cat-border-radius"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.border_radius}
+                    onChange={(e) => patch({ border_radius: Number(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cat-border-color">{t('categories.form.design.border.color')}</Label>
+                  <input
+                    id="cat-border-color"
+                    type="color"
+                    value={form.border_color}
+                    onChange={(e) => patch({ border_color: e.target.value })}
+                    className="h-10 w-full cursor-pointer border border-input bg-background"
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {isSportCategory ? (

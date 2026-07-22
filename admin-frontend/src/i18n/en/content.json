@@ -1194,6 +1194,12 @@
       "active": "Active",
       "hidden": "Hidden"
     },
+    "layoutType": {
+      "default": "Default",
+      "hero": "Hero",
+      "magazine": "Magazine",
+      "featured": "Featured"
+    },
     "filter": {
       "search": "Search by name or slug…",
       "localeAll": "All locales",
@@ -1258,6 +1264,21 @@
       "show_in_footer": "In footer",
       "validation": {
         "nameRequired": "Category name is required (at least 2 characters)."
+      },
+      "design": {
+        "title": "Section design",
+        "banner": {
+          "label": "Section banner",
+          "hint": "Shown at the top of the section page on the site. Recommended size: 1920×500."
+        },
+        "showTitle": "Show section title",
+        "layoutType": "Layout",
+        "border": {
+          "enabled": "Enable banner border",
+          "width": "Border width (px)",
+          "radius": "Corner radius (px)",
+          "color": "Border color"
+        }
       },
       "sport": {
         "title": "Sport linkage",
