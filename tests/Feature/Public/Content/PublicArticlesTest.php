@@ -112,6 +112,28 @@ it('filters articles by category slug', function (): void {
     expect($res->json('data.0.title'))->toBe('مقال أ');
 });
 
+it('filters articles by category combined with is_featured without cache cross-contamination', function (): void {
+    $cat = pubCat(['name' => 'قسم مميّز']);
+    pubArticle($cat, ['title' => 'مميّز', 'is_featured' => true]);
+    pubArticle($cat, ['title' => 'عادي', 'is_featured' => false]);
+
+    // الطلب المميّز أولاً — إن كان مفتاح الكاش لا يفرّق بينه وبين الطلب العادي أدناه،
+    // سيُخزَّن هذا الناتج (عنصر واحد) ويُقدَّم خطأً للطلب العادي (متوقَّع عنصران).
+    $featured = $this->getJson('/api/v1/ar/articles?filter[category]='.$cat->slug.'&filter[is_featured]=1');
+    $plain = $this->getJson('/api/v1/ar/articles?filter[category]='.$cat->slug);
+
+    $featured->assertOk();
+    expect($featured->json('data'))->toHaveCount(1);
+    expect($featured->json('data.0.title'))->toBe('مميّز');
+    // total يجب أن يعكس المرشِّح المميَّز فقط (1) لا عدّ القسم الكامل (2) — يفشل لو أخذ
+    // مسار UNION السريع الذي يتجاهل is_featured عمداً (راجع تعليق UNION في الأكشن).
+    expect($featured->json('meta.pagination.total'))->toBe(1);
+
+    $plain->assertOk();
+    expect($plain->json('data'))->toHaveCount(2);
+    expect($plain->json('meta.pagination.total'))->toBe(2);
+});
+
 it('filters articles by free-text q against title/subtitle/excerpt', function (): void {
     $cat = pubCat();
     pubArticle($cat, ['title' => 'انتخابات ٢٠٢٦']);

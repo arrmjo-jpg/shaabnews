@@ -182,6 +182,7 @@ class ListPublicArticlesAction
             ->allowedFilters(
                 AllowedFilter::exact('type'),
                 AllowedFilter::exact('author_id'),
+                AllowedFilter::exact('is_featured'),
                 AllowedFilter::partial('title', 'title'),
                 // تصفية البحث التقليدي في قاعدة البيانات (Fallback)
                 AllowedFilter::callback('q', function ($q) use ($term): void {
@@ -248,6 +249,7 @@ class ListPublicArticlesAction
             'filter.tag' => (string) ($request->query('filter')['tag'] ?? ''),
             'filter.q' => $term,
             'filter.author_id' => (string) ($request->query('filter')['author_id'] ?? ''),
+            'filter.is_featured' => (string) ($request->query('filter')['is_featured'] ?? ''),
         ];
         ksort($relevantFilters);
         $filterHash = substr(hash('xxh128', json_encode($relevantFilters)), 0, 16);
@@ -265,12 +267,15 @@ class ListPublicArticlesAction
             CacheTtl::MEDIUM,
             function () use ($query, $request, $locale) {
                 // إصلاح جذري لـ DEPENDENT SUBQUERY Stampede:
-                // إذا كان الطلب مفلتراً بتصنيف فقط (بدون بحث أو وسوم إضافية)،
-                // نستخدم UNION سريع (~145ms) بدلاً من OR EXISTS البطيء (~44,000ms).
+                // إذا كان الطلب مفلتراً بتصنيف فقط (بدون بحث أو وسوم أو is_featured إضافية)،
+                // نستخدم UNION سريع (~145ms) بدلاً من OR EXISTS البطيء (~44,000ms). أي مرشِّح
+                // آخر (يشمل is_featured) لا يدعمه الـUNION فيتراجع لـ getCountForPagination()
+                // أدناه — وإلا يُعِدّ (يتجاهل is_featured فيُخزَّن عدد القسم الكامل خطأً
+                // تحت مفتاح كاش مقيَّد بـis_featured، كما ظهر فعليًّا في اختبار شبكة "مميّزة").
                 $filters = $request->query('filter', []);
                 $catSlug = (string) ($filters['category'] ?? '');
 
-                if ($catSlug !== '' && empty($filters['q']) && empty($filters['tag']) && empty($filters['type'])) {
+                if ($catSlug !== '' && empty($filters['q']) && empty($filters['tag']) && empty($filters['type']) && empty($filters['is_featured'])) {
                     $category = Category::where('slug', $catSlug)->where('locale', $locale)->first();
                     if ($category) {
                         $now = now()->toDateTimeString();
@@ -343,6 +348,7 @@ class ListPublicArticlesAction
             'filter.tag' => (string) ($request->query('filter')['tag'] ?? ''),
             'filter.q' => (string) ($request->query('filter')['q'] ?? ''),
             'filter.author_id' => (string) ($request->query('filter')['author_id'] ?? ''),
+            'filter.is_featured' => (string) ($request->query('filter')['is_featured'] ?? ''),
         ];
         ksort($relevant);
 
