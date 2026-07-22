@@ -112,10 +112,7 @@ class Category extends Model
     }
 
     /**
-     * تقييد فرادة الـ slug ضمن نفس اللغة **ونفس الأب** (2026-07-18، كان
-     * per-locale فقط سابقاً). ضروريّ لسلامة المسار المتداخل الجديد
-     * /news/category/{...}: لولا هذا القيد لأمكن تصنيفَين تحت أبوين مختلفين
-     * أن يتشاركا نفس الـ slug فيتعذّر تمييز مسارهما.
+     * تقييد فرادة الـ slug ضمن نفس اللغة فقط (ADR slug per-locale).
      */
     protected function scopeWithUniqueSlugConstraints(
         Builder $query,
@@ -124,12 +121,7 @@ class Category extends Model
         array $config,
         string $slug
     ): Builder {
-        return $query->where('locale', $model->locale)
-            ->when(
-                $model->parent_id === null,
-                fn (Builder $q): Builder => $q->whereNull('parent_id'),
-                fn (Builder $q): Builder => $q->where('parent_id', $model->parent_id),
-            );
+        return $query->where('locale', $model->locale);
     }
 
     // ─── Relationships ──────────────────────────────────────────────
@@ -220,31 +212,5 @@ class Category extends Model
         }
 
         return false;
-    }
-
-    // ─── Canonical URL foundation (2026-07-18) ──────────────────────
-
-    /**
-     * المسار القانوني: /news/category/{ancestor-slug}/.../{slug} — يصعد سلسلة
-     * الآباء (نفس نمط depth() أعلاه، حدّ أمان MAX_DEPTH+1 لمنع حلقة لا نهائية
-     * على بيانات تالفة) ثم يبني المسار من الجذر نزولاً. بلا بادئة لغة (يطابق
-     * مسار الواجهة الفعليّ locale-less، مرآة Article::canonicalPath()).
-     */
-    public function canonicalPath(): string
-    {
-        $segments = [$this->slug];
-        $node = $this;
-        $hops = 0;
-
-        while ($node->parent_id !== null && $hops <= self::MAX_DEPTH + 1) {
-            $node = $node->parent()->first();
-            if ($node === null) {
-                break;
-            }
-            $segments[] = $node->slug;
-            $hops++;
-        }
-
-        return '/news/category/'.implode('/', array_reverse($segments));
     }
 }
