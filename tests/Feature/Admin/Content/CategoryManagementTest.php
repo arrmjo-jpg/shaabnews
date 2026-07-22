@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Article;
 use App\Models\Category;
+use App\Models\MediaAsset;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\Cache\CacheKeys;
@@ -445,4 +446,87 @@ it('denies restore without the categories.restore permission', function (): void
 
     $this->withToken($token)->postJson("/api/v1/admin/categories/{$c->id}/restore")
         ->assertStatus(403);
+});
+
+// ─── Section Design System (banner/show_title/layout_type/appearance) ─────
+
+function catBannerAsset(): MediaAsset
+{
+    return MediaAsset::create([
+        'uuid' => 'cat-banner-'.uniqid(),
+        'disk' => 'public',
+        'path' => 'assets/x/banner.jpg',
+        'filename' => 'banner.jpg',
+        'original_name' => 'banner.jpg',
+        'extension' => 'jpg',
+        'size' => 2048,
+        'mime_type' => 'image/jpeg',
+        'processing_status' => 'ready',
+        'visibility' => 'public',
+    ]);
+}
+
+it('creates a category with section design fields and returns them', function (): void {
+    [, $token] = catAdminToken();
+    $banner = catBannerAsset();
+
+    $res = $this->withToken($token)->postJson('/api/v1/admin/categories', [
+        'name' => 'كأس العالم', 'locale' => 'ar',
+        'banner_media_id' => $banner->id,
+        'show_title' => false,
+        'layout_type' => 'hero',
+        'appearance' => ['border' => ['enabled' => true, 'width' => 4, 'color' => '#A80101']],
+    ])->assertCreated();
+
+    expect($res->json('data.banner_media_id'))->toBe($banner->id);
+    expect($res->json('data.banner_url'))->not->toBeNull();
+    expect($res->json('data.show_title'))->toBeFalse();
+    expect($res->json('data.layout_type'))->toBe('hero');
+    expect($res->json('data.appearance.border.color'))->toBe('#A80101');
+});
+
+it('defaults section design fields when omitted on create', function (): void {
+    [, $token] = catAdminToken();
+
+    $res = $this->withToken($token)->postJson('/api/v1/admin/categories', [
+        'name' => 'افتراضي', 'locale' => 'ar',
+    ])->assertCreated();
+
+    expect($res->json('data.banner_media_id'))->toBeNull();
+    expect($res->json('data.show_title'))->toBeTrue();
+    expect($res->json('data.layout_type'))->toBe('default');
+    expect($res->json('data.appearance'))->toBeNull();
+});
+
+it('updates section design fields and records an activity_log entry (model-audit)', function (): void {
+    [, $token] = catAdminToken();
+    $c = makeCategory(['name' => 'قسم']);
+
+    $this->withToken($token)->putJson("/api/v1/admin/categories/{$c->id}", [
+        'layout_type' => 'magazine',
+        'show_title' => false,
+    ])->assertOk();
+
+    expect(Category::find($c->id)->layout_type->value)->toBe('magazine');
+    $this->assertDatabaseHas('activity_log', [
+        'log_name' => 'category',
+        'subject_id' => $c->id,
+        'event' => 'updated',
+    ]);
+});
+
+it('rejects an invalid layout_type', function (): void {
+    [, $token] = catAdminToken();
+
+    $this->withToken($token)->postJson('/api/v1/admin/categories', [
+        'name' => 'X', 'locale' => 'ar', 'layout_type' => 'nonsense',
+    ])->assertStatus(422)->assertJsonValidationErrors(['layout_type']);
+});
+
+it('rejects a non-existent banner_media_id', function (): void {
+    [, $token] = catAdminToken();
+
+    $this->withToken($token)->postJson('/api/v1/admin/categories', [
+        'name' => 'X', 'locale' => 'ar', 'banner_media_id' => 999999,
+    ])->assertStatus(422)->assertJsonValidationErrors(['banner_media_id']);
 });

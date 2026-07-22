@@ -6,6 +6,7 @@ namespace App\Actions\Admin\Content;
 
 use App\Enums\CategoryScope;
 use App\Enums\CategoryStatus;
+use App\Enums\SectionLayoutType;
 use App\Http\Resources\Admin\Content\CategoryResource;
 use App\Models\Category;
 use App\Support\Content\CategoryHierarchyGuard;
@@ -39,6 +40,10 @@ class CreateCategoryAction
             'show_in_body' => $validated['show_in_body'] ?? true,
             'show_in_footer' => $validated['show_in_footer'] ?? false,
             'sort_order' => $validated['sort_order'] ?? 0,
+            'banner_media_id' => $validated['banner_media_id'] ?? null,
+            'show_title' => $validated['show_title'] ?? true,
+            'layout_type' => $validated['layout_type'] ?? SectionLayoutType::Default->value,
+            'appearance' => $validated['appearance'] ?? null,
             'provider' => $validated['provider'] ?? null,
             'external_id' => $validated['external_id'] ?? null,
         ]);
@@ -55,7 +60,7 @@ class CreateCategoryAction
 
         return ApiResponse::success(
             __('category.created'),
-            new CategoryResource($category),
+            new CategoryResource($category->load('bannerMedia')),
             201
         );
     }

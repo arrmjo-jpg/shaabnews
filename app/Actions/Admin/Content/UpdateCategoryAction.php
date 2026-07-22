@@ -39,6 +39,7 @@ class UpdateCategoryAction
 
         foreach (['name', 'description', 'icon', 'scope', 'status', 'show_in_header',
             'show_in_body', 'show_in_footer', 'sort_order', 'locale',
+            'banner_media_id', 'show_title', 'layout_type', 'appearance',
             'provider', 'external_id'] as $field) {
             if (array_key_exists($field, $validated)) {
                 $category->{$field} = $validated[$field];
@@ -61,7 +62,7 @@ class UpdateCategoryAction
 
         return ApiResponse::success(
             __('category.updated'),
-            new CategoryResource($category->fresh())
+            new CategoryResource($category->fresh()->load('bannerMedia'))
         );
     }
 }

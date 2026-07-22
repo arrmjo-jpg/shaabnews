@@ -26,6 +26,7 @@ class ListCategoriesAction
             fn (): array => CategoryResource::collection(
                 CategoryTree::build(
                     Category::query()
+                        ->with('bannerMedia')
                         ->orderBy('locale')
                         ->orderBy('sort_order')
                         ->orderBy('id')

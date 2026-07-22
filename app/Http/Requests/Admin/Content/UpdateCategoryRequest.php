@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\Content;
 
 use App\Enums\CategoryScope;
 use App\Enums\CategoryStatus;
+use App\Enums\SectionLayoutType;
 use App\Http\Requests\BaseFormRequest;
 use App\Models\Category;
 use Illuminate\Validation\Rule;
@@ -43,6 +44,11 @@ class UpdateCategoryRequest extends BaseFormRequest
             'show_in_body' => ['sometimes', 'boolean'],
             'show_in_footer' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:65535'],
+            // Section Design System — بانر/عنوان/تخطيط/تصميم القسم على الواجهة العامة.
+            'banner_media_id' => ['sometimes', 'nullable', 'integer', 'exists:media_assets,id'],
+            'show_title' => ['sometimes', 'boolean'],
+            'layout_type' => ['sometimes', Rule::in(SectionLayoutType::values())],
+            'appearance' => ['sometimes', 'nullable', 'array'],
             // ربط تصنيف نوع رياضة بمزوّد بيانات (Approved Architecture Baseline v1.0 §0) —
             // provider_metadata عمداً بلا حقل نموذج هنا (بلا شكل مُعرَّف بعد، إداريّ تقنيّ فقط).
             'provider' => ['sometimes', 'nullable', 'string', 'max:50'],

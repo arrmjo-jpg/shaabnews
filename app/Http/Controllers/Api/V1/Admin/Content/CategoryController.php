@@ -33,7 +33,7 @@ class CategoryController extends Controller
     public function show(Category $category): JsonResponse
     {
         return ApiResponse::success(
-            data: new CategoryResource($category->load('children'))
+            data: new CategoryResource($category->load(['children', 'bannerMedia']))
         );
     }
 
