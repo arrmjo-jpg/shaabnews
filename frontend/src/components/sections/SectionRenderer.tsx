@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
 import { AdZone } from '@/components/ads/ad-zone';
-import { CategoryFeaturedGrid } from '@/components/category/category-featured-grid';
 import { FeaturedRenderer } from '@/components/sections/renderers/FeaturedRenderer';
+import { HeroRenderer } from '@/components/sections/renderers/HeroRenderer';
 import { MagazineRenderer } from '@/components/sections/renderers/MagazineRenderer';
 import type { CategoryRef, FeedItem } from '@/lib/feed';
 
@@ -11,10 +11,10 @@ import type { CategoryRef, FeedItem } from '@/lib/feed';
 // كان هذا القرار (switch على layout) يقع داخل CategoryPage مباشرة. لا تغيير بصريّ: نفس
 // المنطق تمامًا (نفس أعداد التقطيع، نفس شرط page===1)، فقط نُقل مكانه إلى هنا.
 //
-// Phase B2 (Renderer Consolidation) بدأت بتفكيك layout==='featured' إلى FeaturedRenderer
-// المستقلّ (B2.1)، ثمّ layout==='magazine' إلى MagazineRenderer (B2.2) — نقطة التوزيع الوحيدة
-// على layout تبقى هنا فقط، لا تتكرّر داخل أيّ Renderer. hero ما زال يمرّ عبر CategoryFeaturedGrid
-// (System B) ريثما يُستخرج بدوره (B2.3) بنفس الطريقة.
+// Phase B2 (Renderer Consolidation) اكتمل استخراج الأشرطة الثلاثة الحيّة: featured
+// (FeaturedRenderer، B2.1) → magazine (MagazineRenderer، B2.2) → hero (HeroRenderer، B2.3a).
+// نقطة التوزيع الوحيدة على layout تبقى هنا فقط، لا تتكرّر داخل أيّ Renderer. CategoryFeaturedGrid
+// (System B) لم يعد مُستدعىً من هنا إطلاقًا — يبقى فقط لتنظيفه في B2.4 (Retire).
 //
 // children كـ render-prop لا ReactNode عاديّ: القسم المميّز (featured) وبقيّة التغذية
 // (feedItems) يعتمدان على نفس قرار التقسيم، ولا يمكن لهذا المكوّن حساب feedItems وتمريرها
@@ -59,7 +59,7 @@ export function SectionRenderer({
           ) : layout === 'magazine' ? (
             <MagazineRenderer items={featured} />
           ) : (
-            <CategoryFeaturedGrid items={featured} layout={layout} category={category} />
+            <HeroRenderer items={featured} category={category} />
           )}
           <AdZone zone="aalan_fasl_alaqsam_b" className="mb-6" />
         </>

@@ -7,15 +7,15 @@ vi.mock('@/components/sections/renderers/FeaturedRenderer', () => ({
 vi.mock('@/components/sections/renderers/MagazineRenderer', () => ({
   MagazineRenderer: vi.fn(() => <div data-testid="magazine-renderer-called" />),
 }));
-vi.mock('@/components/category/category-featured-grid', () => ({
-  CategoryFeaturedGrid: vi.fn(() => <div data-testid="category-featured-grid-called" />),
+vi.mock('@/components/sections/renderers/HeroRenderer', () => ({
+  HeroRenderer: vi.fn(() => <div data-testid="hero-renderer-called" />),
 }));
 
 // يجب الاستيراد بعد vi.mock (hoisted تلقائيًّا بواسطة vitest، لكن الترتيب هنا للوضوح فقط).
 import { SectionRenderer } from './SectionRenderer';
 import { FeaturedRenderer } from '@/components/sections/renderers/FeaturedRenderer';
 import { MagazineRenderer } from '@/components/sections/renderers/MagazineRenderer';
-import { CategoryFeaturedGrid } from '@/components/category/category-featured-grid';
+import { HeroRenderer } from '@/components/sections/renderers/HeroRenderer';
 import type { CategoryRef, FeedItem } from '@/lib/feed';
 
 const items: FeedItem[] = Array.from({ length: 12 }, (_, i) => ({
@@ -58,7 +58,7 @@ describe('SectionRenderer dispatch — single dispatch point, per layout (Render
 
     expect(FeaturedRenderer).toHaveBeenCalledTimes(1);
     expect(MagazineRenderer).not.toHaveBeenCalled();
-    expect(CategoryFeaturedGrid).not.toHaveBeenCalled();
+    expect(HeroRenderer).not.toHaveBeenCalled();
   });
 
   it('invokes MagazineRenderer exactly once and nothing else when layout is "magazine"', () => {
@@ -71,10 +71,10 @@ describe('SectionRenderer dispatch — single dispatch point, per layout (Render
 
     expect(MagazineRenderer).toHaveBeenCalledTimes(1);
     expect(FeaturedRenderer).not.toHaveBeenCalled();
-    expect(CategoryFeaturedGrid).not.toHaveBeenCalled();
+    expect(HeroRenderer).not.toHaveBeenCalled();
   });
 
-  it('invokes CategoryFeaturedGrid exactly once and nothing else when layout is "hero"', () => {
+  it('invokes HeroRenderer exactly once and nothing else when layout is "hero"', () => {
     vi.clearAllMocks();
     renderToStaticMarkup(
       <SectionRenderer category={makeCategory('hero')} items={items} page={1}>
@@ -82,7 +82,7 @@ describe('SectionRenderer dispatch — single dispatch point, per layout (Render
       </SectionRenderer>,
     );
 
-    expect(CategoryFeaturedGrid).toHaveBeenCalledTimes(1);
+    expect(HeroRenderer).toHaveBeenCalledTimes(1);
     expect(FeaturedRenderer).not.toHaveBeenCalled();
     expect(MagazineRenderer).not.toHaveBeenCalled();
   });
@@ -97,7 +97,7 @@ describe('SectionRenderer dispatch — single dispatch point, per layout (Render
 
     expect(FeaturedRenderer).not.toHaveBeenCalled();
     expect(MagazineRenderer).not.toHaveBeenCalled();
-    expect(CategoryFeaturedGrid).not.toHaveBeenCalled();
+    expect(HeroRenderer).not.toHaveBeenCalled();
   });
 
   it('invokes no renderer on page 2, even for a live layout (featured only shows on page 1)', () => {
@@ -110,6 +110,6 @@ describe('SectionRenderer dispatch — single dispatch point, per layout (Render
 
     expect(FeaturedRenderer).not.toHaveBeenCalled();
     expect(MagazineRenderer).not.toHaveBeenCalled();
-    expect(CategoryFeaturedGrid).not.toHaveBeenCalled();
+    expect(HeroRenderer).not.toHaveBeenCalled();
   });
 });
