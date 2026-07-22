@@ -33,6 +33,7 @@ class ListPublicCategoriesAction
                     Category::query()
                         ->active()
                         ->forLocale($locale)
+                        ->with('bannerMedia')
                         ->orderBy('sort_order')
                         ->orderBy('id')
                         ->get()

@@ -32,7 +32,10 @@ class ShowPublicCategoryAction
                     ->active()
                     ->forLocale($locale)
                     ->where('slug', $slug)
-                    ->with(['children' => fn ($q) => $q->where('status', 'active')->orderBy('sort_order')])
+                    ->with([
+                        'children' => fn ($q) => $q->where('status', 'active')->orderBy('sort_order')->with('bannerMedia'),
+                        'bannerMedia',
+                    ])
                     ->first();
 
                 if ($category === null) {

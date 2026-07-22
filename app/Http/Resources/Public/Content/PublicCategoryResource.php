@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Public\Content;
 
+use App\Support\Content\SectionAppearanceResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,6 +25,7 @@ class PublicCategoryResource extends JsonResource
             'description' => $this->description,
             'icon' => $this->icon,
             'locale' => $this->locale,
+            'appearance' => SectionAppearanceResolver::resolve($this->resource),
             // provider/external_id: عامّان عمدًا — الواجهة تحتاجهما لتوجيه تصنيف نوع الرياضة
             // إلى محرّك الرياضة (SportProviderResolver، Approved Architecture Baseline v1.0 §0).
             // provider_metadata يبقى إداريًّا فقط، بلا عقد عامّ محدَّد لشكله.
