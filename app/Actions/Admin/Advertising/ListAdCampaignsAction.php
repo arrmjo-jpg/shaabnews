@@ -36,8 +36,7 @@ class ListAdCampaignsAction
                 'created_at',
                 'deleted_at',
                 'advertiser_name',
-                'total_budget',
-                'daily_budget',
+                'budget_total',
             ])
             ->withCount('creatives')
             ->allowedFilters(
