@@ -14,6 +14,8 @@ export {
   Menu as MenuIcon,
   X as CloseIcon,
   ChevronDown as ChevronDownIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
   Play as PlayIcon,
   Eye as EyeIcon,
   EyeOff as EyeOffIcon,
