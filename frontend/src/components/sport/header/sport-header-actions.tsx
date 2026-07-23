@@ -1,10 +1,10 @@
 import { SearchIcon } from '@/components/icons';
+import { SportAccountSlot } from '@/components/sport/header/sport-account-slot';
 
-// Phase 2.2 Commit 2 (بنية) + Commit 3 (ربط `allow_theme_switch` فقط): أزرار ثابتة، `disabled`،
-// بلا أي حالة أو منطق تفاعليّ. البحث يُفعَّل مع ميزة البحث الرياضيّ لاحقاً (خارج نطاق هذا الـCommit).
-// زرّ المظهر يظهر/يختفي بحسب `sport.allow_theme_switch` من Public Sport Settings — لا Theme
-// Persistence ولا Provider هنا، القيمة تتحكّم فقط بالعرض/الإخفاء. لا أيقونة ثيم جديدة أُضيفت لملف
-// الأيقونات المركزيّ (خارج ملفات هذا الـCommit) — بدلاً منها شكل دائريّ نصفيّ بسيط (CSS).
+// Phase 2.2 Commit 2 (بنية) + Commit 3 (ربط `allow_theme_switch` فقط) + Phase 3 (Notifications/User
+// Menu، Commit 1 — project_sport_header_footer_analysis): البحث والمظهر يبقيان أزرارًا ثابتة
+// `disabled` (خارج نطاق هذا الـCommit، ينتظران دورهما الخاص). الحساب أصبح تفاعليًّا فعليًّا —
+// SportAccountSlot يستهلك الـUnified Entry Point المشترك، لا منطق جلسة جديد هنا.
 export function SportHeaderActions({ allowThemeSwitch }: { allowThemeSwitch: boolean }) {
   return (
     <div className="flex shrink-0 items-center gap-2">
@@ -30,6 +30,7 @@ export function SportHeaderActions({ allowThemeSwitch }: { allowThemeSwitch: boo
           />
         </button>
       )}
+      <SportAccountSlot />
     </div>
   );
 }
