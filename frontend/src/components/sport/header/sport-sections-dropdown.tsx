@@ -7,25 +7,21 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { SportMenuItemNode } from '@/lib/sport-menu';
 
-// خرائط section_key الوظيفيّة إلى مسارات حقيقيّة موجودة اليوم فقط. section_key بلا صفحة قائمة
-// حقيقيّة (competitions/teams/players: توجد صفحة تفاصيل فردية فقط، لا قائمة؛ predictions: ميزة
-// غير مبنية إطلاقًا) يُخفى بدل الربط بصفحة 404 — نفس انضباط "لا تلفيق" المتَّبع في بقيّة محرّك
-// الرياضة (مثال: competition-header.tsx لأقسام بلا بيانات في الـAPI العامّ).
-const SECTION_ROUTES: Record<string, string> = {
-  matches: '/sport',
-};
-
-// عناصر type=category تحتاج تحويل category_id → رابط حقيقي (slug/ancestry عبر categoryHref).
-// عقد /api/v1/sport-menu الحاليّ (Commit 4) لا يعيد سوى المعرّف الرقميّ الخام — لا مصدر آمن لبناء
-// الرابط من الواجهة وحدها دون تعديل الباك إند (خارج نطاق هذا الـCommit، فرونت‑إند فقط) — تُخفى
-// أيضًا حتى تضيف مرحلة لاحقة slug/href جاهزَين إلى العقد العامّ.
-function resolveHref(item: SportMenuItemNode): string | null {
-  if (item.type === 'section' && item.section_key) return SECTION_ROUTES[item.section_key] ?? null;
-  return null;
+// شجرة القوائم بعد الحلّ الكامل (Server، sport-primary-nav.tsx) — كل عقدة تملك href صالحًا
+// بالفعل (لا شيء هنا يُحلّ رابطًا أو يُخفي عقدة: مكوّن عرض بحت). عقدة لها children ⇒ Submenu،
+// وإلا رابط مباشر — نفس القاعدة على أي عمق.
+export interface ResolvedSportMenuNode {
+  id: number;
+  title: string;
+  icon: string | null;
+  href: string;
+  children: ResolvedSportMenuNode[];
 }
 
 // نفس منطق HoverDropdownMenu في main-nav.tsx (News) حرفيًّا — أُعيد هنا محليًّا بدل تعديل ملف
@@ -55,13 +51,33 @@ function HoverDropdownMenu({ trigger, children }: { trigger: React.ReactNode; ch
   );
 }
 
-// لا عنصر يُحلّ إلى رابط حقيقي ⇒ إخفاء الزرّ بالكامل (حالة صادقة، لا زرّ معطَّل بلا فائدة).
-export function SportSectionsDropdown({ items }: { items: SportMenuItemNode[] }) {
-  const resolved = items
-    .map((item) => ({ item, href: resolveHref(item) }))
-    .filter((x): x is { item: SportMenuItemNode; href: string } => x.href !== null);
+// عقدة واحدة — Submenu (Radix Sub، يفتح بالتمرير تلقائيًّا داخل قائمة مفتوحة) إن وُجدت children،
+// وإلا رابط مباشر. نفسها تُستدعى تكراريًّا لأي عمق، بلا حدّ أقصى مفترَض.
+function MenuNode({ node }: { node: ResolvedSportMenuNode }) {
+  if (node.children.length === 0) {
+    return (
+      <DropdownMenuItem asChild>
+        <Link href={node.href}>{node.title}</Link>
+      </DropdownMenuItem>
+    );
+  }
 
-  if (resolved.length === 0) return null;
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>{node.title}</DropdownMenuSubTrigger>
+      <DropdownMenuSubContent>
+        {node.children.map((child) => (
+          <MenuNode key={child.id} node={child} />
+        ))}
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
+  );
+}
+
+// لا عنصر يُحلّ إلى رابط حقيقي ⇒ إخفاء الزرّ بالكامل (حالة صادقة، لا زرّ معطَّل بلا فائدة). الحلّ
+// نفسه (وتصفية غير القابل للحلّ) يحدث الآن بالكامل في sport-primary-nav.tsx قبل الوصول هنا.
+export function SportSectionsDropdown({ items }: { items: ResolvedSportMenuNode[] }) {
+  if (items.length === 0) return null;
 
   return (
     <HoverDropdownMenu
@@ -75,10 +91,8 @@ export function SportSectionsDropdown({ items }: { items: SportMenuItemNode[] })
         </button>
       }
     >
-      {resolved.map(({ item, href }) => (
-        <DropdownMenuItem key={item.id} asChild>
-          <Link href={href}>{item.title}</Link>
-        </DropdownMenuItem>
+      {items.map((item) => (
+        <MenuNode key={item.id} node={item} />
       ))}
     </HoverDropdownMenu>
   );
