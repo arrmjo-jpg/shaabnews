@@ -17,6 +17,7 @@ import {
   getShotMap,
 } from '../games';
 import { getPlayer, getPlayerCareerData, getPlayerLastMatches, getPlayerStats, getPlayerTrophies, getTeamSquad } from '../player';
+import { searchSport } from '../search';
 import {
   getCompetitionBrackets,
   getCompetitionHistory,
@@ -140,5 +141,9 @@ export class Scores365Adapter implements SportDataProvider {
 
   getPlayerTrophies(athleteId: number, competitions: Array<{ id: number; name: string }>) {
     return getPlayerTrophies(athleteId, competitions);
+  }
+
+  searchSport(query: string, sportId: number) {
+    return searchSport(query, sportId);
   }
 }

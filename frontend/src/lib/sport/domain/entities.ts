@@ -38,6 +38,7 @@ import type {
   TrendLine,
 } from '../games';
 import type { CareerSection, PlayerCareerData, PlayerCompetition, PlayerGame, PlayerProfile, PlayerStat, PlayerTeam, SquadPlayer, TrophyGroup } from '../player';
+import type { SportSearchCompetition, SportSearchPlayer, SportSearchResults, SportSearchTeam } from '../search';
 import type {
   BracketMatch,
   BracketParticipant,
@@ -126,6 +127,13 @@ export type CompetitionInsightGame = InsightGame;
 export type CompetitionStatLeader = StatLeader;
 export type CompetitionBracketMatch = BracketMatch;
 export type CompetitionBracketParticipant = BracketParticipant;
+
+// Sprint 1.6 Phase 3 (Search) — بحث كيانات الرياضة. بطولات/فرق/لاعبون فقط (لا مباريات: نقطة
+// 365Scores لا تدعم بحث مباريات إطلاقًا، مؤكَّد حيًّا — راجع lib/sport/search.ts).
+export type SearchCompetitionHit = SportSearchCompetition;
+export type SearchTeamHit = SportSearchTeam;
+export type SearchPlayerHit = SportSearchPlayer;
+export type SearchResults = SportSearchResults;
 
 // لا شكل مطابق موجود اليوم — بديل أدنى (stub) غير مُستخدَم بعد، حتى تحتاجه حالة استخدام لاحقة.
 export interface Season {

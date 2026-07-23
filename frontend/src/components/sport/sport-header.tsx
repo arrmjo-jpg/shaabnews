@@ -8,8 +8,9 @@ import { getSiteSettings } from '@/lib/site-settings';
 // `sport.logo_light` + إظهار/إخفاء زرّ المظهر من `sport.allow_theme_switch`. `getSiteSettings()`
 // مُلفوفة بـ React `cache()` — تُستدعى هنا ومرّة أخرى داخل (sport)/layout.tsx (لـCookiePolicyModal)
 // دون طلبَي شبكة حقيقيّين (نفس نمط الجلب المزدوج المُثبَت في Team/Player/Match/Competition Step 2).
-// لا SportMenu، لا Search، لا Notifications، لا User Menu، لا Theme Persistence/Provider، لا تعديل
-// على (sport)/layout.tsx — كلّها خارج نطاق هذا الـCommit. `sport.secondary_color`/`default_theme`
+// SportMenu/Notifications/User Menu/Search أُنجزت في Commits لاحقة (راجع project_sport_header_footer_analysis).
+// لا يزال خارج النطاق: Theme Persistence/Provider (مؤجَّلة عمدًا لنهاية Phase 3)، لا تعديل على
+// (sport)/layout.tsx. `sport.secondary_color`/`default_theme`
 // قُرئا من نوع الإعدادات لكن لم يُطبَّقا: لا موضع طبيعيّ لهما في البنية الحاليّة بلا اختراع معالجة
 // بصريّة جديدة (وهذا بالضبط ما يقود لتغيير معماريّ — يُوقَف عنده، لا يُوسَّع الـCommit من تلقاء نفسه).
 export async function SportHeader() {
@@ -18,7 +19,7 @@ export async function SportHeader() {
   const allowThemeSwitch = settings?.sport?.allow_theme_switch ?? true;
 
   return (
-    <header className="border-b border-border bg-surface">
+    <header className="relative border-b border-border bg-surface">
       <Container className="flex h-16 items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-6">
           <SportLogo src={logoSrc} />

@@ -23,6 +23,7 @@ import type {
   PlayerStatLine,
   PlayerTrophy,
   PreGameComparison,
+  SearchResults,
   ShotChart,
   SquadMember,
   Standing,
@@ -61,11 +62,13 @@ export interface MockSportDataProviderCanned {
   playerRecentMatches?: PlayerRecentMatch[];
   playerCareer?: PlayerCareer;
   playerTrophies?: PlayerTrophy[];
+  searchResults?: SearchResults;
 }
 
 const EMPTY_COMPETITION_FIXTURES: CompetitionFixtures = { fixtures: [], results: [] };
 const EMPTY_MATCH_LISTING: CompetitionMatchListing = { today: [], upcoming: [], recent: [], fixtures: [], results: [] };
 const EMPTY_PLAYER_CAREER: PlayerCareer = { sections: [], competitions: [] };
+const EMPTY_SEARCH_RESULTS: SearchResults = { competitions: [], teams: [], players: [] };
 
 export class MockSportDataProvider implements SportDataProvider {
   constructor(private readonly canned: MockSportDataProviderCanned = {}) {}
@@ -180,5 +183,9 @@ export class MockSportDataProvider implements SportDataProvider {
 
   async getPlayerTrophies(): Promise<PlayerTrophy[]> {
     return this.canned.playerTrophies ?? [];
+  }
+
+  async searchSport(): Promise<SearchResults> {
+    return this.canned.searchResults ?? EMPTY_SEARCH_RESULTS;
   }
 }

@@ -27,6 +27,7 @@ import type {
   PlayerStatLine,
   PlayerTrophy,
   PreGameComparison,
+  SearchResults,
   ShotChart,
   SquadMember,
   Standing,
@@ -74,4 +75,7 @@ export interface SportDataProvider {
   getPlayerRecentMatches(athleteId: number, limit?: number): Promise<PlayerRecentMatch[]>;
   getPlayerCareer(athleteId: number): Promise<PlayerCareer>;
   getPlayerTrophies(athleteId: number, competitions: Array<{ id: number; name: string }>): Promise<PlayerTrophy[]>;
+
+  // Sprint 1.6 Phase 3 (Search) — بطولات/فرق/لاعبون فقط، راجع domain/entities.ts للسبب.
+  searchSport(query: string, sportId: number): Promise<SearchResults>;
 }

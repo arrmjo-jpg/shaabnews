@@ -59,4 +59,11 @@ describe('Scores365Adapter — تفويض رقيق إلى games.ts/stats.ts', ()
     await expect(adapter.getPlayerCareer(1)).resolves.toEqual({ sections: [], competitions: [] });
     await expect(adapter.getPlayerTrophies(1, [])).resolves.toEqual([]);
   });
+
+  it('يفوّض بحث الرياضة (Sprint 1.6 Phase 3) بنفس اتفاقية الفشل المغلَق', async () => {
+    stubEmptyFetch();
+    const adapter = new Scores365Adapter();
+
+    await expect(adapter.searchSport('ronaldo', 1)).resolves.toEqual({ competitions: [], teams: [], players: [] });
+  });
 });
