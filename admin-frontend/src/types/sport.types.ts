@@ -50,6 +50,9 @@ export interface BarSettingsData {
   eligible_competitions_count: number;
 }
 
+/** Governance فقط (Phase 3.2 Commit 2) — لا يعني وجود Route/صفحة فعليّة، راجع SportMenuSectionKey.php. */
+export type SportMenuSectionKey = 'matches' | 'results' | 'competitions' | 'teams' | 'players' | 'predictions';
+
 /** عقد SportMenuItemResource — شجرة بمستوى واحد من التداخل (children عبر whenLoaded). */
 export interface SportMenuItemData {
   id: number;
@@ -58,7 +61,7 @@ export interface SportMenuItemData {
   title: string;
   type: 'category' | 'section';
   category_id: number | null;
-  section_key: string | null;
+  section_key: SportMenuSectionKey | null;
   icon: string | null;
   order: number;
   enabled: boolean;
@@ -71,7 +74,7 @@ export interface SportMenuItemPayload {
   title?: string;
   type?: 'category' | 'section';
   category_id?: number | null;
-  section_key?: string | null;
+  section_key?: SportMenuSectionKey | null;
   parent_id?: number | null;
   icon?: string | null;
   order?: number;

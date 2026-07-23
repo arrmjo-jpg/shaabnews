@@ -111,7 +111,16 @@
       "category": "التصنيف",
       "categoryNone": "اختر تصنيفًا…",
       "sectionKey": "مفتاح القسم الوظيفي",
-      "sectionKeyHint": "مثال: matches, results, competitions, teams, players, predictions",
+      "sectionKeyNone": "اختر مفتاحًا…",
+      "sectionKeyHint": "قيمة معترف بها من النظام — لا تعني بالضرورة وجود صفحة فعلية لها بعد.",
+      "sectionKeyOptions": {
+        "matches": "المباريات",
+        "results": "النتائج",
+        "competitions": "البطولات",
+        "teams": "الفرق",
+        "players": "اللاعبون",
+        "predictions": "التوقعات"
+      },
       "parent": "الأب",
       "parentNone": "بلا أب (عنصر جذر)",
       "icon": "الأيقونة",

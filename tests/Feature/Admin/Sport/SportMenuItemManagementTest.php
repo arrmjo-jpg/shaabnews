@@ -71,6 +71,35 @@ it('creates a section-type item', function (): void {
     expect($res->json('data.section_key'))->toBe('matches');
 });
 
+// ─── Governance (Phase 3.2 Commit 2) — section_key Enum ─────────────────
+// يثبت فقط أن القيمة معترف بها من النظام؛ لا علاقة له بوجود Route/صفحة فعليّة لها (Availability
+// مسؤولية منفصلة، محكومة في الواجهة العامة عبر SECTION_ROUTES).
+
+it('accepts every recognized section_key value', function (string $key): void {
+    [, $token] = sportMenuAdminToken();
+
+    $this->withToken($token)->postJson('/api/v1/admin/sport-menu-items', [
+        'locale' => 'ar', 'title' => 'test-'.$key, 'type' => 'section', 'section_key' => $key,
+    ])->assertCreated();
+})->with(['matches', 'results', 'competitions', 'teams', 'players', 'predictions']);
+
+it('rejects an unrecognized section_key on create', function (): void {
+    [, $token] = sportMenuAdminToken();
+
+    $this->withToken($token)->postJson('/api/v1/admin/sport-menu-items', [
+        'locale' => 'ar', 'title' => 'أخبار', 'type' => 'section', 'section_key' => 'not-a-real-key',
+    ])->assertStatus(422)->assertJsonValidationErrors(['section_key']);
+});
+
+it('rejects an unrecognized section_key on update', function (): void {
+    [, $token] = sportMenuAdminToken();
+    $item = SportMenuItem::factory()->create(['title' => 'المباريات', 'section_key' => 'matches']);
+
+    $this->withToken($token)
+        ->putJson("/api/v1/admin/sport-menu-items/{$item->id}", ['section_key' => 'not-a-real-key'])
+        ->assertStatus(422)->assertJsonValidationErrors(['section_key']);
+});
+
 it('rejects a category-type item without category_id', function (): void {
     [, $token] = sportMenuAdminToken();
 

@@ -6,11 +6,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCategories } from '@/features/content/hooks';
 import { useCreateSportMenuItem, useUpdateSportMenuItem } from '../hooks';
-import type { SportMenuItemData } from '@/types/sport.types';
+import type { SportMenuItemData, SportMenuSectionKey } from '@/types/sport.types';
 import type { CategoryData } from '@/types/content.types';
 
 const selectCls =
   'h-10 w-full border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
+// Governance فقط (Phase 3.2 Commit 2، يطابق SportMenuSectionKey.php حرفيًّا) — لا يعني ظهور
+// العنصر فعليًّا في القائمة العامة؛ ذلك محكوم بـSECTION_ROUTES في sport-primary-nav.tsx (Frontend).
+const SPORT_MENU_SECTION_KEYS: readonly SportMenuSectionKey[] = [
+  'matches',
+  'results',
+  'competitions',
+  'teams',
+  'players',
+  'predictions',
+];
 
 interface Props {
   open: boolean;
@@ -28,7 +39,7 @@ interface FormState {
   title: string;
   type: 'category' | 'section';
   category_id: number | null;
-  section_key: string;
+  section_key: SportMenuSectionKey | '';
   parent_id: number | null;
   icon: string;
   enabled: boolean;
@@ -102,14 +113,14 @@ export function SportMenuItemFormModal({ open, onClose, item, parent, rootItems 
   const submit = () => {
     if (form.title.trim().length === 0) return;
     if (form.type === 'category' && form.category_id === null) return;
-    if (form.type === 'section' && form.section_key.trim().length === 0) return;
+    if (form.type === 'section' && form.section_key === '') return;
 
     const payload = {
       locale: form.locale,
       title: form.title.trim(),
       type: form.type,
       category_id: form.type === 'category' ? form.category_id : null,
-      section_key: form.type === 'section' ? form.section_key.trim() : null,
+      section_key: form.type === 'section' && form.section_key !== '' ? form.section_key : null,
       parent_id: form.parent_id,
       icon: form.icon.trim() ? form.icon.trim() : null,
       enabled: form.enabled,
@@ -194,14 +205,19 @@ export function SportMenuItemFormModal({ open, onClose, item, parent, rootItems 
         ) : (
           <div>
             <Label htmlFor="smi-section-key">{t('sportMenu.form.sectionKey')}</Label>
-            <Input
+            <select
               id="smi-section-key"
               value={form.section_key}
-              onChange={(e) => patch({ section_key: e.target.value })}
-              dir="ltr"
-              placeholder="matches"
-              maxLength={50}
-            />
+              onChange={(e) => patch({ section_key: e.target.value as SportMenuSectionKey | '' })}
+              className={selectCls}
+            >
+              <option value="">{t('sportMenu.form.sectionKeyNone')}</option>
+              {SPORT_MENU_SECTION_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`sportMenu.form.sectionKeyOptions.${key}`)}
+                </option>
+              ))}
+            </select>
             <p className="mt-1 text-xs text-muted-foreground">{t('sportMenu.form.sectionKeyHint')}</p>
           </div>
         )}

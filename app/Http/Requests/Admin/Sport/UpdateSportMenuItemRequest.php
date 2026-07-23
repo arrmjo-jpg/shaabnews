@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Sport;
 
+use App\Enums\SportMenuSectionKey;
 use App\Http\Requests\BaseFormRequest;
 use App\Models\Category;
 use Illuminate\Contracts\Validation\Validator;
@@ -24,7 +25,8 @@ class UpdateSportMenuItemRequest extends BaseFormRequest
             'title' => ['sometimes', 'string', 'max:150'],
             'type' => ['sometimes', Rule::in(['category', 'section'])],
             'category_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id'],
-            'section_key' => ['sometimes', 'nullable', 'string', 'max:50'],
+            // Governance فقط (Phase 3.2 Commit 2) — راجع StoreSportMenuItemRequest للتعليق الكامل.
+            'section_key' => ['sometimes', 'nullable', 'string', Rule::in(SportMenuSectionKey::values())],
             'parent_id' => ['sometimes', 'nullable', 'integer', 'exists:sport_menu_items,id'],
             'icon' => ['sometimes', 'nullable', 'string', 'max:100'],
             'order' => ['sometimes', 'integer', 'min:0'],

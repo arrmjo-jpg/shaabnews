@@ -107,7 +107,16 @@
       "category": "Category",
       "categoryNone": "Choose a category…",
       "sectionKey": "Section key",
-      "sectionKeyHint": "e.g. matches, results, competitions, teams, players, predictions",
+      "sectionKeyNone": "Choose a key…",
+      "sectionKeyHint": "A system-recognized value — doesn't necessarily mean a real page exists for it yet.",
+      "sectionKeyOptions": {
+        "matches": "Matches",
+        "results": "Results",
+        "competitions": "Competitions",
+        "teams": "Teams",
+        "players": "Players",
+        "predictions": "Predictions"
+      },
       "parent": "Parent",
       "parentNone": "No parent (root item)",
       "icon": "Icon",
