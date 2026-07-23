@@ -15,7 +15,7 @@ export async function SportFooter() {
   const copyright = settings?.copyright?.trim() || `© ${year} ${siteName} — جميع الحقوق محفوظة.`;
 
   return (
-    <footer className="border-t border-border bg-surface">
+    <footer className="sport-scope border-t border-border bg-surface">
       <Container className="flex flex-col items-center gap-3 py-8 text-center">
         {logoSrc ? (
           // eslint-disable-next-line @next/next/no-img-element -- نفس سياسة SiteLogo: نقطة تبديل واحدة لاحقاً لـ next/image

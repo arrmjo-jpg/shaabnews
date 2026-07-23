@@ -20,7 +20,7 @@ export async function SportHeader() {
   const themeCookieName = settings?.sport?.theme_cookie || DEFAULT_SPORT_THEME_COOKIE;
 
   return (
-    <header className="relative border-b border-border bg-surface">
+    <header className="sport-scope relative border-b border-border bg-surface">
       <Container className="flex h-16 items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-6">
           <SportLogo src={logoSrc} />

@@ -276,6 +276,19 @@
 [data-reels-theme='light'] .reels-logo-dark { display: none; }
 [data-reels-theme='light'] .reels-logo-light { display: inline-block; }
 
+/* ══ ثيم الرياضة (Sprint 1.7 Phase T5) — Chrome فقط (Header/Footer) بقرار نطاق صريح ══
+   .sport-scope تُطبَّق على <header>/<footer> فقط، لا على <main> — البطاقات الداخلية (~35 ملفًّا
+   تستخدم bg-white مُثبَّتاً لا رمز اللون) تبقى بيضاء بقرار مؤجَّل (راجع project memory)، فلا
+   تُعاد صياغتها كجزء من هذه المرحلة. [data-sport-theme] يُضبَط على <html> (سكربت (sport)/layout.tsx،
+   Phase T1) — الافتراضي العامّ فاتح (نفس News)، فالتجاوز هنا يستهدف 'dark' فقط (عكس .reels-scope
+   الذي افتراضه داكن). */
+[data-sport-theme='dark'] .sport-scope {
+  --color-surface: #12161b;
+  --color-border: #262b32;
+  --color-fg: #f2f3f4;
+  --color-muted: #8b929b;
+}
+
 /* ══ تخطيط تعويم صورة الهيرو يسارًا في صفحة المقال (article-detail/blocks/hero-image.tsx) ══
    منقول بصريًّا من المشروع المرجعي — يُفعَّل فقط على الشاشات الكبيرة (سطح المكتب)؛ على الجوال
    الصورة تبقى بعرض كامل ضمن التدفّق العادي (لا float). صنف جديد إضافي، لا يمسّ أي قاعدة موجودة. */
