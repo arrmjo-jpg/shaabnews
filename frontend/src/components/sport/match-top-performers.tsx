@@ -5,7 +5,7 @@ import type { TopPerformerCategory, TopPerformerPlayer } from '@/lib/sport/domai
 // (يسار) مع إحصاءاتهما المتقابلة. كلّ لاعب رابطٌ لملفّه. بيانات حقيقيّة من `game.topPerformers` (لا تلفيق).
 export function MatchTopPerformers({ categories }: { categories: TopPerformerCategory[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">أهم اللاعبين</h2>
       </div>

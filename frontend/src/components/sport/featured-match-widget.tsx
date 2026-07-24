@@ -21,7 +21,7 @@ export function FeaturedMatchWidget({ detail, meta }: { detail: MatchDetail; met
   ];
 
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="bg-primary px-4 py-2 text-center text-sm font-extrabold text-white">أبرز المباريات</div>
 
       <div className="p-4">
@@ -46,7 +46,7 @@ export function FeaturedMatchWidget({ detail, meta }: { detail: MatchDetail; met
           className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-px overflow-hidden border border-border bg-border"
         >
           <Team side={detail.home} colors={home} />
-          <div className="flex min-w-14 flex-col items-center justify-center bg-white px-2">
+          <div className="flex min-w-14 flex-col items-center justify-center bg-surface px-2">
             {showScore ? (
               <span dir="ltr" className="text-xl font-extrabold tabular-nums text-fg">
                 {detail.home.score} - {detail.away.score}

@@ -11,7 +11,7 @@ const FORM: Record<HeadToHeadFormGame['outcome'], { label: string; cls: string }
 
 export function MatchRecentForm({ forms }: { forms: HeadToHeadTeamForm[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">الأداء — آخر ٥ مباريات</h2>
       </div>

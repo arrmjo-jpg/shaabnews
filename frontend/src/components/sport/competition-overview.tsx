@@ -45,7 +45,7 @@ export function CompetitionOverview({
       {featured ? (
         <FeaturedMatchWidget detail={featured} meta={meta} />
       ) : nextMatch ? (
-        <section dir="rtl" className="border border-border bg-white">
+        <section dir="rtl" className="border border-border bg-surface">
           <div className="border-b border-border px-4 py-2.5">
             <h2 className="text-sm font-extrabold text-fg">
               {nextMatch.kind === 'finished' ? 'آخر مباراة' : 'المباراة القادمة'}
@@ -56,7 +56,7 @@ export function CompetitionOverview({
       ) : null}
 
       {hasScorers && (
-        <section dir="rtl" className="flex flex-col border border-border bg-white">
+        <section dir="rtl" className="flex flex-col border border-border bg-surface">
           <div className="border-b border-border px-4 py-2.5">
             <h2 className="text-sm font-extrabold text-fg">أبرز الهدّافين</h2>
           </div>
@@ -107,7 +107,7 @@ export function CompetitionOverview({
 
       {hasStandings && standings && <StandingsPreview data={standings} meta={meta} />}
 
-      <section dir="rtl" className="border border-border bg-white">
+      <section dir="rtl" className="border border-border bg-surface">
         <div className="border-b border-border px-4 py-2.5">
           <h2 className="text-sm font-extrabold text-fg">عن البطولة</h2>
         </div>

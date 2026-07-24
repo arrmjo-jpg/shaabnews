@@ -5,7 +5,7 @@ import type { MatchStatRow } from '@/lib/sport/domain/entities';
 export function MatchStats({ stats }: { stats: MatchStatRow[] }) {
   if (!stats.length) {
     return (
-      <div className="border border-border bg-white p-8 text-center text-sm text-muted">الإحصائيات غير متاحة لهذه المباراة.</div>
+      <div className="border border-border bg-surface p-8 text-center text-sm text-muted">الإحصائيات غير متاحة لهذه المباراة.</div>
     );
   }
   const groups: { category: string | null; rows: MatchStatRow[] }[] = [];
@@ -22,7 +22,7 @@ export function MatchStats({ stats }: { stats: MatchStatRow[] }) {
   }
 
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border bg-surface-2 px-4 py-2">
         <h2 className="text-sm font-extrabold text-fg">الإحصائيات</h2>
       </div>

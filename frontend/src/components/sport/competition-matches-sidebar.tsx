@@ -49,7 +49,7 @@ export function CompetitionMatchesSidebar({
   const empty = sections.every((s) => s.groups.length === 0);
 
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="flex border-b border-border">
         {TABS.map((t) => (
           <button

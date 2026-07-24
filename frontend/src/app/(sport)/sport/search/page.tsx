@@ -28,7 +28,7 @@ function ResultSection<T>({
 }) {
   if (items.length === 0) return null;
   return (
-    <section dir="rtl" className="mb-6 border border-border bg-white">
+    <section dir="rtl" className="mb-6 border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">{title}</h2>
       </div>

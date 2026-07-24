@@ -6,7 +6,7 @@ export function CompetitionStatsView({ data }: { data: CompetitionStatsSummary }
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {data.categories.map((cat) => (
-        <section key={cat.id} dir="rtl" className="flex flex-col border border-border bg-white">
+        <section key={cat.id} dir="rtl" className="flex flex-col border border-border bg-surface">
           <div className="border-b border-border px-4 py-2.5">
             <h2 className="text-sm font-extrabold text-fg">{cat.title}</h2>
           </div>

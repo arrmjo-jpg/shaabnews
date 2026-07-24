@@ -35,7 +35,7 @@ export function SportsNav({ active }: { active: string }) {
               'group flex min-w-[84px] flex-1 flex-col items-center justify-center gap-2 border px-4 py-3.5 transition-all duration-200 ' +
               (isActive
                 ? 'border-primary bg-primary text-white shadow-md'
-                : 'border-border bg-white text-muted hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-md')
+                : 'border-border bg-surface text-muted hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-md')
             }
           >
             <Icon className="size-6 shrink-0 transition-transform duration-200 group-hover:scale-110" />

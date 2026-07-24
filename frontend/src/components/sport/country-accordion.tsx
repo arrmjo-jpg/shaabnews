@@ -14,7 +14,7 @@ export function CountryAccordion({ countries }: { countries: CountryMatchGroup[]
   if (!countries.length) return null;
 
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-3 py-2.5">
         <h3 className="text-sm font-extrabold text-fg">الدول</h3>
       </div>

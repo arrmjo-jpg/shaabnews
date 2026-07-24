@@ -102,7 +102,7 @@ export default async function PlayerPage({
         <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
           <main className="flex min-w-0 flex-col gap-6">
             {/* الترويسة */}
-            <section dir="rtl" className="border border-border bg-white">
+            <section dir="rtl" className="border border-border bg-surface">
               <div className="flex items-center gap-4 p-5">
                 <span className="avatar flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2">
                   {p.photo ? (
@@ -202,7 +202,7 @@ function PlayerInfoCard({
   if (nationality) facts.push({ value: nationality, label: 'الجنسية' });
 
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">معلومات اللاعب</h2>
       </div>
@@ -212,7 +212,7 @@ function PlayerInfoCard({
             <Link
               key={team.id}
               href={`/sport/team/${team.id}`}
-              className="flex items-center gap-3 bg-white px-4 py-3 transition-colors hover:bg-surface-2"
+              className="flex items-center gap-3 bg-surface px-4 py-3 transition-colors hover:bg-surface-2"
             >
               {team.logo ? (
                 // eslint-disable-next-line @next/next/no-img-element -- شعار فريق 365 من CDN
@@ -232,7 +232,7 @@ function PlayerInfoCard({
       {facts.length > 0 && (
         <dl className="grid grid-cols-2 gap-px border-t border-border bg-border sm:grid-cols-4">
           {facts.map((f) => (
-            <div key={f.label} className="flex flex-col items-center gap-0.5 bg-white px-2 py-3 text-center">
+            <div key={f.label} className="flex flex-col items-center gap-0.5 bg-surface px-2 py-3 text-center">
               <dd className="order-1 text-base font-extrabold text-fg">{f.value}</dd>
               <dt className="order-2 text-[11px] text-muted">{f.label}</dt>
             </div>
@@ -260,7 +260,7 @@ function RelatedSidebar({ teammates, teams }: { teammates: SquadMember[]; teams:
 
   return (
     <aside dir="rtl" className="min-w-0">
-      <section className="border border-border bg-white lg:sticky lg:top-24">
+      <section className="border border-border bg-surface lg:sticky lg:top-24">
         <div className="border-b border-border px-4 py-2.5">
           <h2 className="text-sm font-extrabold text-fg">قد تكون مهتمًا بـ</h2>
         </div>

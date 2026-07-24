@@ -71,7 +71,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
           <main className="min-w-0">
             {standings ? (
-              <section dir="rtl" className="border border-border bg-white">
+              <section dir="rtl" className="border border-border bg-surface">
                 <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
                   {standings.competition.logo && (
                     // eslint-disable-next-line @next/next/no-img-element -- شعار البطولة من CDN 365
@@ -84,7 +84,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
                 </div>
               </section>
             ) : (
-              <div className="border border-border bg-white p-8 text-center text-sm text-muted">
+              <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
                 لا يتوفّر ترتيب لدوري هذا الفريق حالياً.
               </div>
             )}

@@ -14,7 +14,7 @@ export function MatchPreGameStats({
   return (
     <div className="flex flex-col gap-6">
       {data.groups.map((g, gi) => (
-        <section key={gi} dir="rtl" className="border border-border bg-white">
+        <section key={gi} dir="rtl" className="border border-border bg-surface">
           <div className="border-b border-border px-4 py-2.5">
             <h2 className="text-sm font-extrabold text-fg">{g.title}</h2>
           </div>

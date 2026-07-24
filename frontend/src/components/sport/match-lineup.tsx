@@ -32,13 +32,13 @@ export function MatchLineup({
   const [side, setSide] = useState<'home' | 'away'>(home ? 'home' : 'away');
   if (!home && !away) {
     return (
-      <div className="border border-border bg-white p-8 text-center text-sm text-muted">التشكيلة غير متاحة لهذه المباراة.</div>
+      <div className="border border-border bg-surface p-8 text-center text-sm text-muted">التشكيلة غير متاحة لهذه المباراة.</div>
     );
   }
   const cur = side === 'home' ? home : away;
 
   return (
-    <section dir="rtl" className="overflow-hidden border border-border bg-white">
+    <section dir="rtl" className="overflow-hidden border border-border bg-surface">
       {/* تبويبا الفريقين (المضيف يمين، الافتراضيّ) */}
       <div className="flex border-b border-border">
         <TabBtn active={side === 'home'} label={homeTeam} logo={homeLogo} color={homeColor} onClick={() => setSide('home')} />

@@ -42,14 +42,14 @@ export async function SportMatchesSection({
       </div>
 
       {groups.length === 0 ? (
-        <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 border border-border bg-white p-8 text-center">
+        <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 border border-border bg-surface p-8 text-center">
           <p className="text-base font-bold text-fg">{live ? 'لا مباريات مباشرة الآن' : 'لا تتوفّر مباريات حالياً'}</p>
           <p className="text-sm text-muted">
             {live ? 'جرّب «حسب التوقيت» لعرض كل المباريات.' : 'تعذّر جلب البيانات من المصدر الآن.'}
           </p>
         </div>
       ) : (
-        <div className="border border-border bg-white">
+        <div className="border border-border bg-surface">
           {groups.map((group) => (
             <CompetitionBlock key={group.id} group={group} />
           ))}

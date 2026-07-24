@@ -14,7 +14,7 @@ export interface EntityRow {
 export function EntityListBlock({ title, items }: { title: string; items: EntityRow[] }) {
   if (!items.length) return null;
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-3 py-2.5">
         <h3 className="text-sm font-extrabold text-fg">{title}</h3>
       </div>

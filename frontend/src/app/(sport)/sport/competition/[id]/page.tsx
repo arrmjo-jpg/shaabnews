@@ -100,7 +100,7 @@ export default async function CompetitionPage({
           standings ? (
             <StandingsView data={standings} showLegend />
           ) : (
-            <div className="border border-border bg-white p-8 text-center text-sm text-muted">لا يتوفّر ترتيب لهذه البطولة.</div>
+            <div className="border border-border bg-surface p-8 text-center text-sm text-muted">لا يتوفّر ترتيب لهذه البطولة.</div>
           )
         ) : active === 'news' ? (
           <SportNews />
@@ -110,13 +110,13 @@ export default async function CompetitionPage({
           stats ? (
             <CompetitionStatsView data={stats} />
           ) : (
-            <div className="border border-border bg-white p-8 text-center text-sm text-muted">لا تتوفّر إحصاءات لهذه البطولة.</div>
+            <div className="border border-border bg-surface p-8 text-center text-sm text-muted">لا تتوفّر إحصاءات لهذه البطولة.</div>
           )
         ) : active === 'insights' ? (
           insights ? (
             <CompetitionInsightsView data={insights} />
           ) : (
-            <div className="border border-border bg-white p-8 text-center text-sm text-muted">
+            <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
               لا تتوفّر ملاحظات لهذه البطولة حاليّاً.
             </div>
           )

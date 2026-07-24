@@ -7,7 +7,7 @@ import type { PlayerCareerSection, PlayerRecentMatch, PlayerTrophy } from '@/lib
 // الفرق بعرض ثابت كي تلتصق النتيجة بالاسم (لا تتمدّد فجوة)، و`flex-1` يدفع التقييم لأقصى اليسار كـ365.
 export function PlayerLastMatches({ matches, moreHref }: { matches: PlayerRecentMatch[]; moreHref?: string }) {
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">المباريات الأخيرة</h2>
       </div>
@@ -85,7 +85,7 @@ function TeamLine({ name, logo }: { name: string; logo: string | null }) {
 // «مسيرة اللاعب» — مسيرته بالإحصاء (athletes/career): قسم لكلّ فئة (نادٍ/منتخب)، وجدول بطولاتها بإحصاءاته فيها.
 export function PlayerCareer({ sections }: { sections: PlayerCareerSection[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">مسيرة اللاعب</h2>
       </div>
@@ -131,7 +131,7 @@ export function PlayerCareer({ sections }: { sections: PlayerCareerSection[] }) 
 // «الألقاب» — ألقاب اللاعب (athletes/trophies/stats): مجموعة لكلّ بطولة فاز بها، وصفوف (الفريق/الموسم/مشاركات/أهداف).
 export function PlayerTrophies({ groups }: { groups: PlayerTrophy[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">الألقاب</h2>
       </div>

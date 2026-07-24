@@ -7,10 +7,10 @@ import type { CompetitionChampion } from '@/lib/sport/domain/entities';
 // `competitions/history` (appTypeId=5). بلا تلفيق — صفوف بلا بطل مُستبعَدة، وسطر النتيجة/الرابط يظهران فقط عند توفّرهما.
 export function CompetitionChampions({ rows, title }: { rows: CompetitionChampion[]; title?: string }) {
   if (!rows.length) {
-    return <div className="border border-border bg-white p-8 text-center text-sm text-muted">لا بيانات أبطال متاحة.</div>;
+    return <div className="border border-border bg-surface p-8 text-center text-sm text-muted">لا بيانات أبطال متاحة.</div>;
   }
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">{title ? `أبطال ${title}` : 'الأبطال'}</h2>
       </div>

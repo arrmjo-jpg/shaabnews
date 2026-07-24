@@ -9,7 +9,7 @@ export async function StandingsBlock({ competitionId }: { competitionId: number 
   if (!data || data.rows.length === 0) return null;
 
   return (
-    <section dir="rtl" className="border border-border bg-white" aria-labelledby="standings-block-heading">
+    <section dir="rtl" className="border border-border bg-surface" aria-labelledby="standings-block-heading">
       <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
         {data.competition.logo && (
           // eslint-disable-next-line @next/next/no-img-element -- شعار البطولة من CDN 365

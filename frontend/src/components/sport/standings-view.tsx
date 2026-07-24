@@ -9,7 +9,7 @@ export function StandingsView({ data, showLegend = false }: { data: Standing; sh
 
   if (groups.length <= 1) {
     return (
-      <div dir="rtl" className="border border-border bg-white px-2 py-1">
+      <div dir="rtl" className="border border-border bg-surface px-2 py-1">
         <StandingsTable data={data} showLegend={showLegend} />
       </div>
     );
@@ -18,7 +18,7 @@ export function StandingsView({ data, showLegend = false }: { data: Standing; sh
   return (
     <div className="flex flex-col gap-4">
       {groups.map((g, i) => (
-        <section key={g.num} dir="rtl" className="border border-border bg-white">
+        <section key={g.num} dir="rtl" className="border border-border bg-surface">
           <div className="border-b border-border bg-surface-2 px-4 py-2 text-sm font-extrabold text-fg">{g.name}</div>
           <div className="px-2 py-1">
             <StandingsTable
@@ -46,7 +46,7 @@ export function StandingsPreview({
   const multi = groups.length > 1;
 
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
         {meta.logo && (
           // eslint-disable-next-line @next/next/no-img-element -- شعار بطولة 365 من CDN

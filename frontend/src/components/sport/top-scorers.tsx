@@ -14,7 +14,7 @@ export function TopScorers({ comps }: { comps: ScorerCompetition[] }) {
   const cur = comps[i];
 
   return (
-    <section dir="rtl" className="flex flex-col border border-border bg-white" aria-labelledby="top-scorers-heading">
+    <section dir="rtl" className="flex flex-col border border-border bg-surface" aria-labelledby="top-scorers-heading">
       <div className="border-b border-border px-4 py-2.5">
         <h2 id="top-scorers-heading" className="text-sm font-extrabold text-fg">
           الأهداف

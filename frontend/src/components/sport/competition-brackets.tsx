@@ -16,7 +16,7 @@ export function CompetitionBrackets({
 }) {
   if (!stages.length) {
     return (
-      <div className="border border-border bg-white p-8 text-center text-sm text-muted">
+      <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
         لا تتوفّر بيانات خروج المغلوب لهذه البطولة.
       </div>
     );

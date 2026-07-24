@@ -12,7 +12,7 @@ export interface TrendCard {
 export function CompetitionTrends({ cards }: { cards: TrendCard[] }) {
   if (!cards.length) return null;
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">الأكثر شيوعاً</h2>
       </div>

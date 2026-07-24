@@ -34,7 +34,7 @@ export default async function FollowingPage() {
         <h1 className="mb-6 text-xl font-extrabold text-fg sm:text-2xl">أتابعهم</h1>
 
         {items.length === 0 ? (
-          <div className="border border-border bg-white p-8 text-center text-sm text-muted">
+          <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
             لا تتابع أيّ فريق أو بطولة أو لاعب بعد. اضغط «تابع» على أيّ صفحة لإضافته هنا.
           </div>
         ) : (
@@ -43,7 +43,7 @@ export default async function FollowingPage() {
               const list = items.filter((i) => i.type === g.type);
               if (list.length === 0) return null;
               return (
-                <section key={g.type} dir="rtl" className="border border-border bg-white">
+                <section key={g.type} dir="rtl" className="border border-border bg-surface">
                   <div className="border-b border-border px-4 py-2.5">
                     <h2 className="text-sm font-extrabold text-fg">{g.title}</h2>
                   </div>

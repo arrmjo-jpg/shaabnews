@@ -30,7 +30,7 @@ export function DayFilter({
   const sel = dayParts(selected, today);
 
   return (
-    <div dir="rtl" className="flex flex-col items-center gap-2 border border-border bg-white px-3 py-2.5">
+    <div dir="rtl" className="flex flex-col items-center gap-2 border border-border bg-surface px-3 py-2.5">
       <div className="flex items-center justify-center gap-2">
         <Link
           href={href(shiftYmd(selected, -1))}

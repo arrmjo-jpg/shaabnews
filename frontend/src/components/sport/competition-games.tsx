@@ -5,7 +5,7 @@ import type { MatchListItem } from '@/lib/sport/domain/entities';
 export function CompetitionGamesView({ fixtures, results }: { fixtures: MatchListItem[]; results: MatchListItem[] }) {
   if (!fixtures.length && !results.length) {
     return (
-      <div className="border border-border bg-white p-8 text-center text-sm text-muted">
+      <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
         لا مباريات متاحة لهذه البطولة حالياً.
       </div>
     );
@@ -20,7 +20,7 @@ export function CompetitionGamesView({ fixtures, results }: { fixtures: MatchLis
 
 function GamesBlock({ title, games }: { title: string; games: MatchListItem[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border px-4 py-2.5">
         <h2 className="text-sm font-extrabold text-fg">{title}</h2>
       </div>

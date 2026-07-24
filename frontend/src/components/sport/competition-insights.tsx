@@ -9,7 +9,7 @@ export function CompetitionInsightsView({ data }: { data: CompetitionInsightsSum
   return (
     <div className="flex flex-col gap-6">
       {data.top.length > 0 && (
-        <section dir="rtl" className="border border-border bg-white">
+        <section dir="rtl" className="border border-border bg-surface">
           <div className="border-b border-border px-4 py-2.5">
             <h2 className="text-sm font-extrabold text-fg">أبرز التريندات</h2>
           </div>
@@ -19,7 +19,7 @@ export function CompetitionInsightsView({ data }: { data: CompetitionInsightsSum
         </section>
       )}
 
-      <section dir="rtl" className="border border-border bg-white">
+      <section dir="rtl" className="border border-border bg-surface">
         <div className="border-b border-border px-4 py-2.5">
           <h2 className="text-sm font-extrabold text-fg">شائع</h2>
         </div>

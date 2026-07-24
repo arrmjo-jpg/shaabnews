@@ -5,7 +5,7 @@ import type { MatchEvent, MatchEventType } from '@/lib/sport/games';
 // أحداث المباراة (النظرة العامّة) — صفّ ثلاثيّ: حدث المضيف يمين | الدقيقة وسط | حدث الضيف يسار. أيقونة بحسب النوع.
 export function MatchEvents({ events }: { events: MatchEvent[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-white">
+    <section dir="rtl" className="border border-border bg-surface">
       <div className="border-b border-border bg-surface-2 px-4 py-2">
         <h2 className="text-sm font-extrabold text-fg">أحداث المباراة</h2>
       </div>

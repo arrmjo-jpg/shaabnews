@@ -149,7 +149,7 @@ export default async function MatchPage({
               ) : preGame ? (
                 <MatchPreGameStats data={preGame} homeColor={d.home.color} awayColor={d.away.color} />
               ) : (
-                <div className="border border-border bg-white p-8 text-center text-sm text-muted">
+                <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
                   لا تتوفّر إحصاءات لهذه المباراة بعد.
                 </div>
               )
@@ -157,7 +157,7 @@ export default async function MatchPage({
               trends ? (
                 <MatchTrendsView data={trends} />
               ) : (
-                <div className="border border-border bg-white p-8 text-center text-sm text-muted">
+                <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
                   لا تتوفّر إحصاءات شائعة لهذه المباراة.
                 </div>
               )
@@ -167,7 +167,7 @@ export default async function MatchPage({
               h2h ? (
                 <MatchH2H data={h2h} />
               ) : (
-                <div className="border border-border bg-white p-8 text-center text-sm text-muted">
+                <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
                   لا تتوفّر بيانات مواجهات بين هذين الفريقين.
                 </div>
               )
@@ -180,7 +180,7 @@ export default async function MatchPage({
                 {d.commentary.length > 0 ? (
                   <MatchCommentary stages={d.commentary} />
                 ) : (
-                  <div className="border border-border bg-white p-8 text-center text-sm text-muted">
+                  <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
                     {d.kind === 'upcoming' ? 'لم تبدأ المباراة بعد.' : 'لا أحداث مسجّلة لهذه المباراة.'}
                   </div>
                 )}
@@ -190,7 +190,7 @@ export default async function MatchPage({
                 <MatchInfo d={d} />
 
                 {standings && (
-                  <section dir="rtl" className="border border-border bg-white">
+                  <section dir="rtl" className="border border-border bg-surface">
                     <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
                       {standings.competition.logo && (
                         // eslint-disable-next-line @next/next/no-img-element -- شعار البطولة من CDN 365

@@ -29,7 +29,7 @@ export function MatchH2H({ data }: { data: HeadToHead }) {
         </FilterBtn>
       </div>
 
-      <section dir="rtl" className="border border-border bg-white">
+      <section dir="rtl" className="border border-border bg-surface">
         <div className="border-b border-border px-4 py-2.5">
           <h2 className="text-sm font-extrabold text-fg">المواجهات المباشرة</h2>
         </div>
@@ -68,7 +68,7 @@ export function MatchH2H({ data }: { data: HeadToHead }) {
         const isHomeForm = f.teamId === homeId;
         const games = (mode === 'all' ? f.games : f.games.filter((g) => g.wasHome === isHomeForm)).slice(0, 5);
         return (
-          <section key={f.teamId} dir="rtl" className="border border-border bg-white">
+          <section key={f.teamId} dir="rtl" className="border border-border bg-surface">
             <Link
               href={`/sport/team/${f.teamId}`}
               className="flex items-center gap-2 border-b border-border px-4 py-2.5 transition-colors hover:bg-surface-2"
