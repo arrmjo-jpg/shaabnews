@@ -276,12 +276,21 @@
 [data-reels-theme='light'] .reels-logo-dark { display: none; }
 [data-reels-theme='light'] .reels-logo-light { display: inline-block; }
 
-/* ══ ثيم الرياضة (Sprint 1.7 Phase T5) — Chrome فقط (Header/Footer) بقرار نطاق صريح ══
-   .sport-scope تُطبَّق على <header>/<footer> فقط، لا على <main> — البطاقات الداخلية (~35 ملفًّا
-   تستخدم bg-white مُثبَّتاً لا رمز اللون) تبقى بيضاء بقرار مؤجَّل (راجع project memory)، فلا
-   تُعاد صياغتها كجزء من هذه المرحلة. [data-sport-theme] يُضبَط على <html> (سكربت (sport)/layout.tsx،
-   Phase T1) — الافتراضي العامّ فاتح (نفس News)، فالتجاوز هنا يستهدف 'dark' فقط (عكس .reels-scope
-   الذي افتراضه داكن). */
+/* ══ ثيم الرياضة (تصحيح نطاق، بعد Sprint 1.7 Phase T5) ══
+   الهيدر أصبح دائمًا داكنًا (#4E4E4E) وخارج نطاق الثيم تمامًا — .sport-header-scope غير مشروطة
+   بـ[data-sport-theme] إطلاقًا (خلاف .sport-scope أدناه). النطاق الذي يتأثر بالثيم الآن: منطقة
+   المحتوى (<main>) + الفوتر فقط، عبر .sport-scope كسابقًا. البطاقات الداخلية (~35 ملفًّا تستخدم
+   bg-white مُثبَّتاً لا رمز اللون) تبقى بيضاء بقرار مؤجَّل (راجع project memory) — النطاق صحيح الآن
+   (main يحمل .sport-scope)، لكن لا تغيير بصريّ فعليّ على تلك البطاقات حتى تُعاد صياغتها لاحقًا،
+   بشكل منفصل. [data-sport-theme] يُضبَط على <html> (سكربت (sport)/layout.tsx، Phase T1) —
+   الافتراضي العامّ فاتح (نفس News)، فالتجاوز يستهدف 'dark' فقط (عكس .reels-scope الذي افتراضه داكن). */
+.sport-header-scope {
+  background-color: #4e4e4e;
+  --color-surface: #4e4e4e;
+  --color-border: #262b32;
+  --color-fg: #f2f3f4;
+  --color-muted: #8b929b;
+}
 [data-sport-theme='dark'] .sport-scope {
   --color-surface: #12161b;
   --color-border: #262b32;

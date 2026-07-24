@@ -15,7 +15,7 @@ export interface FeedItem {
   imageAlt: string;
   category: string | null;
   categoryHref: string | null;
-  author: { id: number | null; name: string; avatar: string | null; isWriter: boolean } | null;
+  author: { id: number | null; name: string; slug: string | null; avatar: string | null; isWriter: boolean } | null;
   publishedAt: string | null;
   badge: { kind: 'live' | 'breaking'; label: string } | null;
 }
@@ -46,6 +46,7 @@ export const ItemSchema = z
       .object({
         id: z.number().nullish(),
         name: z.string().nullish(),
+        slug: z.string().nullish(),
         avatar: z.string().nullish(),
         is_writer: z.boolean().nullish(),
       })
@@ -91,6 +92,7 @@ export async function mapItem(it: Item): Promise<FeedItem> {
       ? {
           id: typeof it.author.id === 'number' ? it.author.id : null,
           name: it.author.name,
+          slug: it.author.slug ?? null,
           avatar: it.author.avatar ?? null,
           isWriter: !!it.author.is_writer,
         }
@@ -204,6 +206,7 @@ interface RawCategoryNode {
   name?: unknown;
   slug?: unknown;
   description?: unknown;
+  icon?: unknown;
   appearance?: unknown;
   children?: unknown;
 }
@@ -309,6 +312,62 @@ export const getCategoryBySlug = cache(async (slug: string, locale = 'ar'): Prom
 
   return null;
 });
+
+// عقدة فرعيّة من شجرة الأقسام الحقيقيّة (لا SportMenuItem) — href كلّ عقدة محسوب من سلسلة
+// أسلافها الفعليّة (نفس categoryHref المستخدَم في كل مكان آخر)، children تُحلّ تكراريًّا بلا حدّ
+// عمق مفترَض. تصحيح Sprint 1.7 (بند 4): قائمة الرياضة "الأقسام" تعرض الآن شجرة CMS الحقيقيّة
+// (لا SportMenuItem المُقفَل/الفارغ) — لا تصنيف يُخترَع، لا تجاهل لأبناء أي مستوى.
+export interface CategoryTreeNode {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string | null;
+  href: string;
+  children: CategoryTreeNode[];
+}
+
+// شجرة أبناء تصنيف جذر بعينه (بالـID، مقاوم لإعادة التسمية) — DFS واحد على fetchCategoryTree
+// المُكاشة أصلاً (لا طلب شبكة إضافيّ). التصنيف الجذر نفسه غير موجود ⇒ []، لا تلفيق. أب غير موجود
+// ضمن العودة ⇒ استُبعِد بصمت هو وفرعه بالكامل (نفس سياسة sport-primary-nav.tsx القديمة).
+export const getCategorySubtree = cache(
+  async (rootId: number, locale = 'ar'): Promise<CategoryTreeNode[]> => {
+    const tree = await fetchCategoryTree(locale);
+
+    const toNode = (n: RawCategoryNode, ancestry: CategoryAncestor[]): CategoryTreeNode | null => {
+      if (typeof n.id !== 'number' || typeof n.slug !== 'string' || !n.slug) return null;
+      const nextAncestry = [...ancestry, { id: n.id, name: typeof n.name === 'string' ? n.name : '', slug: n.slug }];
+      const children = Array.isArray(n.children)
+        ? (n.children as RawCategoryNode[])
+            .map((c) => toNode(c, nextAncestry))
+            .filter((c): c is CategoryTreeNode => c !== null)
+        : [];
+      return {
+        id: n.id,
+        name: typeof n.name === 'string' ? n.name : '',
+        slug: n.slug,
+        icon: typeof n.icon === 'string' ? n.icon : null,
+        href: categoryHref(nextAncestry),
+        children,
+      };
+    };
+
+    const findRoot = (nodes: RawCategoryNode[], ancestry: CategoryAncestor[]): CategoryTreeNode[] => {
+      for (const n of nodes) {
+        if (n.id === rootId) return toNode(n, ancestry)?.children ?? [];
+        if (typeof n.id === 'number' && typeof n.slug === 'string' && n.slug && Array.isArray(n.children)) {
+          const found = findRoot(n.children as RawCategoryNode[], [
+            ...ancestry,
+            { id: n.id, name: typeof n.name === 'string' ? n.name : '', slug: n.slug },
+          ]);
+          if (found.length > 0) return found;
+        }
+      }
+      return [];
+    };
+
+    return findRoot(tree, []);
+  },
+);
 
 // مقالات تصنيف محدّد (slug) — قائمة المقالات العامّة بمرشّح allow-list `filter[category]`.
 // نفس مغلّف {data:[…]} ومورد القائمة ⇒ إعادة استخدام mapItem. ISR 300s؛ فشل ⇒ [] (عزل الكتلة).

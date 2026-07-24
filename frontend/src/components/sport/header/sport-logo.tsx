@@ -5,8 +5,8 @@ import Link from 'next/link';
 // site-logo.tsx: «المكان الوحيد» للشعار العامّ) لكن نسخة صغيرة خاصّة بالرياضة داخل نطاق هذا
 // الـCommit فقط — لا تعديل على SiteLogo نفسه (خارج الملفات المسموح بها). فراغ الشعار ⇒ نص بديل
 // «الرياضة» (نفس سياسة الفشل الصادق في SiteLogo)، بلا أي معالجة ألوان (لا filter/invert).
-// المتغيّر المستخدَم دائمًا «light» (logo_light) لأنّ خلفية الهيدر الحاليّة فاتحة (bg-surface) —
-// يتغيّر إلى logo_dark فقط حين يصبح Header 1 داكنًا فعليًّا في Commit لاحق (خارج نطاق هذا الـCommit).
+// المتغيّر المُستهلَك دائمًا «dark» (logo_dark) — خلفية الهيدر ثابتة داكنة (#4E4E4E) دومًا، غير
+// خاضعة لتبديل الثيم؛ اختيار المتغيّر يجري في SportHeader نفسه، هذا المكوّن لا يقرأ الإعدادات.
 const FOCUS_RING = 'rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/40';
 
 export function SportLogo({ src }: { src: string | null }) {

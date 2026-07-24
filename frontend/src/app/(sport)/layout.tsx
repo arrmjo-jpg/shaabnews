@@ -12,11 +12,12 @@ import { buildThemeBootstrapScript, DEFAULT_SPORT_THEME_COOKIE } from '@/lib/spo
 // SportHeader/SportFooter, FollowProvider carried over unchanged (previously wrapped one level
 // deeper in sport/layout.tsx, consolidated here to match the approved Layout Ownership model),
 // MobileBottomNav and CookiePolicyModal reused exactly as agreed (both are application-level shared
-// UI, not News chrome — see the ADR's Layout Ownership decision). Sport Menu/logo/search landed in
-// later commits; Theme bootstrap (Sprint 1.7 Phase T1) below is the first Theme-related code here —
-// [data-sport-theme] is set pre-paint from the sport_theme cookie/getSiteSettings() defaults, never
-// from cookies()/next-headers (would break ISR — see use-auth-session.ts). Nothing reads the
-// attribute yet (no CSS, no consumer) — zero visual change until Phase T5.
+// UI, not News chrome — see the ADR's Layout Ownership decision). Theme bootstrap (Sprint 1.7 Phase
+// T1) sets [data-sport-theme] pre-paint from the sport_theme cookie/getSiteSettings() defaults,
+// never from cookies()/next-headers (would break ISR — see use-auth-session.ts). Theme SCOPE
+// correction (post-1.7): `.sport-scope` on <main> means the theme now governs the content area +
+// Footer only — Header is permanently dark via its own `.sport-header-scope` (sport-header.tsx),
+// entirely outside [data-sport-theme]'s reach.
 export default async function SportLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSiteSettings();
   const themeScript = buildThemeBootstrapScript(
@@ -28,7 +29,7 @@ export default async function SportLayout({ children }: { children: React.ReactN
     <FollowProvider>
       <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       <SportHeader />
-      <main className="flex-1">{children}</main>
+      <main className="sport-scope flex-1">{children}</main>
       <SportFooter />
       {/* فاصل يمنع شريط التنقّل السفليّ الثابت من تغطية آخر الفوتر على الموبايل (نفس نمط (site)) */}
       <div className="h-14 lg:hidden" aria-hidden />
