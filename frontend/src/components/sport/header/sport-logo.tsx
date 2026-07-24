@@ -12,7 +12,7 @@ const FOCUS_RING = 'rounded-sm outline-none focus-visible:ring-2 focus-visible:r
 export function SportLogo({ src }: { src: string | null }) {
   if (!src) {
     return (
-      <Link href="/sport" className={`shrink-0 text-base font-extrabold text-fg ${FOCUS_RING}`}>
+      <Link href="/sport" className={`shrink-0 text-lg font-extrabold text-fg ${FOCUS_RING}`}>
         الرياضة
       </Link>
     );
@@ -21,7 +21,7 @@ export function SportLogo({ src }: { src: string | null }) {
   return (
     <Link href="/sport" className={`shrink-0 ${FOCUS_RING}`}>
       {/* eslint-disable-next-line @next/next/no-img-element -- نفس سياسة SiteLogo: نقطة تبديل واحدة لاحقاً لـ next/image */}
-      <img src={src} alt="الرياضة" className="h-8 w-auto" loading="eager" decoding="async" />
+      <img src={src} alt="الرياضة" className="h-13 w-auto" loading="eager" decoding="async" />
     </Link>
   );
 }

@@ -29,7 +29,7 @@ export async function SportPrimaryNav() {
     <nav aria-label="تنقّل الرياضة" className="hidden items-center gap-5 md:flex">
       <Link
         href="/"
-        className="rounded-sm text-sm font-bold text-muted outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none"
+        className="rounded-sm text-base font-bold text-muted outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none"
       >
         الأخبار
       </Link>

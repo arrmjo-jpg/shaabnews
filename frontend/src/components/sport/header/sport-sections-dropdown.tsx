@@ -84,7 +84,7 @@ export function SportSectionsDropdown({ items }: { items: ResolvedSportMenuNode[
       trigger={
         <button
           type="button"
-          className="flex items-center gap-1 rounded-sm text-sm font-bold text-muted outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-primary/40 data-[state=open]:text-fg motion-reduce:transition-none"
+          className="flex items-center gap-1 rounded-sm text-base font-bold text-muted outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-primary/40 data-[state=open]:text-fg motion-reduce:transition-none"
         >
           الأقسام
           <ChevronDownIcon className="size-4" aria-hidden />

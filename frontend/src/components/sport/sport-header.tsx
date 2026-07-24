@@ -21,7 +21,7 @@ export async function SportHeader() {
 
   return (
     <header className="sport-header-scope relative border-b border-border">
-      <Container className="flex h-16 items-center justify-between gap-4">
+      <Container className="flex h-[88px] items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-6">
           <SportLogo src={logoSrc} />
           <SportPrimaryNav />
