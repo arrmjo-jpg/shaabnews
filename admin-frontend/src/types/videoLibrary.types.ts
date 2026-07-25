@@ -222,9 +222,6 @@ export interface VideoCategoryUpsertPayload {
   seo_description?: string | null;
 }
 
-/** PATCH /move — نقل ضمن الإخوة بالاتجاه (مرآة تصنيفات الأخبار). */
-export type VideoCategoryDirection = 'up' | 'down';
-
 // ─── Playlists ─────────────────────────────────────────────────────────────
 
 export interface VideoPlaylistData {
