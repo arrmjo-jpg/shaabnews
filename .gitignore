@@ -42,4 +42,22 @@ rr
 /storage/logs
 /public/uploads
 
+# -- Archives / backups (never intended for the repo — large, regenerable, or export snapshots) --
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+
+# -- Generated build output / caches not already covered above --
+/admin-frontend/*.tsbuildinfo
+dist/
+build/
+coverage/
+.cache/
+
+# -- Temp dirs --
+tmp/
+temp/
+
 
