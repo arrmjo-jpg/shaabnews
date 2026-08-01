@@ -17,33 +17,68 @@ const at = (obj, path) => path.split('.').reduce((o, k) => (o == null ? o : o[k]
 
 for (const ep of PREFLIGHT_ENDPOINTS) {
   const url = `${base}${ep.path}`;
+  console.log(`GET ${url}`);
+
+  let res;
   try {
-    const res = await fetch(url, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) });
-    if (!res.ok) {
-      failures.push(`${ep.label}: HTTP ${res.status} ${res.statusText} — ${url}`);
-      continue;
-    }
-    const body = await res.json();
-    if (ep.arrayPath) {
-      const arr = at(body, ep.arrayPath);
-      if (!Array.isArray(arr)) {
-        failures.push(`${ep.label}: expected array at "${ep.arrayPath}" — ${url}`);
-      } else if (arr.length === 0) {
-        // 200 بقائمة فارغة هو بالضبط السيناريو الذي يُنتج صفحة موسومة لكن بلا محتوى.
-        failures.push(`${ep.label}: HTTP 200 but "${ep.arrayPath}" is empty — ${url}`);
-      } else {
-        console.log(`[build-gate:preflight] OK — ${ep.label} (${arr.length} item(s))`);
-      }
-    } else {
-      const data = body?.data ?? body;
-      if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
-        failures.push(`${ep.label}: HTTP 200 but payload is empty — ${url}`);
-      } else {
-        console.log(`[build-gate:preflight] OK — ${ep.label}`);
-      }
-    }
+    res = await fetch(url, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) });
   } catch (err) {
-    failures.push(`${ep.label}: ${err?.name === 'TimeoutError' ? `timeout after ${TIMEOUT_MS}ms` : err?.message} — ${url}`);
+    // undici collapses the real cause (TLS, DNS, ECONNREFUSED, ...) into a generic
+    // "fetch failed" err.message — the actual reason lives in err.cause.
+    const reason = err?.name === 'TimeoutError' ? `timeout after ${TIMEOUT_MS}ms` : err?.message;
+    failures.push(`${ep.label}: ${reason} — ${url}`);
+    console.error(`  error.message: ${err?.message}`);
+    console.error(`  error.cause: ${err?.cause?.message ?? '(none)'}`);
+    console.error(`  error.stack:\n${err?.stack}`);
+    continue;
+  }
+
+  const contentType = res.headers.get('content-type') ?? '(none)';
+  console.log(`  status: ${res.status} ${res.statusText}`);
+  console.log(`  content-type: ${contentType}`);
+  console.log('  headers:');
+  for (const [key, value] of res.headers.entries()) console.log(`    ${key}: ${value}`);
+
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '(failed to read body)');
+    failures.push(`${ep.label}: HTTP ${res.status} ${res.statusText} — ${url}`);
+    console.error(`  NOT OK — url: ${url}`);
+    console.error(`  status: ${res.status} ${res.statusText}`);
+    console.error(`  body (first 1000 chars):\n${bodyText.slice(0, 1000)}`);
+    continue;
+  }
+
+  const rawText = await res.text();
+  let body;
+  try {
+    body = JSON.parse(rawText);
+  } catch (err) {
+    failures.push(`${ep.label}: invalid JSON — ${url}`);
+    console.error(`  raw body:\n${rawText}`);
+    console.error(`  parse error: ${err.message}`);
+    continue;
+  }
+
+  if (ep.arrayPath) {
+    const arr = at(body, ep.arrayPath);
+    if (!Array.isArray(arr)) {
+      failures.push(`${ep.label}: expected array at "${ep.arrayPath}" — ${url}`);
+      console.error(`  body:\n${JSON.stringify(body, null, 2)}`);
+    } else if (arr.length === 0) {
+      // 200 بقائمة فارغة هو بالضبط السيناريو الذي يُنتج صفحة موسومة لكن بلا محتوى.
+      failures.push(`${ep.label}: HTTP 200 but "${ep.arrayPath}" is empty — ${url}`);
+      console.error(`  body:\n${JSON.stringify(body, null, 2)}`);
+    } else {
+      console.log(`[build-gate:preflight] OK — ${ep.label} (${arr.length} item(s))`);
+    }
+  } else {
+    const data = body?.data ?? body;
+    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+      failures.push(`${ep.label}: HTTP 200 but payload is empty — ${url}`);
+      console.error(`  body:\n${JSON.stringify(body, null, 2)}`);
+    } else {
+      console.log(`[build-gate:preflight] OK — ${ep.label}`);
+    }
   }
 }
 
