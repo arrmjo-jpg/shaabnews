@@ -1,0 +1,67 @@
+# -- Bootstrap-only compose file --------------------------------------------------------------
+#
+# Temporary, backend-only subset of docker-compose.yml. Purpose: break the chicken-and-egg
+# deploy deadlock where `frontend`'s build-time prerendering needs BUILD_API_BASE_URL
+# (https://api.harer.store) to already be live and answering real data — but on a fresh
+# deployment nothing is running yet, so `docker compose build` for the full stack always fails
+# at frontend's preflight gate before any container (including backend) ever starts, because
+# `depends_on` only orders container *startup*, not image *build* order.
+#
+# Deploy this file ONCE (point Coolify's "Docker Compose Location" at it, deploy, confirm
+# https://api.harer.store/api/v1/site?locale=ar returns 200), then switch back to
+# docker-compose.yml and deploy again — by then a real backend container is already running,
+# so frontend's build-time preflight has something live to fetch from.
+#
+# Not a fork: backend/meilisearch definitions below are copied verbatim from docker-compose.yml.
+# Delete this file once the bootstrap deploy is no longer needed.
+
+x-backend-common: &backend-common
+  image: alphacms-backend:latest
+  restart: unless-stopped
+  env_file:
+    - .env
+  volumes:
+    - ${STORAGE_PUBLIC_HOST_PATH:-/data/storage-public}:/var/www/html/storage/app/public:rw
+    - ${UPLOADS_HOST_PATH:-/data/uploads}:/var/www/html/public/uploads:rw
+
+services:
+
+  backend:
+    <<: *backend-common
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.public-storage.rule=Host(`harer.store`) && PathPrefix(`/storage`)"
+      - traefik.http.routers.public-storage.entrypoints=https
+      - traefik.http.routers.public-storage.tls=true
+      - traefik.http.routers.public-storage.tls.certresolver=letsencrypt
+      - traefik.http.routers.public-storage.priority=100
+      - traefik.http.routers.public-storage.service=public-storage
+      - traefik.http.services.public-storage.loadbalancer.server.port=80
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.16
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_KEY:?MEILISEARCH_KEY is required (>=16 bytes) — set it in .env}
+      MEILI_ENV: production
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - meili-data:/meili_data
+
+volumes:
+  meili-data:
