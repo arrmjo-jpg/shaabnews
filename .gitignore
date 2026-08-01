@@ -28,7 +28,9 @@ Thumbs.db
 rr
 /vendor
 /node_modules
-
+storage/backups/
+database/*.sql
+*.sql
 /admin-frontend/node_modules
 /admin-frontend/dist
 
