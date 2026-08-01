@@ -54,6 +54,21 @@ class GenerateMediaAssetConversionsJob implements ShouldQueue
             $ready = ! empty($asset->fresh()?->conversions);
             $asset->forceFill(['processing_status' => $ready ? 'ready' : 'failed'])->save();
 
+            // TEMP-INSTRUMENTATION [MEDIA-WRITE-PROBE] — حالة الملفات عند نهاية الوظيفة نفسها.
+            $fresh = $asset->fresh();
+            $root = (string) config('filesystems.disks.'.$fresh->disk.'.root');
+            $state = [];
+            foreach (($fresh->conversions ?? []) as $n => $c) {
+                $abs = rtrim($root, '/').'/'.$c['path'];
+                clearstatcache(true, $abs);
+                $state[$n] = ['exists' => file_exists($abs), 'size' => @filesize($abs) ?: null];
+            }
+            \Illuminate\Support\Facades\Log::info('[MEDIA-WRITE-PROBE] after job', [
+                'asset_id' => $this->mediaAssetId,
+                'transaction_level' => \Illuminate\Support\Facades\DB::transactionLevel(),
+                'state' => $state,
+            ]);
+
             // التخزين الهجين: انسخ الأصل + مشتقّاته إلى المرآة البعيدة (إن فُعّلت).
             if ($ready && RemoteStorage::enabled()) {
                 MirrorMediaToRemoteJob::dispatch($asset->id);

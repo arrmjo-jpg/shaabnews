@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { Container } from '@/components/layout/container';
 import { SearchIcon } from '@/components/icons';
+import { Card, CardHeader } from '@/components/ui/card';
 import { getSportSearchResults } from '@/lib/sport/application/queries/getSportSearchResults';
 import type { SearchCompetitionHit, SearchPlayerHit, SearchTeamHit } from '@/lib/sport/domain/entities';
 
@@ -28,12 +29,12 @@ function ResultSection<T>({
 }) {
   if (items.length === 0) return null;
   return (
-    <section dir="rtl" className="mb-6 border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl" className="mb-6">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">{title}</h2>
-      </div>
+      </CardHeader>
       <ul>{items.map(renderItem)}</ul>
-    </section>
+    </Card>
   );
 }
 

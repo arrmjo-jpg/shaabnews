@@ -54,6 +54,9 @@ services:
       context: ./admin-frontend
       dockerfile: Dockerfile
       args:
+        # ⚠️ BUILD-TIME values: Vite compiles these into the admin bundle literally, so changing
+        # them requires `docker compose build admin` — a restart alone keeps the old domain.
+        # Overridden to localhost for local dev in docker-compose.override.yml.
         VITE_API_BASE_URL: https://api.harer.store/api/v1
         VITE_PUBLIC_SITE_URL: https://harer.store
     restart: unless-stopped
@@ -112,7 +115,19 @@ services:
   worker:
     <<: *backend-common
     user: www-data
-    command: php artisan queue:work redis --queue=default,notifications,mail,search,sitemap,ai,analytics --tries=3 --backoff=10 --sleep=1 --max-time=3600
+    # notifications-high/notifications-low added: DispatchCampaignJob for Critical/High priority
+    # events (e.g. article.breaking, broadcast.live) and Low priority events (article.updated,
+    # digest.daily) dispatches onto these via NotificationQueues::forPriority() — nothing
+    # previously consumed them, so those campaigns sat permanently pending. Ordered
+    # high,default,low around 'notifications' per NotificationQueues.php's own documented
+    # convention. whatsapp/vertix/migration/cdn-purge added for the same reason (confirmed live
+    # producers, zero prior consumers) — see queue-routing audit.
+    command: php artisan queue:work redis --queue=default,notifications-high,notifications,notifications-low,mail,search,sitemap,ai,analytics,whatsapp,cdn-purge,vertix,migration --tries=3 --backoff=10 --sleep=1 --max-time=3600
+    # 930s > DispatchCampaignJob::$timeout=900s, still the longest job across all queues above
+    # (vertix=600s, migration jobs=120-300s, whatsapp=30-300s, cdn-purge=30s all fit under it).
+    # Same class of fix as worker-media below: Docker's default ~10s SIGTERM->SIGKILL grace
+    # period would otherwise kill an in-flight job outright on every deploy/restart.
+    stop_grace_period: 930s
     healthcheck:
       test: ["CMD", "pgrep", "-f", "queue:work"]
       interval: 30s
@@ -154,6 +169,17 @@ services:
       dockerfile: Dockerfile
       args:
         CLIENT: ${CLIENT:-shaabjo}
+        # نقطة الـ CMS وقت البناء. تختلف قيمتها حسب البيئة (محليّ/CI/Coolify/إنتاج) لكنّ اسمها ثابت.
+        # ليست API_BASE_URL: تلك قيمة وقت التشغيل (http://backend) ولا يمكن تحليلها داخل البناء —
+        # BuildKit ينفّذ البناء خارج شبكة Compose (مُثبَت: Could not resolve host: backend).
+        # :? إلزاميّة — بناء لا يصل إلى الـ CMS يجب أن يفشل بوضوح لا أن يُنتج HTML فارغاً بصمت.
+        BUILD_API_BASE_URL: ${BUILD_API_BASE_URL:?BUILD_API_BASE_URL is required — a build-reachable CMS endpoint (see .env.example)}
+        # يُخبز في canonical/og:url داخل صفحات ISR ⇒ يجب أن يكون أصل الموقع العموميّ الحقيقيّ.
+        SITE_URL: ${SITE_URL:?SITE_URL is required — set it in .env (see .env.example)}
+      # أسرار البناء عبر BuildKit — لا تُمرَّر كـ build args ولا تترك أثراً في طبقات الصورة.
+      secrets:
+        - openweather_api_key
+        - internal_api_token
     image: alphacms-frontend:${CLIENT:-shaabjo}
     restart: unless-stopped
     environment:
@@ -165,6 +191,8 @@ services:
       API_BASE_URL: ${API_BASE_URL:?API_BASE_URL is required — set it in .env (see .env.example)}
       SITE_URL: ${SITE_URL:?SITE_URL is required — set it in .env (see .env.example)}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?REVALIDATE_SECRET is required — must match FRONTEND_REVALIDATE_SECRET}
+      # اختياري — غيابه لا يكسر التشغيل (lib/weather.ts يرجّع null/[] بلا مفتاح، القسم يُخفى بأدب).
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
     volumes:
       - frontend-cache:/app/.next/cache
     expose:
@@ -207,3 +235,11 @@ services:
 volumes:
   frontend-cache:
   meili-data:
+
+# أسرار وقت البناء فقط — تُقرأ من البيئة (.env) وتُمرَّر عبر BuildKit secret mounts، فلا تدخل
+# طبقات الصورة ولا `docker history`. وقت التشغيل تصل نفس القيم عبر `environment:` كالمعتاد.
+secrets:
+  openweather_api_key:
+    environment: OPENWEATHER_API_KEY
+  internal_api_token:
+    environment: INTERNAL_API_TOKEN

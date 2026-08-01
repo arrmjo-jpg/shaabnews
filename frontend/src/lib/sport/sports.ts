@@ -25,3 +25,17 @@ export function sportHref(s: SportDef): string {
 export function findSportBySlug(slug: string): SportDef | undefined {
   return SPORTS.find((s) => s.slug === slug);
 }
+
+// يحدّد الرياضة النشطة من مسار الصفحة الحاليّ (لا Prop من صفحة، منذ انتقال SportsNav إلى
+// SportHeader — الـLayout يقع فوق مقطع [sport] الديناميكي، فلا يملك params.sport أبداً؛
+// usePathname() هو الحلّ القياسي في Next.js App Router لهذه الحالة تحديدًا، ومُستخدَم فعلاً في
+// MobileBottomNav لنفس السبب). صفحات لا تحمل رياضة في مسارها (match/team/player/competition/
+// following/search) ترجع null عمدًا — لا رياضة "نشطة" مزيَّفة؛ نفس نمط "إخفاء ما لا يُحلّ" المُتَّبع
+// أصلًا في SportSectionsDropdown.
+export function activeSportKeyFromPathname(pathname: string): string | null {
+  if (pathname === '/sport') return DEFAULT_SPORT.key;
+  const match = SPORTS.find(
+    (s) => s.key !== DEFAULT_SPORT.key && (pathname === `/sport/${s.slug}` || pathname.startsWith(`/sport/${s.slug}/`)),
+  );
+  return match?.key ?? null;
+}

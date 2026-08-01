@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\UserStatus;
 use App\Notifications\QueuedResetPassword;
 use App\Support\Audit\AuditsChanges;
+use App\Support\Content\SlugGenerator;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -101,6 +102,16 @@ class User extends Authenticatable implements HasMedia
     public function isWriter(): bool
     {
         return (bool) $this->is_writer;
+    }
+
+    /**
+     * Slug زخرفيّ فقط — لا عمود مخزَّن، غير فريد، لا يُستخدم أبداً في البحث/الاستعلام
+     * (الـ id هو مفتاح الحلّ الوحيد لبروفيل الكاتب). مصدر الحقيقة الوحيد لكل Resource
+     * يكشف كاتباً (PublicWriterResource وكل مورد يضمّن author).
+     */
+    public function getSlugAttribute(): string
+    {
+        return SlugGenerator::makeWithFallback($this->name);
     }
 
     public function writerRequests()

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { MatchRow } from '@/components/sport/match-row';
+import { Card } from '@/components/ui/card';
 import type { MatchGroupSummary } from '@/lib/sport/domain/entities';
 
 // الشريط الجانبيّ لصفحة البطولة (نمط 365) — ٣ تبويبات: كل المباريات / نتائج / جدول المباريات. «كل المباريات»
@@ -49,7 +50,7 @@ export function CompetitionMatchesSidebar({
   const empty = sections.every((s) => s.groups.length === 0);
 
   return (
-    <section dir="rtl" className="border border-border bg-surface">
+    <Card as="section" dir="rtl">
       <div className="flex border-b border-border">
         {TABS.map((t) => (
           <button
@@ -95,7 +96,7 @@ export function CompetitionMatchesSidebar({
           ))}
         </div>
       )}
-    </section>
+    </Card>
   );
 }
 

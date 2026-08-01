@@ -1,5 +1,6 @@
 import { BarChart3, LayoutGrid, Trophy, Users } from 'lucide-react';
 import Link from 'next/link';
+import { Card } from '@/components/ui/card';
 import type { CompetitionProfile, MatchDetail } from '@/lib/sport/domain/entities';
 
 // ودجت «أبرز المباريات» (نمط 365 featured-games) — بطاقة المباراة المميّزة للبطولة الحاليّة: ترويسة (شعار+اسم
@@ -21,7 +22,7 @@ export function FeaturedMatchWidget({ detail, meta }: { detail: MatchDetail; met
   ];
 
   return (
-    <section dir="rtl" className="border border-border bg-surface">
+    <Card as="section" dir="rtl">
       <div className="bg-primary px-4 py-2 text-center text-sm font-extrabold text-white">أبرز المباريات</div>
 
       <div className="p-4">
@@ -68,7 +69,7 @@ export function FeaturedMatchWidget({ detail, meta }: { detail: MatchDetail; met
             <Link
               key={b.label}
               href={b.href}
-              className="flex flex-col items-center gap-1.5 border border-border px-2 py-3 text-center text-[11px] font-bold text-fg transition-colors hover:border-primary hover:text-primary"
+              className="sport-card flex flex-col items-center gap-1.5 border border-border px-2 py-3 text-center text-[11px] font-bold text-fg transition-colors hover:border-primary hover:text-primary"
             >
               <b.Icon className="size-5 text-primary" />
               {b.label}
@@ -76,7 +77,7 @@ export function FeaturedMatchWidget({ detail, meta }: { detail: MatchDetail; met
           ))}
         </div>
       </div>
-    </section>
+    </Card>
   );
 }
 

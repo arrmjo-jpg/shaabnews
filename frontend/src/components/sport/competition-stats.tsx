@@ -1,3 +1,4 @@
+import { Card, CardHeader } from '@/components/ui/card';
 import type { CompetitionStatsSummary } from '@/lib/sport/domain/entities';
 
 // تبويب «الإحصائيات» لصفحة البطولة — شبكة بطاقات لكلّ فئة (هدّافون/صنّاع/بطاقات/شباك نظيفة…)،
@@ -6,10 +7,10 @@ export function CompetitionStatsView({ data }: { data: CompetitionStatsSummary }
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {data.categories.map((cat) => (
-        <section key={cat.id} dir="rtl" className="flex flex-col border border-border bg-surface">
-          <div className="border-b border-border px-4 py-2.5">
+        <Card key={cat.id} as="section" dir="rtl" className="flex flex-col">
+          <CardHeader>
             <h2 className="text-sm font-extrabold text-fg">{cat.title}</h2>
-          </div>
+          </CardHeader>
           <ol>
             {cat.leaders.map((p, idx) => (
               <li key={`${p.id}-${idx}`} className="flex items-center gap-3 border-b border-border px-4 py-2.5 last:border-b-0">
@@ -33,7 +34,7 @@ export function CompetitionStatsView({ data }: { data: CompetitionStatsSummary }
               </li>
             ))}
           </ol>
-        </section>
+        </Card>
       ))}
     </div>
   );

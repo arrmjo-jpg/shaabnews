@@ -4,9 +4,19 @@ import { Container } from '@/components/layout/container';
 import type { FeedItem } from '@/lib/feed';
 import { formatRelativeTime } from '@/lib/format';
 
-// كتلة الهيرو (الأخبار المميّزة is_featured): كرت رئيسيّ كبير + شبكة 2×2 — الصور الخمس ملاصقة
-// داخل حاوية واحدة بزوايا 15px. RSC · dir-aware · tokens · صور <img> لحارس أداء الهوم.
-// نمط الرابط-المتراكب: رابط الخبر يغطّي الكرت؛ اسم القسم رابط مستقلّ فوقه (يفتح القسم لا الخبر).
+// كتلة الهيرو (الأخبار المميّزة is_featured): كرت رئيسيّ كبير + شبكة 2×2 — خمس صور تبدو ملاصقة
+// داخل كتلة واحدة بزوايا 15px مدوَّرة (الأربع الخارجية فقط، الحواف الداخلية بينها حادّة).
+// **لا حاوية أمّ تقصّ (overflow:hidden) بعد الآن** — كانت موجودة على الصفّ الخارجي، لكنها تقصّ
+// خطّ تمييز lead (نصفه المفروض يخرج خارج حدود الصورة، بلا أي سماحية ارتفاع لتفعل ذلك). البديل:
+// كلّ كرت يحمل زوايا انحنائه الخاصّة بحسب موقعه الفعليّ في الشكل الجماعيّ (RTL: lead يمين، الشبكة
+// يسار — auto-flow RTL يضع العنصر الأوّل أعلى-يمين، فأعلى-يسار، فأسفل-يمين، فأسفل-يسار)، فالمظهر
+// النهائيّ مطابق تمامًا بكسل بكسل للسابق، لكن بلا قصّ. RSC · dir-aware · tokens · صور <img> لحارس
+// أداء الهوم. نمط الرابط-المتراكب: رابط الخبر يغطّي الكرت؛ اسم القسم رابط مستقلّ فوقه.
+// أصناف الزوايا معرَّفة بـglobals.css (.hero-corner-lead / .hero-corner-grid-1..3) — أسماء بلا
+// "rounded" فيها عمدًا: قاعدة "Square design" العامّة تصفّر أيّ صنف يحتوي [class*='rounded']
+// بـ!important، فصنف Tailwind القياسيّ (rounded-tl-[15px] مثلاً) كان سيُصفَّر رغم توليده الصحيح.
+const GRID_CORNER_CLASSES = ['', 'hero-corner-grid-1', 'hero-corner-grid-2', 'hero-corner-grid-3'];
+
 export function FeaturedHero({ items }: { items: FeedItem[] }) {
   if (items.length === 0) return <FeaturedHeroEmpty />;
 
@@ -15,17 +25,15 @@ export function FeaturedHero({ items }: { items: FeedItem[] }) {
 
   return (
     <Container className="py-6 sm:py-8">
-      <div
-        className="flex transform-gpu flex-col overflow-hidden will-change-transform lg:flex-row"
-        style={{ borderRadius: '15px' }}
-      >
-        <div className="lg:w-1/2">
-          <HeroCard item={lead} variant="lead" priority />
+      <div className="flex transform-gpu flex-col will-change-transform lg:flex-row">
+        <div className="relative lg:w-1/2">
+          <HeroCard item={lead} variant="lead" priority cornerClassName="hero-corner-lead" />
+          <div className="featured-accent-marker" aria-hidden />
         </div>
         {grid.length > 0 && (
           <div className="grid grid-cols-2 lg:w-1/2">
-            {grid.map((item) => (
-              <HeroCard key={item.id} item={item} variant="grid" />
+            {grid.map((item, i) => (
+              <HeroCard key={item.id} item={item} variant="grid" cornerClassName={GRID_CORNER_CLASSES[i]} />
             ))}
           </div>
         )}
@@ -34,23 +42,32 @@ export function FeaturedHero({ items }: { items: FeedItem[] }) {
   );
 }
 
-function HeroCard({
+export function HeroCard({
   item,
   variant,
   priority = false,
+  fixedHeight = true,
+  cornerClassName = '',
 }: {
   item: FeedItem;
   variant: 'lead' | 'grid';
   priority?: boolean;
+  /** false ⇒ نسبة 16:9 ثابتة بكل العروض (يتناسب حجمها مع عرض أي حاوية) بدل الارتفاع الثابت
+   * بالبكسل — مطلوب حين يكون عرض العمود متغيّرًا (مثل CategoryFeaturedGrid)، فالارتفاع الثابت
+   * هناك يجعل الكرت يبدو ممطوطًا طوليًا إذا كان العمود أضيق ممّا صُمِّم له بالرئيسية. */
+  fixedHeight?: boolean;
+  /** زوايا الانحناء الخاصّة بموقع هذا الكرت في الشكل الجماعيّ — محسوبة في FeaturedHero
+   * (لا حاوية أمّ تقصّ بعد الآن؛ كلّ كرت يحمل انحناءه بنفسه). فارغة = بلا انحناء (زاوية داخلية). */
+  cornerClassName?: string;
 }) {
   const isLead = variant === 'lead';
 
   return (
-    // الجوّال: نسبة 16:9؛ سطح المكتب: ارتفاع ثابت أطول (lead 400px، الصغير 200px) — يبقى الارتفاعان متطابقين.
+    // الجوّال: نسبة 16:9؛ سطح المكتب (fixedHeight): ارتفاع ثابت أطول (lead 400px، الصغير 200px).
     <div
-      className={`group relative block aspect-video transform-gpu overflow-hidden bg-surface-2 will-change-transform lg:aspect-auto ${
-        isLead ? 'lg:h-[400px]' : 'lg:h-[200px]'
-      }`}
+      className={`hero-slider-item group relative block aspect-video transform-gpu overflow-hidden bg-surface-2 will-change-transform ${
+        fixedHeight ? `lg:aspect-auto ${isLead ? 'lg:h-[400px]' : 'lg:h-[200px]'}` : ''
+      } ${cornerClassName}`}
     >
       {/* رابط الخبر يغطّي الكرت كاملاً */}
       <Link href={item.href} className="absolute inset-0 z-10" aria-label={item.title} />
@@ -90,11 +107,11 @@ function HeroCard({
           )}
         </div>
         <h3
-          className={
+          className={`underline-offset-2 group-hover:underline group-has-[:focus-visible]:underline ${
             isLead
               ? 'line-clamp-3 font-heading text-base font-extrabold leading-tight text-white sm:text-lg'
               : 'line-clamp-2 font-heading text-sm font-extrabold leading-tight text-white'
-          }
+          }`}
         >
           {item.title}
         </h3>

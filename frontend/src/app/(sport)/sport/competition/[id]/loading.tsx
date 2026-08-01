@@ -8,7 +8,7 @@ function Box({ className = '' }: { className?: string }) {
 
 export default function CompetitionPageLoading() {
   return (
-    <div className="bg-surface-2">
+    <div className="bg-bg">
       <Box className="h-[52px] w-full rounded-none bg-[#10181d]" />
       <Container className="py-6">
         <Box className="mb-4 h-4 w-40" />

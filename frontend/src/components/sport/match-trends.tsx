@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { MatchTrendsSummary } from '@/lib/sport/domain/entities';
 
 // «شائع» لصفحة المباراة (نمط 365 trends-widget) — قسم «أفضل تريند» (مظلَّل بشعار الفريق) + قسم «شائع» مُجمَّع بالفريق
@@ -7,10 +8,10 @@ export function MatchTrendsView({ data }: { data: MatchTrendsSummary }) {
   return (
     <div className="flex flex-col gap-6">
       {data.top && data.top.lines.length > 0 && (
-        <section dir="rtl" className="border border-border bg-surface">
-          <div className="border-b border-border px-4 py-2.5">
+        <Card as="section" dir="rtl">
+          <CardHeader>
             <h2 className="text-sm font-extrabold text-fg">أفضل تريند</h2>
-          </div>
+          </CardHeader>
           <div className="flex items-center gap-3 p-4">
             {data.top.teamLogo && (
               // eslint-disable-next-line @next/next/no-img-element -- شعار فريق 365 من CDN
@@ -24,13 +25,13 @@ export function MatchTrendsView({ data }: { data: MatchTrendsSummary }) {
               ))}
             </ul>
           </div>
-        </section>
+        </Card>
       )}
 
-      <section dir="rtl" className="border border-border bg-surface">
-        <div className="border-b border-border px-4 py-2.5">
+      <Card as="section" dir="rtl">
+        <CardHeader>
           <h2 className="text-sm font-extrabold text-fg">شائع</h2>
-        </div>
+        </CardHeader>
         {data.teams.map((team) => (
           <div key={team.teamId ?? team.teamName} className="border-b border-border last:border-b-0">
             <TeamHeader id={team.teamId} name={team.teamName} logo={team.teamLogo} />
@@ -51,7 +52,7 @@ export function MatchTrendsView({ data }: { data: MatchTrendsSummary }) {
             </ul>
           </div>
         ))}
-      </section>
+      </Card>
     </div>
   );
 }

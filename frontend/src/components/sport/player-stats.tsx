@@ -1,4 +1,5 @@
 import { CompetitionCarousel } from '@/components/sport/competition-carousel';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { PlayerCompetitionRef, PlayerStatLine } from '@/lib/sport/domain/entities';
 
 // بطاقة إحصاء اللاعب (نمط 365 athlete highlight-stats) — محوّل بطولات أفقيّ (روابط `?competitionId=`، يحفظ التبويب)
@@ -15,10 +16,10 @@ export function PlayerStats({
   baseHref: string;
 }) {
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">الإحصائيات</h2>
-      </div>
+      </CardHeader>
 
       {competitions.length > 0 && (
         <CompetitionCarousel competitions={competitions} activeId={activeId} baseHref={baseHref} />
@@ -36,6 +37,6 @@ export function PlayerStats({
       ) : (
         <div className="p-6 text-center text-xs text-muted">لا تتوفّر إحصاءات لهذه البطولة.</div>
       )}
-    </section>
+    </Card>
   );
 }

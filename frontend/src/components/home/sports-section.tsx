@@ -106,6 +106,10 @@ export async function SportsSection({
                             </div>
                           </footer>
                         </div>
+                        {/* .gc إذا كان flex-direction:column-reverse (تأكّدت عبر DevTools) — ترتيب DOM
+                            معكوس بصريًّا، فالعلامة توضع هنا (قبل الصورة بترتيب DOM) لتظهر بعدها بصريًّا.
+                            sports-feature-marker: تصحيح فجوة flex gap:12px على .gc — راجع globals.css. */}
+                        <div className="featured-accent-marker sports-feature-marker" aria-hidden />
                         <div className="gc__image-wrap u-clickable-card__exclude relative overflow-hidden">
                           <Link href={feature.href} className="u-clickable-card__link block size-full" tabIndex={-1}>
                             <div className="article-card__image-wrap article-card__featured-image size-full" tabIndex={-1}>

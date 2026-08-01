@@ -77,7 +77,8 @@ function GridCard({ item }: { item: FeedItem }) {
           <div className="size-full bg-surface-3" aria-hidden />
         )}
       </div>
-      <h3 className="mt-3 line-clamp-2 text-base font-bold leading-snug text-fg transition-colors group-hover:text-primary sm:text-lg">
+      <div className="featured-accent-marker" aria-hidden />
+      <h3 className="mt-3 line-clamp-2 text-base font-bold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-focus-visible:underline sm:text-lg">
         {item.title}
       </h3>
       {item.publishedAt && (

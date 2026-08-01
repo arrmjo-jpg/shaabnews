@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { HeadToHead, HeadToHeadFormGame, HeadToHeadMeeting } from '@/lib/sport/domain/entities';
 
 type Mode = 'all' | 'venue';
@@ -29,10 +30,10 @@ export function MatchH2H({ data }: { data: HeadToHead }) {
         </FilterBtn>
       </div>
 
-      <section dir="rtl" className="border border-border bg-surface">
-        <div className="border-b border-border px-4 py-2.5">
+      <Card as="section" dir="rtl">
+        <CardHeader>
           <h2 className="text-sm font-extrabold text-fg">المواجهات المباشرة</h2>
-        </div>
+        </CardHeader>
 
         {meetings.length > 0 && (
           <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-4">
@@ -62,13 +63,13 @@ export function MatchH2H({ data }: { data: HeadToHead }) {
               : 'لا تتوفّر مواجهات سابقة بين هذين الفريقين.'}
           </p>
         )}
-      </section>
+      </Card>
 
       {data.forms.map((f) => {
         const isHomeForm = f.teamId === homeId;
         const games = (mode === 'all' ? f.games : f.games.filter((g) => g.wasHome === isHomeForm)).slice(0, 5);
         return (
-          <section key={f.teamId} dir="rtl" className="border border-border bg-surface">
+          <Card key={f.teamId} as="section" dir="rtl">
             <Link
               href={`/sport/team/${f.teamId}`}
               className="flex items-center gap-2 border-b border-border px-4 py-2.5 transition-colors hover:bg-surface-2"
@@ -90,7 +91,7 @@ export function MatchH2H({ data }: { data: HeadToHead }) {
                 {isHomeForm ? 'لا مباريات على أرضه في السجلّ الأخير.' : 'لا مباريات خارج أرضه في السجلّ الأخير.'}
               </p>
             )}
-          </section>
+          </Card>
         );
       })}
     </div>

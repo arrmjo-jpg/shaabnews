@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build-gate-config.mjs && node scripts/build-gate-preflight.mjs && next build && node scripts/build-gate-artifacts.mjs",
+    "build:no-gates": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run"

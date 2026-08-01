@@ -52,6 +52,7 @@ class Epaper extends Model
 
     protected $fillable = [
         'uuid',
+        'source_post_id',
         'locale',
         'issue_number',
         'title',

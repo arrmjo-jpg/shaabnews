@@ -10,6 +10,7 @@ use App\Jobs\WpMigration\DispatchMigrationChunkJob;
 use App\Models\MigrationRun;
 use App\Support\Responses\ApiResponse;
 use App\Support\WpMigration\MigrationAuthor;
+use App\Support\WpMigration\WpMediaSource;
 use App\Support\WpMigration\WpSourceInspector;
 use Illuminate\Http\JsonResponse;
 
@@ -54,9 +55,12 @@ class QuickIncrementalImportAction
             return ApiResponse::error(__('wp_migration.run.author_missing'), [], 422);
         }
 
-        $uploads = (string) $run->uploads_path;
-        if ($uploads === '' || ! is_dir($uploads) || ! is_readable($uploads)) {
-            return ApiResponse::error(__('wp_migration.run.uploads_unreadable'), [], 422);
+        // كما في StartMigrationAction: الشرط يخصّ الوضع المحلّي وحده.
+        if (! WpMediaSource::enabled()) {
+            $uploads = (string) $run->uploads_path;
+            if ($uploads === '' || ! is_dir($uploads) || ! is_readable($uploads)) {
+                return ApiResponse::error(__('wp_migration.run.uploads_unreadable'), [], 422);
+            }
         }
 
         if (! WpSourceInspector::for($run)->canConnect()) {

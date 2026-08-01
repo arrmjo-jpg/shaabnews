@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star, Trash2, ImageOff } from 'lucide-react';
 import { UploadProgress } from './UploadButton';
 import { Dropzone } from './Dropzone';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/hooks/useAuth';
+import { useUpdateMediaAsset } from '../../hooks';
 import type { MediaStaging } from '../../lib/useMediaStaging';
 import type { StagedMediaItem } from '@/types/content.types';
 
@@ -15,7 +18,25 @@ interface Props {
 /** Images workspace: batch upload + cover assignment + gallery management. */
 export function ImagesTab({ staging }: Props) {
   const { t } = useTranslation('content');
+  const { hasPermission } = useAuth();
   const [dragId, setDragId] = useState<number | null>(null);
+
+  const canEditCaption = hasPermission('media.upload');
+  const updateCaption = useUpdateMediaAsset();
+  const [captionDraft, setCaptionDraft] = useState('');
+
+  // Seed the draft whenever the cover asset changes (new cover, or article load).
+  useEffect(() => {
+    setCaptionDraft(staging.cover?.caption ?? '');
+  }, [staging.cover?.assetId, staging.cover?.caption]);
+
+  const saveCoverCaption = () => {
+    const uuid = staging.cover?.uuid;
+    if (!uuid) return;
+    const trimmed = captionDraft.trim();
+    if (trimmed === (staging.cover?.caption ?? '')) return;
+    updateCaption.mutate({ uuid, payload: { caption: trimmed || null } });
+  };
 
   const imgUploads = staging.uploading.filter((u) => u.target === 'gallery');
 
@@ -45,14 +66,24 @@ export function ImagesTab({ staging }: Props) {
           {t('mediaStudio.images.cover')}
         </p>
         {staging.cover ? (
-          <Tile
-            item={staging.cover}
-            isCover
-            onUnsetCover={staging.unsetCover}
-            onRemove={() => staging.remove(staging.cover!.assetId)}
-            removeLabel={t('mediaStudio.common.remove')}
-            unsetLabel={t('mediaStudio.images.unsetCover')}
-          />
+          <div className="space-y-2">
+            <Tile
+              item={staging.cover}
+              isCover
+              onUnsetCover={staging.unsetCover}
+              onRemove={() => staging.remove(staging.cover!.assetId)}
+              removeLabel={t('mediaStudio.common.remove')}
+              unsetLabel={t('mediaStudio.images.unsetCover')}
+            />
+            <Input
+              value={captionDraft}
+              onChange={(e) => setCaptionDraft(e.target.value)}
+              onBlur={saveCoverCaption}
+              disabled={!canEditCaption || !staging.cover.uuid}
+              placeholder={t('mediaStudio.images.captionPlaceholder')}
+              className="text-xs"
+            />
+          </div>
         ) : (
           <p className="text-xs text-muted-foreground">{t('mediaStudio.images.coverHint')}</p>
         )}

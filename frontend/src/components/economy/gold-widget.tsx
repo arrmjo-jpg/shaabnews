@@ -13,8 +13,9 @@ export function GoldWidget({ gold, className = '' }: { gold: GoldPrices | null; 
 
   if (!gold || rows.length === 0) {
     return (
-      <div
-        className={`flex min-h-[200px] flex-col items-center justify-center gap-2 bg-white p-6 text-center shadow-sm ${className}`}
+      <Link
+        href="/gold-prices"
+        className={`flex min-h-[200px] flex-col items-center justify-center gap-2 bg-white p-6 text-center shadow-sm transition-opacity hover:opacity-90 ${className}`}
         style={{ borderRadius: '14px' }}
       >
         <span className="flex size-12 items-center justify-center opacity-85" style={{ background: GOLD, borderRadius: '9999px' }} aria-hidden>
@@ -22,10 +23,8 @@ export function GoldWidget({ gold, className = '' }: { gold: GoldPrices | null; 
         </span>
         <p className="text-sm font-extrabold text-fg">أسعار الذهب</p>
         <p className="text-xs text-muted">الأسعار غير متاحة حاليّاً</p>
-        <Link href="/gold-prices" className="mt-1 text-xs font-bold text-primary hover:underline">
-          أرشيف الأسعار ←
-        </Link>
-      </div>
+        <span className="mt-1 text-xs font-bold text-primary">أرشيف الأسعار ←</span>
+      </Link>
     );
   }
 
@@ -33,7 +32,11 @@ export function GoldWidget({ gold, className = '' }: { gold: GoldPrices | null; 
   const headIsKarat = /^\d+$/.test(head.key);
 
   return (
-    <div className={`flex flex-col overflow-hidden bg-white shadow-sm ${className}`} style={{ borderRadius: '14px' }}>
+    <Link
+      href="/gold-prices"
+      className={`flex flex-col overflow-hidden bg-white shadow-sm transition-opacity hover:opacity-95 ${className}`}
+      style={{ borderRadius: '14px' }}
+    >
       {/* شريط ذهبيّ علويّ */}
       <div className="h-1" style={{ background: GOLD }} aria-hidden />
 
@@ -79,11 +82,11 @@ export function GoldWidget({ gold, className = '' }: { gold: GoldPrices | null; 
         ) : (
           <span />
         )}
-        <Link href="/gold-prices" className="relative z-20 shrink-0 font-bold text-primary hover:underline">
+        <span className="shrink-0 font-bold text-primary">
           التفاصيل ←
-        </Link>
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }
 

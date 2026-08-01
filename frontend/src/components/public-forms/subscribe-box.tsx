@@ -197,7 +197,7 @@ export function SubscribeBox({ variant = 'card', termsHref, termsLabel, privacyH
           <div className="mb-2">{successCard}</div>
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 text-start md:grid-cols-2">
+            <div className="flex flex-col gap-4 text-start">
               <div>{nameField}</div>
               {phoneField}
             </div>

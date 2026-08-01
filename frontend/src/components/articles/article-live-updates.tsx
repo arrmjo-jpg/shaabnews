@@ -97,7 +97,9 @@ function mapRaw(raw: unknown): LiveUpdateItem {
       .map((g): ArticleImage | null => {
         const gi = (g ?? {}) as Record<string, unknown>;
         const url = str(gi.url);
-        return url ? { url, thumb: str(gi.thumb), medium: str(gi.medium), alt: str(gi.alt) } : null;
+        return url
+          ? { url, thumb: str(gi.thumb), medium: str(gi.medium), alt: str(gi.alt), caption: str(gi.caption) }
+          : null;
       })
       .filter((g): g is ArticleImage => g !== null),
   };

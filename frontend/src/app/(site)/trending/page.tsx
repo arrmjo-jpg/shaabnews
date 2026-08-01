@@ -99,7 +99,7 @@ function TrendingCard({ item, rank }: { item: FeedItem; rank: number }) {
             </time>
           )}
         </div>
-        <h3 className="line-clamp-3 font-heading text-base font-bold leading-snug text-fg transition-colors group-hover:text-primary sm:text-lg">
+        <h3 className="line-clamp-3 font-heading text-base font-bold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline sm:text-lg">
           {item.title}
         </h3>
       </div>

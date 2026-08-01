@@ -1,20 +1,21 @@
 import Link from 'next/link';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { TopPerformerCategory, TopPerformerPlayer } from '@/lib/sport/domain/entities';
 
 // «أهم اللاعبين» (نمط 365 top-performers) — فئات (الهجوم/الوسط/الدفاع)، لكلّ فئة لاعب المضيف (يمين) ولاعب الضيف
 // (يسار) مع إحصاءاتهما المتقابلة. كلّ لاعب رابطٌ لملفّه. بيانات حقيقيّة من `game.topPerformers` (لا تلفيق).
 export function MatchTopPerformers({ categories }: { categories: TopPerformerCategory[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">أهم اللاعبين</h2>
-      </div>
+      </CardHeader>
       <div className="divide-y divide-border">
         {categories.map((c) => (
           <Category key={c.name} c={c} />
         ))}
       </div>
-    </section>
+    </Card>
   );
 }
 

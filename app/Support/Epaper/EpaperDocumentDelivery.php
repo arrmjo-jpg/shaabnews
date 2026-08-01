@@ -6,6 +6,7 @@ namespace App\Support\Epaper;
 
 use App\Models\Epaper;
 use App\Models\MediaAsset;
+use App\Support\Media\MediaUrl;
 use App\Support\Media\RemoteStorage;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -63,6 +64,10 @@ final class EpaperDocumentDelivery
         }
 
         // الاحتياطيّ الطارئ فقط: مسار موقَّع داخل التطبيق (يبثّ من القرص المحلّي مع Range).
+        // جذر الرابط يُفرَض من MediaUrl::origin() (نفس أصل ملفّات public/storage) لا من مضيف الطلب
+        // الوارد — Laravel افتراضياً يعكس ترويسة Host كما هي، وهذا الطلب قد يصل عبر قناة داخليّة
+        // (Next.js rewrite/Docker DNS) لا تطابق الدومين العامّ الذي يجب أن يصل إليه متصفّح المستخدم.
+        URL::forceRootUrl(MediaUrl::origin());
         $url = URL::temporarySignedRoute('epaper.document.stream', $expiresAt, [
             'epaper' => $epaper->id,
             'disposition' => $disposition,

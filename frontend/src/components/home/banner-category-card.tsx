@@ -78,7 +78,8 @@ async function BannerCategoryCard({ categoryId, headingId, fallbackTitle }: Card
               <div className="size-full bg-surface-3" aria-hidden />
             )}
           </div>
-          <h4 className="mt-3 line-clamp-2 text-base font-bold leading-snug text-fg transition-colors group-hover:text-primary sm:text-lg">
+          <div className="featured-accent-marker" aria-hidden />
+          <h4 className="mt-3 line-clamp-2 text-base font-bold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline sm:text-lg">
             {feature.title}
           </h4>
           {feature.publishedAt && (
@@ -95,7 +96,7 @@ async function BannerCategoryCard({ categoryId, headingId, fallbackTitle }: Card
           {list.map((item) => (
             <li key={item.id} className="group relative border-t border-border py-2.5">
               <Link href={item.href} className="absolute inset-0 z-10" aria-label={item.title} />
-              <p className="line-clamp-2 text-sm font-semibold leading-snug text-fg transition-colors group-hover:text-primary">
+              <p className="line-clamp-2 text-sm font-semibold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline">
                 {item.title}
               </p>
               {item.publishedAt && (

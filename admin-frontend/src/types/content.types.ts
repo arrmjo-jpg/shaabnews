@@ -41,11 +41,13 @@ export interface ArticleCategoryRef {
 
 export interface ArticleMediaItem {
   id: number;
+  uuid?: string | null;
   url: string;
   thumb?: string;
   medium?: string;
   name?: string;
   alt?: string | null;
+  caption?: string | null;
 }
 
 export interface ArticleSeo {
@@ -675,6 +677,8 @@ export interface StagedMediaItem {
   processingStatus?: VideoProcessingStatus | null;
   duration?: number | null;
   hls?: string | null;
+  /** Image caption (MediaAsset.caption) — shown as a visible line under the cover on the public page. */
+  caption?: string | null;
 }
 
 /** Attach-on-save payload entry sent with the article create/update. */

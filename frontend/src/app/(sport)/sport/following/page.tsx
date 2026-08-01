@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { FollowButton } from '@/components/sport/follow-button';
+import { Card, CardHeader } from '@/components/ui/card';
 import { getMyFollows, type FollowedEntity } from '@/lib/follow';
 
 // صفحة «أتابعهم» — قائمة متابعات المستخدم مُجمَّعة بالنوع (فرق/بطولات/لاعبون/مباريات)، كلّ عنصر رابطٌ لصفحته
@@ -22,7 +23,7 @@ export default async function FollowingPage() {
   if (!authed) redirect('/login?returnTo=/sport/following');
 
   return (
-    <div className="bg-surface-2">
+    <div className="bg-bg">
       <Container className="py-6">
         <Link
           href="/sport"
@@ -34,19 +35,19 @@ export default async function FollowingPage() {
         <h1 className="mb-6 text-xl font-extrabold text-fg sm:text-2xl">أتابعهم</h1>
 
         {items.length === 0 ? (
-          <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
+          <Card className="p-8 text-center text-sm text-muted">
             لا تتابع أيّ فريق أو بطولة أو لاعب بعد. اضغط «تابع» على أيّ صفحة لإضافته هنا.
-          </div>
+          </Card>
         ) : (
           <div className="flex flex-col gap-6">
             {GROUPS.map((g) => {
               const list = items.filter((i) => i.type === g.type);
               if (list.length === 0) return null;
               return (
-                <section key={g.type} dir="rtl" className="border border-border bg-surface">
-                  <div className="border-b border-border px-4 py-2.5">
+                <Card key={g.type} as="section" dir="rtl">
+                  <CardHeader>
                     <h2 className="text-sm font-extrabold text-fg">{g.title}</h2>
-                  </div>
+                  </CardHeader>
                   <ul className="divide-y divide-border">
                     {list.map((it) => (
                       <li key={`${it.type}-${it.id}`} className="flex items-center gap-3 px-4 py-3">
@@ -65,7 +66,7 @@ export default async function FollowingPage() {
                       </li>
                     ))}
                   </ul>
-                </section>
+                </Card>
               );
             })}
           </div>

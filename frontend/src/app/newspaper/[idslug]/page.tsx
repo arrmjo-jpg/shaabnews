@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { NewspaperReader } from '@/components/epaper/reader/newspaper-reader';
 import { getEpapers, type EpaperIssue } from '@/lib/epaper';
 import { buildMetadata } from '@/lib/seo';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getSiteSettings, resolveNewspaperGate } from '@/lib/site-settings';
 
 // القارئ الأصليّ (pdf.js) — خارج مجموعة (site) ⇒ صفحة غامرة بلا هيدر/فوتر الموقع. SEO عبر
 // buildMetadata (عنوان/وصف/canonical/OG)، قابلة للفهرسة (العدد عامّ). بوّابة newspaper_enabled.
@@ -52,7 +52,7 @@ export default async function NewspaperReaderPage({
   params: Promise<{ idslug: string }>;
 }) {
   const settings = await getSiteSettings();
-  if (!settings?.newspaper_enabled) notFound();
+  if (resolveNewspaperGate(settings) === 'disabled') notFound();
 
   const { idslug } = await params;
   const issue = await resolveIssue(idslug);

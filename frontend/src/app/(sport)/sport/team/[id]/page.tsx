@@ -4,6 +4,7 @@ import { EntityListBlock } from '@/components/sport/entity-list-block';
 import { FollowButton } from '@/components/sport/follow-button';
 import { SportBreadcrumb } from '@/components/sport/sport-breadcrumb';
 import { StandingsTable } from '@/components/sport/standings-table';
+import { Card, CardHeader } from '@/components/ui/card';
 import { env } from '@/lib/env';
 import { buildMetadata } from '@/lib/seo';
 import { getTeamPageData } from '@/lib/sport/application/queries/getTeamPageData';
@@ -51,7 +52,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   };
 
   return (
-    <div className="bg-surface-2">
+    <div className="bg-bg">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(teamJsonLd) }} />
       <Container className="py-6">
         <SportBreadcrumb items={[{ name: team.name }]} />
@@ -71,22 +72,20 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
           <main className="min-w-0">
             {standings ? (
-              <section dir="rtl" className="border border-border bg-surface">
-                <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+              <Card as="section" dir="rtl">
+                <CardHeader>
                   {standings.competition.logo && (
                     // eslint-disable-next-line @next/next/no-img-element -- شعار البطولة من CDN 365
                     <img src={standings.competition.logo} alt="" className="size-6 shrink-0 object-contain" />
                   )}
                   <h2 className="text-sm font-extrabold text-fg">ترتيب {standings.competition.name}</h2>
-                </div>
+                </CardHeader>
                 <div className="px-2">
                   <StandingsTable data={standings} highlightIds={[team.id]} showLegend />
                 </div>
-              </section>
+              </Card>
             ) : (
-              <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
-                لا يتوفّر ترتيب لدوري هذا الفريق حالياً.
-              </div>
+              <Card className="p-8 text-center text-sm text-muted">لا يتوفّر ترتيب لدوري هذا الفريق حالياً.</Card>
             )}
           </main>
 

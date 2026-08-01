@@ -110,12 +110,17 @@ export type SiteSettings = z.infer<typeof SiteSettingsSchema>;
 const EnvelopeSchema = z.object({ data: SiteSettingsSchema.nullish() }).passthrough();
 
 // Cached + deduped per request (React cache) + Next data cache (tag-revalidatable).
-// Every consumer (metadata, JSON-LD, manifest, analytics) shares ONE fetch.
+// Every consumer (metadata, JSON-LD, manifest, analytics) shares ONE fetch — this is the single
+// place that owns settings freshness; pages/layout never configure their own revalidate for this.
+// 300s (لا 36000s سابقاً): مطابق CacheTtl::SHORT في الباك إند لنفس البيانات — عند فشل وسم
+// site-settings في الوصول لصفحة مُولَّدة وقت البناء (raw fetch لم يُنفَّذ إطلاقاً لغياب
+// API_BASE_URL وقت `docker build`، فلا وسم يُسجَّل ليُبطِله revalidateTag لاحقاً)، أقصى مدّة
+// بقاء حالة خاطئة هي 5 دقائق بدل 10 ساعات — سقف أمان واقعي، لا يعتمد فقط على وسم قد لا يصل.
 export const getSiteSettings = cache(async (locale = 'ar'): Promise<SiteSettings | null> => {
   if (!env.apiBaseUrl) return null;
   try {
     const res = await fetch(`${env.apiBaseUrl}/api/v1/site?locale=${encodeURIComponent(locale)}`, {
-      next: { revalidate: 36000, tags: ['site-settings'] }, // ISR — سقف أمان فقط؛ التحديث الفعليّ حدثيّ.
+      next: { revalidate: 300, tags: ['site-settings'] },
     });
     if (!res.ok) return null;
     const parsed = EnvelopeSchema.safeParse(await res.json());
@@ -124,6 +129,18 @@ export const getSiteSettings = cache(async (locale = 'ar'): Promise<SiteSettings
     return null;
   }
 });
+
+// بوّابة الجريدة الرقمية — مصدر تفسير واحد بدل تكرار `!settings?.newspaper_enabled` (يخلط بين
+// «معطّلة» و«غير معروفة») في كل مستهلك على حدة. null (فشل الجلب: بناء بلا API، شبكة، استجابة
+// غير صالحة) أو الحقل نفسه غائب ⇐ 'unknown' — قرار الوصول (notFound) يُبنى فقط على 'disabled'
+// المؤكَّدة، لا على الغياب؛ عرض التنقّل (الرابط بالهيدر) يبقى حرّاً باختيار سياسته الخاصة تجاه
+// 'unknown' (اليوم: إخفاء، سلوك موجود لم يتغيّر).
+export type NewspaperGateState = 'enabled' | 'disabled' | 'unknown';
+
+export function resolveNewspaperGate(settings: SiteSettings | null): NewspaperGateState {
+  if (!settings || settings.newspaper_enabled == null) return 'unknown';
+  return settings.newspaper_enabled ? 'enabled' : 'disabled';
+}
 
 // مسار قسم كامل من slug — يحلّ سلسلة الأسلاف الحقيقيّة (getCategoryAncestry، لا يفترض
 // أنّ تجميع قوائم التنقّل يطابق شجرة /categories الفعليّة) ثمّ يبنيها بـcategoryHref.

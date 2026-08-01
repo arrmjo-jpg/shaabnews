@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Card, CardFooter, CardHeader } from '@/components/ui/card';
 import type { ScorerCompetition } from '@/lib/sport/stats';
 
 // ويدجت «الأهداف» — نمط 365 `entity-stats-widget`: ترويسة + تبويبات بطولات قابلة للتبديل + صفوف هدّافين
@@ -14,12 +15,12 @@ export function TopScorers({ comps }: { comps: ScorerCompetition[] }) {
   const cur = comps[i];
 
   return (
-    <section dir="rtl" className="flex flex-col border border-border bg-surface" aria-labelledby="top-scorers-heading">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl" className="flex flex-col" aria-labelledby="top-scorers-heading">
+      <CardHeader>
         <h2 id="top-scorers-heading" className="text-sm font-extrabold text-fg">
           الأهداف
         </h2>
-      </div>
+      </CardHeader>
 
       {comps.length > 1 && (
         <div className="flex gap-1 overflow-x-auto border-b border-border px-2 py-2">
@@ -73,12 +74,14 @@ export function TopScorers({ comps }: { comps: ScorerCompetition[] }) {
       </ul>
 
       {/* عرض الكل → صفحة البطولة (تبويب الإحصائيات الكامل) للبطولة النشطة */}
-      <Link
-        href={`/sport/competition/${cur.competitionId}?tab=stats`}
-        className="flex items-center justify-center gap-1 border-t border-border px-4 py-2.5 text-[13px] font-bold text-primary transition-colors hover:bg-surface-2"
-      >
-        عرض الكل
-      </Link>
-    </section>
+      <CardFooter className="p-0">
+        <Link
+          href={`/sport/competition/${cur.competitionId}?tab=stats`}
+          className="flex items-center justify-center gap-1 px-4 py-2.5 text-[13px] font-bold text-primary transition-colors hover:bg-surface-2"
+        >
+          عرض الكل
+        </Link>
+      </CardFooter>
+    </Card>
   );
 }

@@ -5,6 +5,7 @@ import { ChevronDown, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { FollowButton } from '@/components/sport/follow-button';
 import { MatchRow } from '@/components/sport/match-row';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { CountryMatchGroup } from '@/lib/sport/games';
 
 // كتلة «الدول» منسدلة (أكورديون، نمط 365) — نقر الدولة يفتح بطولاتها ومبارياتها (صفوف روابط لصفحة التفاصيل).
@@ -14,10 +15,10 @@ export function CountryAccordion({ countries }: { countries: CountryMatchGroup[]
   if (!countries.length) return null;
 
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-3 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h3 className="text-sm font-extrabold text-fg">الدول</h3>
-      </div>
+      </CardHeader>
       <ul>
         {countries.map((c) => {
           const isOpen = openId === c.id;
@@ -73,6 +74,6 @@ export function CountryAccordion({ countries }: { countries: CountryMatchGroup[]
           );
         })}
       </ul>
-    </section>
+    </Card>
   );
 }

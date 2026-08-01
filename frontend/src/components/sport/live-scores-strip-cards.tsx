@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icons';
+import { Card } from '@/components/ui/card';
 import type { Match, MatchSideSummary } from '@/lib/sport/domain/entities';
 
 // طبقة العرض التفاعلية للـLive Scores Strip — عرض جديد بالكامل، ليس استيرادًا لـ
@@ -35,7 +36,7 @@ export function LiveScoresStripCards({ matches }: { matches: Match[] }) {
   };
 
   return (
-    <div dir="rtl" className="relative border border-border bg-surface">
+    <Card className="relative" dir="rtl">
       <button
         type="button"
         onClick={() => scrollByPage('prev')}
@@ -59,7 +60,7 @@ export function LiveScoresStripCards({ matches }: { matches: Match[] }) {
       >
         <ChevronLeftIcon className="size-5" aria-hidden />
       </button>
-    </div>
+    </Card>
   );
 }
 

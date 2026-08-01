@@ -1,12 +1,11 @@
+import { Card, CardHeader } from '@/components/ui/card';
 import type { MatchStatRow } from '@/lib/sport/domain/entities';
 
 // تبويب الإحصائيات — كلّ الإحصائيّات مُجمّعة بالفئة (categoryName)؛ لكلّ واحدة: قيمة المضيف (يمين) | الاسم | قيمة الضيف
 // (يسار) + شريط مقارنة (المضيف أحمر يمين / الضيف رماديّ يسار). غير المصنّفة (الرئيسيّة) أوّلاً. RTL.
 export function MatchStats({ stats }: { stats: MatchStatRow[] }) {
   if (!stats.length) {
-    return (
-      <div className="border border-border bg-surface p-8 text-center text-sm text-muted">الإحصائيات غير متاحة لهذه المباراة.</div>
-    );
+    return <Card className="p-8 text-center text-sm text-muted">الإحصائيات غير متاحة لهذه المباراة.</Card>;
   }
   const groups: { category: string | null; rows: MatchStatRow[] }[] = [];
   const idx = new Map<string, number>();
@@ -22,10 +21,10 @@ export function MatchStats({ stats }: { stats: MatchStatRow[] }) {
   }
 
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border bg-surface-2 px-4 py-2">
+    <Card as="section" dir="rtl">
+      <CardHeader className="bg-surface-2">
         <h2 className="text-sm font-extrabold text-fg">الإحصائيات</h2>
-      </div>
+      </CardHeader>
       {groups.map((grp, gi) => (
         <div key={gi}>
           {grp.category && (
@@ -50,6 +49,6 @@ export function MatchStats({ stats }: { stats: MatchStatRow[] }) {
           </ul>
         </div>
       ))}
-    </section>
+    </Card>
   );
 }

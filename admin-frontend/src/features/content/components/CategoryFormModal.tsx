@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/useToast';
+import { autoSlug } from '@/lib/slug';
+import { cn } from '@/lib/utils';
 import { useCreateCategory, useUpdateCategory } from '../hooks';
 import { OgImagePicker } from './OgImagePicker';
 import type {
@@ -14,6 +16,7 @@ import type {
   ContentLocale,
   SectionLayoutType,
 } from '@/types/content.types';
+import type { NormalizedError } from '@/types/api';
 
 const selectCls =
   'h-10 w-full border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -98,10 +101,12 @@ export function CategoryFormModal({
 
   const isEdit = Boolean(category);
   const [form, setForm] = useState<FormState>(() => emptyState(parent));
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Hydrate / reset whenever the modal opens
   useEffect(() => {
     if (!open) return;
+    setFieldErrors({});
     if (category) {
       setForm({
         name: category.name,
@@ -129,6 +134,18 @@ export function CategoryFormModal({
       setForm(emptyState(parent));
     }
   }, [open, category, parent]);
+
+  // Auto-slug: إنشاء فقط، ويتوقّف عن التوليد فور تعديل المستخدم للحقل يدوياً (نفس نمط
+  // PageFormPage) — التعديل لا يُغيَّر فيه الـ slug تلقائياً أبداً؛ يبقى كما حُمِّل من الفئة.
+  const lastAutoSlug = useRef<string>('');
+  useEffect(() => {
+    if (!open || isEdit) return;
+    const generated = autoSlug(form.name);
+    const slugIsAuto = form.slug === '' || form.slug === lastAutoSlug.current;
+    if (!slugIsAuto || generated === form.slug) return;
+    lastAutoSlug.current = generated;
+    setForm((prev) => ({ ...prev, slug: generated }));
+  }, [open, isEdit, form.name, form.slug]);
 
   const eligibleParents = useMemo(() => {
     // Flatten the tree, keep nodes of the matching locale, exclude self + descendants.
@@ -180,7 +197,18 @@ export function CategoryFormModal({
 
   const patch = (p: Partial<FormState>) => setForm((prev) => ({ ...prev, ...p }));
 
+  // يُعيد أخطاء الـ 422 (حزمة {field: string[]}) إلى الحقول المعنيّة بدل toast عامّ غامض فقط.
+  const applyServerErrors = (e: NormalizedError): void => {
+    const map: Record<string, string> = {};
+    Object.entries(e.errors ?? {}).forEach(([key, msgs]) => {
+      const msg = msgs?.[0];
+      if (msg) map[key] = msg;
+    });
+    setFieldErrors(map);
+  };
+
   const submit = () => {
+    setFieldErrors({});
     if (form.name.trim().length < 2) {
       toastError(t('categories.form.validation.nameRequired'));
       return;
@@ -223,6 +251,7 @@ export function CategoryFormModal({
             success(t('categories.form.saved'));
             onClose();
           },
+          onError: applyServerErrors,
         },
       );
     } else {
@@ -231,6 +260,7 @@ export function CategoryFormModal({
           success(t('categories.form.saved'));
           onClose();
         },
+        onError: applyServerErrors,
       });
     }
   };
@@ -262,7 +292,10 @@ export function CategoryFormModal({
             value={form.name}
             onChange={(e) => patch({ name: e.target.value })}
             maxLength={150}
+            aria-invalid={Boolean(fieldErrors.name)}
+            className={cn(fieldErrors.name && 'border-destructive focus-visible:ring-destructive')}
           />
+          {fieldErrors.name ? <p className="mt-1 text-xs font-medium text-destructive">{fieldErrors.name}</p> : null}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -273,9 +306,16 @@ export function CategoryFormModal({
               value={form.slug}
               onChange={(e) => patch({ slug: e.target.value })}
               dir="ltr"
-              placeholder={t('articles.form.slugPlaceholder')}
+              placeholder={t('categories.form.slugPlaceholder')}
               maxLength={160}
+              aria-invalid={Boolean(fieldErrors.slug)}
+              className={cn(fieldErrors.slug && 'border-destructive focus-visible:ring-destructive')}
             />
+            {fieldErrors.slug ? (
+              <p className="mt-1 text-xs font-medium text-destructive">{fieldErrors.slug}</p>
+            ) : !isEdit ? (
+              <p className="mt-1 text-xs text-muted-foreground">{t('categories.form.slugAutoHint')}</p>
+            ) : null}
           </div>
           <div>
             <Label htmlFor="cat-locale">{t('articles.form.locale')}</Label>

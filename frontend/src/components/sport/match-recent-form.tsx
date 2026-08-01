@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { HeadToHeadFormGame, HeadToHeadTeamForm } from '@/lib/sport/domain/entities';
 
 // «الأداء» (آخر ٥) لتبويب المباراة — لكلّ فريق شارات نتائجه الخمس الأخيرة (ف/ت/خ) + روابط لكلّ مباراة. يعيد استخدام
@@ -11,10 +12,10 @@ const FORM: Record<HeadToHeadFormGame['outcome'], { label: string; cls: string }
 
 export function MatchRecentForm({ forms }: { forms: HeadToHeadTeamForm[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">الأداء — آخر ٥ مباريات</h2>
-      </div>
+      </CardHeader>
       <div className="divide-y divide-border">
         {forms.map((f) => (
           <div key={f.teamId} className="flex items-center gap-3 px-4 py-3">
@@ -43,6 +44,6 @@ export function MatchRecentForm({ forms }: { forms: HeadToHeadTeamForm[] }) {
           </div>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

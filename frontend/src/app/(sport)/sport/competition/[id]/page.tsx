@@ -11,6 +11,7 @@ import { CompetitionStatsView } from '@/components/sport/competition-stats';
 import { SportBreadcrumb } from '@/components/sport/sport-breadcrumb';
 import { SportNews } from '@/components/sport/sport-news';
 import { StandingsView } from '@/components/sport/standings-view';
+import { Card } from '@/components/ui/card';
 import { env } from '@/lib/env';
 import { buildMetadata } from '@/lib/seo';
 import { getCompetitionPageData, type CompetitionPageTab } from '@/lib/sport/application/queries/getCompetitionPageData';
@@ -82,7 +83,7 @@ export default async function CompetitionPage({
   };
 
   return (
-    <div className="bg-surface-2">
+    <div className="bg-bg">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(competitionJsonLd) }} />
       <CompetitionHeader meta={meta} activeTab={active} />
       <Container className="py-6">
@@ -100,7 +101,7 @@ export default async function CompetitionPage({
           standings ? (
             <StandingsView data={standings} showLegend />
           ) : (
-            <div className="border border-border bg-surface p-8 text-center text-sm text-muted">لا يتوفّر ترتيب لهذه البطولة.</div>
+            <Card className="p-8 text-center text-sm text-muted">لا يتوفّر ترتيب لهذه البطولة.</Card>
           )
         ) : active === 'news' ? (
           <SportNews />
@@ -110,15 +111,13 @@ export default async function CompetitionPage({
           stats ? (
             <CompetitionStatsView data={stats} />
           ) : (
-            <div className="border border-border bg-surface p-8 text-center text-sm text-muted">لا تتوفّر إحصاءات لهذه البطولة.</div>
+            <Card className="p-8 text-center text-sm text-muted">لا تتوفّر إحصاءات لهذه البطولة.</Card>
           )
         ) : active === 'insights' ? (
           insights ? (
             <CompetitionInsightsView data={insights} />
           ) : (
-            <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
-              لا تتوفّر ملاحظات لهذه البطولة حاليّاً.
-            </div>
+            <Card className="p-8 text-center text-sm text-muted">لا تتوفّر ملاحظات لهذه البطولة حاليّاً.</Card>
           )
         ) : active === 'champions' ? (
           <CompetitionChampions rows={champions} title={meta.name} />

@@ -94,7 +94,7 @@ function IncidentCard({ item }: { item: FeedItem }) {
       {/* البطاقة العائمة — relative + -mt تتراكب على أسفل الصورة (zauto: تُرسَم فوق الصورة بترتيب DOM،
           وتحت الرابط المتراكب z-10 لتُنقَر كاملةً؛ بلا z-index صريح كي لا تحبس z-20 الكِكَر) */}
       <div className="relative -mt-9 mx-4 bg-white px-4 py-3 shadow-[0_8px_22px_rgba(2,6,23,0.08)]">
-        <h3 className="line-clamp-3 min-h-[60px] pe-8 text-sm font-bold leading-snug text-fg transition-colors group-hover:text-primary">
+        <h3 className="line-clamp-3 min-h-[60px] pe-8 text-sm font-bold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline">
           {item.title}
         </h3>
         <div className="mt-1">

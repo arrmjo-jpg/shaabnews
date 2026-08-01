@@ -10,6 +10,7 @@ use App\Jobs\WpMigration\DispatchMigrationChunkJob;
 use App\Models\MigrationRun;
 use App\Support\Responses\ApiResponse;
 use App\Support\WpMigration\MigrationAuthor;
+use App\Support\WpMigration\WpMediaSource;
 use App\Support\WpMigration\WpSourceInspector;
 use Illuminate\Http\JsonResponse;
 
@@ -40,9 +41,14 @@ class StartMigrationAction
             return ApiResponse::error(__('wp_migration.run.author_missing'), [], 422);
         }
 
-        $uploads = (string) $run->uploads_path;
-        if ($uploads === '' || ! is_dir($uploads) || ! is_readable($uploads)) {
-            return ApiResponse::error(__('wp_migration.run.uploads_unreadable'), [], 422);
+        // مسار الوسائط المحلّي شرطٌ للوضع المحلّي وحده. عند ضبط WP_BASE_URL تُنزَّل
+        // الوسائط من الموقع الحيّ فلا نسخة محلّية مطلوبة — والحارس هنا كان سيمنع
+        // البدء بلا سبب (422) رغم أن المصدر متاح بالكامل عبر الشبكة.
+        if (! WpMediaSource::enabled()) {
+            $uploads = (string) $run->uploads_path;
+            if ($uploads === '' || ! is_dir($uploads) || ! is_readable($uploads)) {
+                return ApiResponse::error(__('wp_migration.run.uploads_unreadable'), [], 422);
+            }
         }
 
         if (! WpSourceInspector::for($run)->canConnect()) {

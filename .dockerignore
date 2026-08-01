@@ -40,6 +40,17 @@ public/storage
 storage/app/public
 storage/app/private
 
+# -- Stray media backups/exports (THE actual root cause of a 15GB build context, found
+#    2026-07-25): a one-off `public/uploads.zip` (14.1GB, likely a backup taken during the
+#    uploads bind-mount migration) sits as a SIBLING FILE directly under public/, not inside
+#    public/uploads/ - so the exclusion above never matched it (it excludes the uploads
+#    directory, not sibling archives). `public/*.zip` is a directory-scoped, not blanket,
+#    pattern: it does NOT touch app/Modules/*.zip (small, legitimate module archives) - public/
+#    is a web-servable static dir that should never legitimately contain a build/backup archive.
+public/*.zip
+public/*.tar
+public/*.tar.gz
+
 # -- Raw SQL dumps/backups under database/ (e.g. database/shaab.sql). The Dockerfile does
 #    `COPY database ./database` for migrations/seeders/factories, which are small .php files -
 #    but a multi-GB *.sql backup sitting at the root of that folder would otherwise get copied

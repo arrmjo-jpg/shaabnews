@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { Card } from '@/components/ui/card';
 import type { LineupMember, TeamLineupSummary } from '@/lib/sport/domain/entities';
 
 // تبويب «التشكيلة المتوقعة» (نسخة طبق‑الأصل من 365) — تبويبا فريقين (المضيف أوّلاً يميناً) + ملعب 365 رأسيّ لفريق
@@ -31,14 +32,12 @@ export function MatchLineup({
 }) {
   const [side, setSide] = useState<'home' | 'away'>(home ? 'home' : 'away');
   if (!home && !away) {
-    return (
-      <div className="border border-border bg-surface p-8 text-center text-sm text-muted">التشكيلة غير متاحة لهذه المباراة.</div>
-    );
+    return <Card className="p-8 text-center text-sm text-muted">التشكيلة غير متاحة لهذه المباراة.</Card>;
   }
   const cur = side === 'home' ? home : away;
 
   return (
-    <section dir="rtl" className="overflow-hidden border border-border bg-surface">
+    <Card as="section" dir="rtl">
       {/* تبويبا الفريقين (المضيف يمين، الافتراضيّ) */}
       <div className="flex border-b border-border">
         <TabBtn active={side === 'home'} label={homeTeam} logo={homeLogo} color={homeColor} onClick={() => setSide('home')} />
@@ -67,7 +66,7 @@ export function MatchLineup({
       ) : (
         <div className="p-8 text-center text-sm text-muted">التشكيلة غير متاحة لهذا الفريق.</div>
       )}
-    </section>
+    </Card>
   );
 }
 

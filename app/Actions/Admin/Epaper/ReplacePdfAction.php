@@ -6,7 +6,6 @@ namespace App\Actions\Admin\Epaper;
 
 use App\Actions\Admin\Media\StoreMediaAssetAction;
 use App\Http\Resources\Admin\Epaper\EpaperResource;
-use App\Jobs\ExtractEpaperTextJob;
 use App\Jobs\GenerateEpaperCoverJob;
 use App\Models\Epaper;
 use App\Models\EpaperVersion;
@@ -44,9 +43,7 @@ class ReplacePdfAction
             ]);
         });
 
-        // الوثيقة تغيّرت ⇒ تُصفَّر ميتاداتا OCR ويُعاد جدولة الاستخراج للملفّ الجديد (Phase 4a).
-        ExtractEpaperTextJob::enqueue($epaper);
-
+        // OCR مُعطَّل عمداً بقرار منتج — لا إعادة جدولة استخراج نصّ عند استبدال الملفّ.
         // الصفحة الأولى تغيّرت ⇒ أعِد توليد الغلاف.
         GenerateEpaperCoverJob::enqueue($epaper);
 

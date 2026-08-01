@@ -172,9 +172,22 @@ final class WpMediaImporter
             return ['asset' => null, 'reason' => $resolution->reason ?? 'media_unresolved'];
         }
 
-        return $resolution->isLocal()
-            ? $this->importLocal((string) $resolution->path)
-            : $this->importExternal((string) $resolution->url);
+        if ($resolution->isLocal()) {
+            return $this->importLocal((string) $resolution->path);
+        }
+
+        // مرشّحات بالترتيب (الأصل ثم المشتقّ المُشار إليه في وضع التنزيل البعيد).
+        // أوّل نجاح يفوز؛ عند فشل الجميع نُبقي سبب آخر محاولة كتصنيف الفشل.
+        $reason = 'media_unresolved';
+        foreach ($resolution->urlCandidates() as $candidate) {
+            $result = $this->importExternal($candidate);
+            if ($result['asset'] !== null) {
+                return $result;
+            }
+            $reason = $result['reason'] ?? $reason;
+        }
+
+        return ['asset' => null, 'reason' => $reason];
     }
 
     private function maxMediaAttempts(): int
@@ -220,7 +233,10 @@ final class WpMediaImporter
         }
 
         try {
-            $response = Http::timeout($this->timeout())
+            // مهلة اتصال منفصلة عن مهلة التنزيل: خادم لا يستجيب يُقصَّر عليه سريعاً،
+            // بينما تبقى للصور الكبيرة مهلة نقل أطول.
+            $response = Http::connectTimeout($this->connectTimeout())
+                ->timeout($this->timeout())
                 ->retry($this->retries(), 200, throw: false)
                 ->withOptions(['allow_redirects' => [
                     'max' => $this->maxRedirects(),
@@ -229,22 +245,35 @@ final class WpMediaImporter
                 ]])
                 ->get($url);
 
+            // 1) حالة HTTP.
             if (! $response->successful()) {
                 return ['asset' => null, 'reason' => 'media_network_error'];
             }
 
+            // 2) ترويسة Content-Type (فحص مبكّر رخيص). صفحة خطأ HTML بحالة 200 —
+            //    وهو سلوك شائع في ووردبريس — تُرفَض هنا قبل كتابة أيّ بايت للقرص.
+            $declared = strtolower(trim(explode(';', (string) $response->header('Content-Type'))[0]));
+            if ($declared !== '' && ! $this->allowedMime($declared)) {
+                return ['asset' => null, 'reason' => 'media_unsupported_mime'];
+            }
+
+            // 3) الحجم.
             $body = (string) $response->body();
             if (strlen($body) > $this->maxBytes()) {
                 return ['asset' => null, 'reason' => 'media_too_large'];
             }
+            if ($body === '') {
+                return ['asset' => null, 'reason' => 'media_network_error'];
+            }
 
+            // 4) الصيغة الحقيقية بالمحتوى (finfo) — هي الحاكمة، لا الترويسة.
             file_put_contents($tmp, $body);
             $mime = self::sniffMime($tmp);
             if (! $this->allowedMime($mime)) {
                 return ['asset' => null, 'reason' => 'media_unsupported_mime'];
             }
 
-            $file = new UploadedFile($tmp, 'remote-'.Str::random(8).self::extFor($mime), $mime, null, true);
+            $file = new UploadedFile($tmp, self::remoteFilename($url, $mime), $mime, null, true);
 
             $asset = (new StoreMediaAssetAction)->handle($file, $this->actor);
             // احتفظ بالرابط الأصلي كبيانات وصفية (source_url موجود أصلاً على media_assets
@@ -303,6 +332,29 @@ final class WpMediaImporter
         return in_array($mime, (array) config('wp-migration.media.allowed_mimes', []), true);
     }
 
+    /**
+     * اسم ملفّ مُشتقّ من رابط ووردبريس (يُحفظ في original_name فيبقى الأثر واضحاً
+     * في مكتبة الوسائط بدل «remote-x7f2a»). الامتداد يأتي من الصيغة المُتحقَّق منها
+     * بالمحتوى لا من الرابط، فلا يُصدَّق امتداد كاذب. اسم متعذّر ⇒ بديل عشوائي.
+     */
+    private static function remoteFilename(string $url, string $mime): string
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        $base = $path !== '' ? rawurldecode(basename($path)) : '';
+
+        // جرّد الامتداد الأصلي ونظّف الفواصل الخطرة (مسار/بايت صفري)، مع إبقاء
+        // المحارف العربية كما هي (المكتبة تخزّن الاسم كبيانات وصفية فقط).
+        $name = (string) preg_replace('/\.[A-Za-z0-9]{1,5}$/', '', $base);
+        $name = str_replace(['/', '\\', "\0"], '', $name);
+        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
+
+        if ($name === '' || $name === '.' || $name === '..') {
+            $name = 'remote-'.Str::random(8);
+        }
+
+        return mb_substr($name, 0, 120).self::extFor($mime);
+    }
+
     private static function extFor(string $mime): string
     {
         return match ($mime) {
@@ -323,6 +375,11 @@ final class WpMediaImporter
     private function timeout(): int
     {
         return (int) config('wp-migration.media.fetch_timeout', 10);
+    }
+
+    private function connectTimeout(): int
+    {
+        return (int) config('wp-migration.media.fetch_connect_timeout', 5);
     }
 
     private function retries(): int

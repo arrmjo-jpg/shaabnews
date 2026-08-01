@@ -43,8 +43,9 @@ export function LatestUpdates({ items }: { items: FeedItem[] }) {
 
         {/* كرت رئيسيّ + شبكة — ارتفاع ثابت متطابق على سطح المكتب (md) */}
         <div className="flex flex-col gap-4 md:h-[440px] md:flex-row md:gap-6">
-          <div className="md:h-full md:w-[42%]">
+          <div className="relative md:h-full md:w-[42%]">
             <LeadCard item={lead} />
+            <div className="featured-accent-marker" aria-hidden />
           </div>
           {grid.length > 0 && (
             <ul className="grid flex-1 grid-cols-1 gap-2 md:h-full md:grid-cols-2 md:grid-rows-4 md:gap-3">
@@ -99,7 +100,7 @@ function LeadCard({ item }: { item: FeedItem }) {
             </time>
           )}
         </div>
-        <h3 className="line-clamp-3 font-heading text-lg font-extrabold leading-tight text-white sm:text-xl">
+        <h3 className="line-clamp-3 font-heading text-lg font-extrabold leading-tight text-white underline-offset-2 group-hover:underline group-has-[:focus-visible]:underline sm:text-xl">
           {item.title}
         </h3>
       </div>
@@ -135,7 +136,7 @@ function ListCard({ item }: { item: FeedItem }) {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 text-start">
-        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-fg transition-colors group-hover:text-primary sm:text-[15px]">
+        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline sm:text-[15px]">
           {item.title}
         </h3>
         {item.category &&

@@ -46,7 +46,7 @@ export function VideoListItem({ video, active = false }: { video: VideoItem; act
       </div>
       <div className="min-w-0 flex-1">
         {active && <span className="text-[10px] font-extrabold text-primary">يُعرض الآن</span>}
-        <h4 className="line-clamp-2 text-sm font-bold leading-snug text-fg transition-colors group-hover:text-primary">
+        <h4 className="line-clamp-2 text-sm font-bold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline">
           {video.title}
         </h4>
         <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted">

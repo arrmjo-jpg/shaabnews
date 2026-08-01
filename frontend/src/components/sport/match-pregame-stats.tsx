@@ -1,3 +1,4 @@
+import { Card, CardHeader } from '@/components/ui/card';
 import type { PreGameComparison } from '@/lib/sport/domain/entities';
 
 // مقارنة ما قبل المباراة (نمط 365 pre-game-stats) — مجموعات (كل المسابقات % + معدّل الإحصائيات)، كلّ صفّ ثلاثيّ:
@@ -14,10 +15,10 @@ export function MatchPreGameStats({
   return (
     <div className="flex flex-col gap-6">
       {data.groups.map((g, gi) => (
-        <section key={gi} dir="rtl" className="border border-border bg-surface">
-          <div className="border-b border-border px-4 py-2.5">
+        <Card key={gi} as="section" dir="rtl">
+          <CardHeader>
             <h2 className="text-sm font-extrabold text-fg">{g.title}</h2>
-          </div>
+          </CardHeader>
           {(data.homeText || data.awayText) && (
             <div className="flex items-center justify-between border-b border-border bg-surface-2 px-4 py-1.5 text-[11px] font-bold text-muted">
               <span>{data.homeText}</span>
@@ -33,7 +34,7 @@ export function MatchPreGameStats({
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       ))}
     </div>
   );

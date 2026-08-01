@@ -5,10 +5,11 @@ import { EpaperGridViewer } from '@/components/epaper/epaper-grid-viewer';
 import { Container } from '@/components/layout/container';
 import { getEpapers } from '@/lib/epaper';
 import { buildMetadata } from '@/lib/seo';
-import { getSiteSettings } from '@/lib/site-settings';
+import { getSiteSettings, resolveNewspaperGate } from '@/lib/site-settings';
 
 // «الجريدة الرقمية» — جدار الأعداد (أغلفة + مشاركة + تحميل + بحث برقم/تاريخ). نقر عدد ⇒ يفتح
-// بنمط الرأي (PDF مضمَّن في العارض). بوّابة المنتج newspaper_enabled (معطّل ⇒ 404).
+// بنمط الرأي (PDF مضمَّن في العارض). بوّابة المنتج newspaper_enabled — 404 فقط عند تعطيل مؤكَّد
+// (resolveNewspaperGate === 'disabled')؛ حالة غير معروفة (فشل جلب الإعدادات) لا تُغلِق الصفحة.
 // ISR = سقف أمان فقط؛ التحديث الفعليّ حدثيّ عبر epaper-feed:{locale}.
 export const revalidate = 36000;
 
@@ -18,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function EpaperPage() {
   const settings = await getSiteSettings();
-  if (!settings?.newspaper_enabled) notFound();
+  if (resolveNewspaperGate(settings) === 'disabled') notFound();
 
   const issues = await getEpapers();
 

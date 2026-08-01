@@ -4,6 +4,7 @@ import { ArrowDownUp } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 import { FootballIcon } from '@/components/sport/sport-icons';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { CommentaryEntry, CommentaryEventType, CommentaryPlayerRef, CommentaryStageGroup } from '@/lib/sport/domain/entities';
 
 // «مجريات» (نمط 365 matchEventsModule) — فلتر (عرض الكل/الأبرز) + أشواط (عنوان + نتيجة) + خطّ زمنيّ ثنائيّ الجانب
@@ -18,10 +19,10 @@ export function MatchCommentary({ stages }: { stages: CommentaryStageGroup[] }) 
     .filter((s) => s.events.length > 0);
 
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">مجريات</h2>
-      </div>
+      </CardHeader>
       <div className="flex gap-2 border-b border-border px-4 py-2.5">
         <FilterBtn active={mode === 'all'} onClick={() => setMode('all')}>
           عرض الكل
@@ -52,7 +53,7 @@ export function MatchCommentary({ stages }: { stages: CommentaryStageGroup[] }) 
           </div>
         ))
       )}
-    </section>
+    </Card>
   );
 }
 

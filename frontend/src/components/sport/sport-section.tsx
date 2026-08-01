@@ -7,7 +7,6 @@ import { FeaturedSlider } from '@/components/sport/featured-slider';
 import { LiveScoresStrip } from '@/components/sport/live-scores-strip';
 import { SportMatchesSection } from '@/components/sport/matches-section';
 import { SportNews } from '@/components/sport/sport-news';
-import { SportsNav } from '@/components/sport/sports-nav';
 import { StandingsBlock } from '@/components/sport/standings-block';
 import { TopScorers } from '@/components/sport/top-scorers';
 import { getCompetitions, getFeaturedMatches, getMatchesByCountry, getPopularTeams } from '@/lib/sport/games';
@@ -57,10 +56,7 @@ export async function SportSection({
   return (
     <div className="bg-surface-2">
       <Container className="py-6">
-        <SportsNav active={sport.key} />
-        <div className="mt-6">
-          <LiveScoresStrip sportId={sid} date={date} priorityCompetitionIds={featuredPriority} />
-        </div>
+        <LiveScoresStrip sportId={sid} date={date} priorityCompetitionIds={featuredPriority} />
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
           <aside className="flex flex-col gap-6">
             <div className="flex flex-col gap-3">

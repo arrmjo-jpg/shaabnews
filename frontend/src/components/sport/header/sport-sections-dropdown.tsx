@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDownIcon } from '@/components/icons';
 import {
   DropdownMenu,
@@ -27,23 +27,55 @@ export interface ResolvedSportMenuNode {
 // نفس منطق HoverDropdownMenu في main-nav.tsx (News) حرفيًّا — أُعيد هنا محليًّا بدل تعديل ملف
 // News (خارج نطاق هذا الـCommit) لجعله مشتركًا؛ كلاهما يبني على نفس Radix primitives الجاهزة
 // (@/components/ui/dropdown-menu)، لا منطق تفاعل جديد يُخترَع.
+// المدّتان أدناه مطابقتان لـmain-nav.tsx حرفيًّا (fix الوميض/القفزة عند hover سريع — أُبقيتا هنا
+// بنفس التكرار المقصود أعلاه بدل استخراج hook مشترك).
+const OPEN_INTENT_MS = 75;
+const CLOSE_GRACE_MS = 150;
+
 function HoverDropdownMenu({ trigger, children }: { trigger: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    };
+  }, []);
 
   const handleMouseEnter = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setOpen(true);
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    if (open || openTimeoutRef.current) return;
+    openTimeoutRef.current = setTimeout(() => {
+      openTimeoutRef.current = null;
+      setOpen(true);
+    }, OPEN_INTENT_MS);
   };
   const handleMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => setOpen(false), 150);
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current);
+      openTimeoutRef.current = null;
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      closeTimeoutRef.current = null;
+      setOpen(false);
+    }, CLOSE_GRACE_MS);
   };
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} dir="rtl">
       <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="relative inline-flex">
         <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+        <DropdownMenuContent
+          align="end"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          className="nav-mega-menu-content data-[state=open]:duration-[220ms] data-[state=open]:ease-out data-[state=closed]:duration-[170ms] data-[state=closed]:ease-in data-[side=bottom]:data-[state=open]:slide-in-from-top-2 data-[side=bottom]:data-[state=closed]:slide-out-to-top-2 data-[side=top]:data-[state=open]:slide-in-from-bottom-2 data-[side=top]:data-[state=closed]:slide-out-to-bottom-2 data-[side=left]:data-[state=open]:slide-in-from-right-2 data-[side=left]:data-[state=closed]:slide-out-to-right-2 data-[side=right]:data-[state=open]:slide-in-from-left-2 data-[side=right]:data-[state=closed]:slide-out-to-left-2"
+        >
           {children}
         </DropdownMenuContent>
       </div>

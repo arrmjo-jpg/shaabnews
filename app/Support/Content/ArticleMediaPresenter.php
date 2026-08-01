@@ -53,11 +53,13 @@ final class ArticleMediaPresenter
     {
         return [
             'id' => $asset->id,
+            'uuid' => $asset->uuid,
             'url' => $asset->url(),
             'thumb' => $asset->conversionUrl('thumb'),
             'medium' => $asset->conversionUrl('medium'),
             'name' => $asset->original_name,
             'alt' => $asset->alt,
+            'caption' => $asset->caption,
         ];
     }
 }

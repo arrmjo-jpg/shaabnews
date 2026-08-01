@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { PlayerCareerSection, PlayerRecentMatch, PlayerTrophy } from '@/lib/sport/domain/entities';
 
 // مكوّنات صفحة اللاعب (نمط 365 athlete-widget) — تُعرَض دائمًا (هيكل 365)، وتملأ ببيانات 365 الفعليّة أو حالة فارغة صادقة.
@@ -7,10 +8,10 @@ import type { PlayerCareerSection, PlayerRecentMatch, PlayerTrophy } from '@/lib
 // الفرق بعرض ثابت كي تلتصق النتيجة بالاسم (لا تتمدّد فجوة)، و`flex-1` يدفع التقييم لأقصى اليسار كـ365.
 export function PlayerLastMatches({ matches, moreHref }: { matches: PlayerRecentMatch[]; moreHref?: string }) {
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">المباريات الأخيرة</h2>
-      </div>
+      </CardHeader>
       {matches.length > 0 ? (
         <>
           <div>
@@ -64,7 +65,7 @@ export function PlayerLastMatches({ matches, moreHref }: { matches: PlayerRecent
       ) : (
         <p className="p-6 text-center text-xs text-muted">لا تتوفّر مباريات حاليّاً.</p>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -85,10 +86,10 @@ function TeamLine({ name, logo }: { name: string; logo: string | null }) {
 // «مسيرة اللاعب» — مسيرته بالإحصاء (athletes/career): قسم لكلّ فئة (نادٍ/منتخب)، وجدول بطولاتها بإحصاءاته فيها.
 export function PlayerCareer({ sections }: { sections: PlayerCareerSection[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">مسيرة اللاعب</h2>
-      </div>
+      </CardHeader>
       {sections.length > 0 ? (
         sections.map((s, si) => (
           <div key={si} className="border-b border-border last:border-b-0">
@@ -124,17 +125,17 @@ export function PlayerCareer({ sections }: { sections: PlayerCareerSection[] }) 
       ) : (
         <p className="p-6 text-center text-xs text-muted">لا تتوفّر بيانات مسيرة حاليّاً.</p>
       )}
-    </section>
+    </Card>
   );
 }
 
 // «الألقاب» — ألقاب اللاعب (athletes/trophies/stats): مجموعة لكلّ بطولة فاز بها، وصفوف (الفريق/الموسم/مشاركات/أهداف).
 export function PlayerTrophies({ groups }: { groups: PlayerTrophy[] }) {
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">الألقاب</h2>
-      </div>
+      </CardHeader>
       {groups.length > 0 ? (
         <>
           {/* عرض الكؤوس (نمط 365): أيقونة كأس + اسم البطولة + عدد مرّات الفوز */}
@@ -196,7 +197,7 @@ export function PlayerTrophies({ groups }: { groups: PlayerTrophy[] }) {
       ) : (
         <p className="p-6 text-center text-xs text-muted">لا تتوفّر بيانات ألقاب حاليّاً.</p>
       )}
-    </section>
+    </Card>
   );
 }
 

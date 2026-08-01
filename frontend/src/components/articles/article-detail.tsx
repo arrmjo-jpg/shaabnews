@@ -41,7 +41,10 @@ export function ArticleDetailView({
   const isOpinion = article.type === 'opinion';
   const isLive = article.type === 'live';
   const minutes = readingMinutes(contentHtml ?? article.contentHtml);
-  const writerHref = article.author?.isWriter && article.author.id ? `/writer/${article.author.id}` : null;
+  const writerHref =
+    article.author?.isWriter && article.author.id
+      ? `/news/writer/${article.author.id}${article.author.slug ? `-${article.author.slug}` : ''}`
+      : null;
   const bodyHtml = stripTitleFromHtml(contentHtml ?? article.contentHtml, article.title, article.subtitle);
   const photo = article.cover?.url || article.author?.avatar || null;
 

@@ -17,6 +17,7 @@ import { MatchTrendsView } from '@/components/sport/match-trends';
 import { SportBreadcrumb } from '@/components/sport/sport-breadcrumb';
 import { SportNews } from '@/components/sport/sport-news';
 import { StandingsTable } from '@/components/sport/standings-table';
+import { Card, CardFooter, CardHeader } from '@/components/ui/card';
 import { env } from '@/lib/env';
 import { buildMetadata } from '@/lib/seo';
 import { getMatchPageData, type MatchPageTab } from '@/lib/sport/application/queries/getMatchPageData';
@@ -100,7 +101,7 @@ export default async function MatchPage({
   };
 
   return (
-    <div className="bg-surface-2">
+    <div className="bg-bg">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(matchJsonLd) }} />
       {compMeta && <CompetitionHeader meta={compMeta} />}
       <Container className="py-6">
@@ -149,17 +150,13 @@ export default async function MatchPage({
               ) : preGame ? (
                 <MatchPreGameStats data={preGame} homeColor={d.home.color} awayColor={d.away.color} />
               ) : (
-                <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
-                  لا تتوفّر إحصاءات لهذه المباراة بعد.
-                </div>
+                <Card className="p-8 text-center text-sm text-muted">لا تتوفّر إحصاءات لهذه المباراة بعد.</Card>
               )
             ) : active === 'trends' ? (
               trends ? (
                 <MatchTrendsView data={trends} />
               ) : (
-                <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
-                  لا تتوفّر إحصاءات شائعة لهذه المباراة.
-                </div>
+                <Card className="p-8 text-center text-sm text-muted">لا تتوفّر إحصاءات شائعة لهذه المباراة.</Card>
               )
             ) : active === 'news' ? (
               <SportNews />
@@ -167,9 +164,7 @@ export default async function MatchPage({
               h2h ? (
                 <MatchH2H data={h2h} />
               ) : (
-                <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
-                  لا تتوفّر بيانات مواجهات بين هذين الفريقين.
-                </div>
+                <Card className="p-8 text-center text-sm text-muted">لا تتوفّر بيانات مواجهات بين هذين الفريقين.</Card>
               )
             ) : (
               <>
@@ -180,9 +175,9 @@ export default async function MatchPage({
                 {d.commentary.length > 0 ? (
                   <MatchCommentary stages={d.commentary} />
                 ) : (
-                  <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
+                  <Card className="p-8 text-center text-sm text-muted">
                     {d.kind === 'upcoming' ? 'لم تبدأ المباراة بعد.' : 'لا أحداث مسجّلة لهذه المباراة.'}
-                  </div>
+                  </Card>
                 )}
 
                 {h2h && h2h.forms.length > 0 && <MatchRecentForm forms={h2h.forms} />}
@@ -190,24 +185,26 @@ export default async function MatchPage({
                 <MatchInfo d={d} />
 
                 {standings && (
-                  <section dir="rtl" className="border border-border bg-surface">
-                    <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+                  <Card as="section" dir="rtl">
+                    <CardHeader>
                       {standings.competition.logo && (
                         // eslint-disable-next-line @next/next/no-img-element -- شعار البطولة من CDN 365
                         <img src={standings.competition.logo} alt="" className="size-6 shrink-0 object-contain" />
                       )}
                       <h2 className="text-sm font-extrabold text-fg">ترتيب الفريقين</h2>
-                    </div>
+                    </CardHeader>
                     <div className="px-2">
                       <StandingsTable data={groupOfTeams(standings, matchTeamIds)} highlightIds={matchTeamIds} />
                     </div>
-                    <Link
-                      href={`/sport/competition/${standings.competition.id}?tab=standings`}
-                      className="block border-t border-border px-4 py-2.5 text-center text-[13px] font-bold text-primary transition-colors hover:bg-surface-2"
-                    >
-                      الترتيب الكامل
-                    </Link>
-                  </section>
+                    <CardFooter className="p-0">
+                      <Link
+                        href={`/sport/competition/${standings.competition.id}?tab=standings`}
+                        className="block px-4 py-2.5 text-center text-[13px] font-bold text-primary transition-colors hover:bg-surface-2"
+                      >
+                        الترتيب الكامل
+                      </Link>
+                    </CardFooter>
+                  </Card>
                 )}
               </>
             )}

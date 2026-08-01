@@ -283,6 +283,43 @@ it('allows keeping the same slug on self-update (ignore current)', function (): 
     ])->assertOk();
 });
 
+it('leaves the slug untouched when the field is omitted from the update', function (): void {
+    [, $token] = catAdminToken();
+    $c = makeCategory(['name' => 'Untouched', 'locale' => 'ar', 'slug' => 'untouched-slug']);
+
+    $res = $this->withToken($token)->putJson("/api/v1/admin/categories/{$c->id}", [
+        'name' => 'Untouched Renamed',
+    ])->assertOk();
+
+    expect($res->json('data.slug'))->toBe('untouched-slug');
+    expect($c->fresh()->slug)->toBe('untouched-slug');
+});
+
+it('updates the category with a new manual slug', function (): void {
+    [, $token] = catAdminToken();
+    $c = makeCategory(['name' => 'Renamed', 'locale' => 'ar', 'slug' => 'old-slug']);
+
+    $res = $this->withToken($token)->putJson("/api/v1/admin/categories/{$c->id}", [
+        'slug' => 'new-slug',
+    ])->assertOk();
+
+    expect($res->json('data.slug'))->toBe('new-slug');
+    expect($c->fresh()->slug)->toBe('new-slug');
+});
+
+it('regenerates the slug from the current name when cleared to empty on update', function (): void {
+    [, $token] = catAdminToken();
+    $c = makeCategory(['name' => 'Regenerated Category', 'locale' => 'ar', 'slug' => 'manual-slug']);
+
+    $res = $this->withToken($token)->putJson("/api/v1/admin/categories/{$c->id}", [
+        'slug' => '',
+    ])->assertOk();
+
+    $expected = Category::arabicSlug('Regenerated Category', '-');
+    expect($res->json('data.slug'))->toBe($expected);
+    expect($c->fresh()->slug)->toBe($expected);
+});
+
 // ─── Reorder among siblings (move up/down) ─────────────────────────────
 
 it('reorders a sibling up by swapping with its neighbor', function (): void {

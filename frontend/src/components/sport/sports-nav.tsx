@@ -1,5 +1,8 @@
+'use client';
+
 import type { SVGProps } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import {
   BasketballIcon,
@@ -8,10 +11,19 @@ import {
   TennisIcon,
   VolleyballIcon,
 } from '@/components/sport/sport-icons';
-import { SPORTS, sportHref } from '@/lib/sport/sports';
+import { SportsNavScroller } from '@/components/sport/sports-nav-scroller';
+import { activeSportKeyFromPathname, SPORTS, sportHref } from '@/lib/sport/sports';
 
-// منيو الرياضات — **ضمن الحاوية**، بلاطات بطاقيّة فعليّة (روابط) data-driven من `SPORTS` (لا تكرار).
-// النشط = أحمر ممتلئ بظلّ؛ الخامل = أبيض، عند المرور **حركة كالبطاقات** (رفع + ظلّ + تكبير الأيقونة). بوّابة عوالم القسم.
+// منيو الرياضات — الآن جزء من هيكل SportHeader (كروم ثابت عبر كل صفحات /sport/**)، لا من محتوى
+// صفحة بعينها — لذا الرياضة النشطة تُشتَقّ من المسار الحاليّ (usePathname، نفس نمط MobileBottomNav
+// تمامًا)، لا من Prop قادم من صفحة (Layout يقع فوق مقطع [sport]، لا يملك ذلك الـparam أصلًا).
+// هذا وحده سبب صيرورة هذا المكوّن Client — التمرير/الأسهم/لوحة المفاتيح يبقيان معزولين تمامًا
+// داخل SportsNavScroller كما كانا (لم يتغيّر ذلك الملف بهذه الجولة).
+//
+// شكل شريط تنقّل حقيقيّ — عمدًا بلا بطاقة/صندوق/حدّ/عرض ثابت (قرار صريح: لا card ولا tile ولا
+// flex-1 ولا min-width). كل عنصر عرضه الطبيعيّ حسب محتواه (أيقونة + نصّ جنبًا إلى جنب على سطر
+// واحد، لا مكدَّسين). النشط يتمايز بالنصّ فقط (أفتح + أعرض وزنًا) + خطّ سفليّ رفيع بلون العلامة —
+// لا خلفيّة حمراء ممتلئة كسابقًا.
 const ICONS: Record<string, (p: SVGProps<SVGSVGElement>) => React.ReactElement> = {
   football: FootballIcon,
   basketball: BasketballIcon,
@@ -20,29 +32,32 @@ const ICONS: Record<string, (p: SVGProps<SVGSVGElement>) => React.ReactElement> 
   volleyball: VolleyballIcon,
 };
 
-export function SportsNav({ active }: { active: string }) {
+export function SportsNav() {
+  const pathname = usePathname();
+  const active = activeSportKeyFromPathname(pathname);
+
   return (
-    <nav dir="rtl" aria-label="الرياضات" className="flex gap-2.5 overflow-x-auto pb-1">
-      {SPORTS.map((s) => {
-        const Icon = ICONS[s.key] ?? FootballIcon;
-        const isActive = s.key === active;
-        return (
-          <Link
-            key={s.key}
-            href={sportHref(s)}
-            aria-current={isActive ? 'page' : undefined}
-            className={
-              'group flex min-w-[84px] flex-1 flex-col items-center justify-center gap-2 border px-4 py-3.5 transition-all duration-200 ' +
-              (isActive
-                ? 'border-primary bg-primary text-white shadow-md'
-                : 'border-border bg-surface text-muted hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-md')
-            }
-          >
-            <Icon className="size-6 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-            <span className="whitespace-nowrap text-[13px] font-bold">{s.label}</span>
-          </Link>
-        );
-      })}
+    <nav dir="rtl" aria-label="الرياضات">
+      <SportsNavScroller ariaLabel="الرياضات">
+        {SPORTS.map((s) => {
+          const Icon = ICONS[s.key] ?? FootballIcon;
+          const isActive = s.key === active;
+          return (
+            <Link
+              key={s.key}
+              href={sportHref(s)}
+              aria-current={isActive ? 'page' : undefined}
+              className={
+                'inline-flex shrink-0 scroll-ms-3 snap-start items-center gap-1.5 border-b-2 px-1 py-2 text-sm transition-colors duration-200 motion-reduce:transition-none ' +
+                (isActive ? 'border-primary font-bold text-fg' : 'border-transparent font-semibold text-muted hover:text-fg')
+              }
+            >
+              <Icon className="size-4 shrink-0" />
+              <span className="whitespace-nowrap">{s.label}</span>
+            </Link>
+          );
+        })}
+      </SportsNavScroller>
     </nav>
   );
 }

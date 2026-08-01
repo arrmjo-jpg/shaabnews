@@ -83,12 +83,17 @@ final class FrontendCacheTags
         }
 
         // 3. Author transitions
+        // الوسم `writer:{id}` لا `author_articles:{id}`: الواجهة توسم به الجلبتين معاً —
+        // ملف الكاتب (writer.ts: ['writers', writer:{id}]) وقائمة مقالاته (writer.ts:
+        // ['articles', writer:{id}]) — فيُبطلهما وسم واحد. الاسم القديم لم يكن له وجود في
+        // الواجهة إطلاقاً، فكان نشر مقال لا يُبطل صفحة كاتبه بأي وسم وتبقى قديمة حتى سقف
+        // الـISR (36000 ثانية = 10 ساعات).
         $authorId = $article->author_id;
         if ($authorId) {
-            $tags[] = "author_articles:{$authorId}";
+            $tags[] = "writer:{$authorId}";
         }
         if ($oldAuthorId !== null && $oldAuthorId !== $authorId) {
-            $tags[] = "author_articles:{$oldAuthorId}";
+            $tags[] = "writer:{$oldAuthorId}";
         }
 
         // 4. Tag transitions

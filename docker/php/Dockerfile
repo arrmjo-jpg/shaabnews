@@ -46,10 +46,16 @@ FROM php:8.4-fpm AS runtime
 # image (all four roles) rather than a worker-media-only image to avoid image sprawl — only the
 # media queue worker actually exercises Spatie Image today, so other roles are unaffected in
 # practice despite the extension being present.
+#
+# poppler-utils: provides pdftoppm (Epaper cover generation, config/epaper.php `cover.pdftoppm`)
+# and pdftotext (embedded-text OCR extraction, config/epaper.php `ocr.embedded.binary`). Was
+# missing entirely — confirmed live (`which pdftoppm` → not found) — so every Epaper cover
+# silently never rendered (EpaperCoverGenerator catches the failure and just logs, by design, so
+# nothing surfaced as an error) and embedded-text OCR always fell through to `no_pages`/failed.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       unzip libicu-dev libzip-dev libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev \
       libmagickwand-dev \
-      ffmpeg jpegoptim optipng pngquant gifsicle webp nginx supervisor procps \
+      ffmpeg jpegoptim optipng pngquant gifsicle webp nginx supervisor procps poppler-utils \
     && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql gd intl zip bcmath exif pcntl opcache \
     && pecl install redis imagick && docker-php-ext-enable redis imagick \
@@ -79,7 +85,13 @@ COPY bootstrap ./bootstrap
 COPY config ./config
 COPY database ./database
 COPY lang ./lang
-COPY public ./public
+# --exclude enforces this at the COPY instruction itself (Dockerfile syntax 1.7+), independent of
+# .dockerignore: real-world proof this actually matters — a stray public/uploads.zip (14.1GB
+# backup, sibling to public/uploads/) slipped past the .dockerignore excludes on 2026-07-25 and
+# got baked into this image (140s COPY, 15GB build context) because no .dockerignore pattern
+# happened to name it. uploads/storage are belt-and-suspenders (docker-compose.yml bind-mounts
+# them at runtime); the archive globs are the actual fix for a repeat of that incident.
+COPY --exclude=uploads --exclude=storage --exclude=*.zip --exclude=*.tar --exclude=*.tar.gz public ./public
 COPY resources ./resources
 COPY routes ./routes
 COPY artisan ./artisan

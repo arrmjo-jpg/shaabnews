@@ -25,12 +25,29 @@ ENV NODE_OPTIONS="--max-old-space-size=1024"
 ARG CLIENT=shaabjo
 ENV CLIENT=$CLIENT
 
-# Prevent Coolify's --build-arg injection from leaking API urls into the build.
-# Next.js must NOT attempt API calls during static page generation at build time.
-ENV API_BASE_URL=""
-ENV SITE_URL="http://localhost:3000"
+# Build-time CMS endpoint. Deliberately named BUILD_API_BASE_URL rather than API_BASE_URL:
+# Coolify injects API_BASE_URL as a --build-arg carrying the RUNTIME value (http://backend), which
+# no build can resolve — BuildKit runs builds off the compose network. With no ARG of that name
+# declared, the injection is ignored. That preserves exactly the protection the previous
+# `ENV API_BASE_URL=""` provided, without the side effect that made every prerendered page generate
+# with no data (all lib/* loaders guard on `if (!env.apiBaseUrl) return []`, so an empty value meant
+# no fetch ran, no cache tag was attached, and revalidateTag() could never reach the artifact).
+#
+# No default value: a build that cannot reach the CMS must fail loudly, never silently ship empty
+# HTML. The value is environment-specific (local / CI / Coolify / production); the name is not.
+ARG BUILD_API_BASE_URL
+ARG SITE_URL
+ENV BUILD_API_BASE_URL=$BUILD_API_BASE_URL
+ENV API_BASE_URL=$BUILD_API_BASE_URL
+ENV SITE_URL=$SITE_URL
 
-RUN npm run build
+# Secrets are mounted, never passed as build args: --mount=type=secret exposes them only for the
+# duration of this RUN and leaves no trace in image layers or `docker history`.
+# `npm run build` is the gated pipeline (config assert -> API preflight -> next build -> artifact
+# assert); see frontend/scripts/. The gates need the same secrets, so they run inside this mount.
+RUN --mount=type=secret,id=openweather_api_key,env=OPENWEATHER_API_KEY \
+    --mount=type=secret,id=internal_api_token,env=INTERNAL_API_TOKEN \
+    npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner

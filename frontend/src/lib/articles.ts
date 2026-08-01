@@ -20,6 +20,7 @@ export interface ArticleImage {
   thumb: string | null;
   medium: string | null;
   alt: string | null;
+  caption: string | null;
 }
 
 export interface ArticleDetail {
@@ -37,7 +38,14 @@ export interface ArticleDetail {
   /** SSoT: ناتج CommentGuard (إعدادات الموقع ∧ المقال) — قيمة واحدة، لا منطق إضافيّ بالواجهة. */
   commentsEnabled: boolean;
   flags: { breaking: boolean; featured: boolean; header: boolean; spotlight: boolean };
-  author: { id: number | null; name: string; bio: string | null; avatar: string | null; isWriter: boolean } | null;
+  author: {
+    id: number | null;
+    name: string;
+    slug: string | null;
+    bio: string | null;
+    avatar: string | null;
+    isWriter: boolean;
+  } | null;
   primaryCategory: { name: string; slug: string } | null;
   secondaryCategories: { name: string; slug: string }[];
   cover: ArticleImage | null;
@@ -54,6 +62,7 @@ const ImageSchema = z
     medium: z.string().nullish(),
     name: z.string().nullish(),
     alt: z.string().nullish(),
+    caption: z.string().nullish(),
   })
   .passthrough();
 
@@ -143,6 +152,7 @@ const ArticleSchema = z
       .object({
         id: z.number().nullish(),
         name: z.string().nullish(),
+        slug: z.string().nullish(),
         bio: z.string().nullish(),
         avatar: z.string().nullish(),
         is_writer: z.boolean().nullish(),
@@ -200,7 +210,13 @@ export function canonicalArticlePath(id: number, publishedAtIso: string | null):
 
 function mapImage(i: z.infer<typeof ImageSchema> | null | undefined): ArticleImage | null {
   if (!i?.url) return null;
-  return { url: i.url, thumb: i.thumb ?? null, medium: i.medium ?? null, alt: i.alt ?? null };
+  return {
+    url: i.url,
+    thumb: i.thumb ?? null,
+    medium: i.medium ?? null,
+    alt: i.alt ?? null,
+    caption: i.caption ?? null,
+  };
 }
 
 function mapArticle(a: RawArticle): ArticleDetail {
@@ -227,6 +243,7 @@ function mapArticle(a: RawArticle): ArticleDetail {
       ? {
           id: typeof a.author.id === 'number' ? a.author.id : null,
           name: a.author.name,
+          slug: a.author.slug ?? null,
           bio: a.author.bio ?? null,
           avatar: a.author.avatar ?? null,
           isWriter: !!a.author.is_writer,

@@ -1,3 +1,4 @@
+import { Card, CardHeader } from '@/components/ui/card';
 import type { MatchDetail } from '@/lib/sport/domain/entities';
 
 // قسم «معلومات المباراة» (نمط 365 game-info) — بطولة/جولة + موعد + ملعب + حكم + حالة. يظهر لكلّ مباراة (يملأ صفحة
@@ -13,10 +14,10 @@ export function MatchInfo({ d }: { d: MatchDetail }) {
   if (!rows.length) return null;
 
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">معلومات المباراة</h2>
-      </div>
+      </CardHeader>
       <dl>
         {rows.map((r) => (
           <div key={r.label} className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5 last:border-b-0">
@@ -25,7 +26,7 @@ export function MatchInfo({ d }: { d: MatchDetail }) {
           </div>
         ))}
       </dl>
-    </section>
+    </Card>
   );
 }
 

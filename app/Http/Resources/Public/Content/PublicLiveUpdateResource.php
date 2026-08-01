@@ -28,7 +28,9 @@ class PublicLiveUpdateResource extends JsonResource
             'is_featured' => $this->is_featured,
             'happened_at' => $this->happened_at?->toISOString(),
             'author' => $this->whenLoaded('author', fn (): array => [
+                'id' => $this->author?->id,
                 'name' => $this->author?->name,
+                'slug' => $this->author?->slug,
             ]),
             'media' => $this->whenLoaded('mediaAssets', fn (): array => [
                 'gallery' => $this->mediaAssets

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 
+import { NewsListItem } from '@/components/feed/news-list-item';
 import type { FeedItem } from '@/lib/feed';
-import { formatRelativeTime } from '@/lib/format';
 
 // تبويبات أخبار الشريط الجانبيّ (client) — «آخر الأخبار» / «الأكثر شيوعًا». تبديل لحظيّ بلا جلب
 // إضافيّ (القائمتان مُمرَّرتان خادميًّا). صفّ مُدمج: صورة مصغّرة + عنوان + تاريخ نسبيّ، رابط متراكب.
@@ -46,32 +45,7 @@ export function NewsTabs({ latest, popular }: { latest: FeedItem[]; popular: Fee
         <ol className="divide-y divide-border">
           {items.map((item) => (
             <li key={item.id}>
-              <Link href={item.href} className="group flex gap-3 p-3 transition-colors hover:bg-surface-2">
-                <div className="aspect-[4/3] w-16 shrink-0 overflow-hidden bg-surface-2">
-                  {item.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- <img> مقصود (سياسة صور الواجهة)
-                    <img
-                      src={item.image}
-                      alt={item.imageAlt}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <div className="size-full bg-surface-3" aria-hidden />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <h4 className="line-clamp-2 text-sm font-bold leading-snug text-fg transition-colors group-hover:text-primary">
-                    {item.title}
-                  </h4>
-                  {item.publishedAt && (
-                    <time dateTime={item.publishedAt} className="mt-1 block text-caption text-muted">
-                      {formatRelativeTime(item.publishedAt)}
-                    </time>
-                  )}
-                </div>
-              </Link>
+              <NewsListItem item={item} />
             </li>
           ))}
         </ol>

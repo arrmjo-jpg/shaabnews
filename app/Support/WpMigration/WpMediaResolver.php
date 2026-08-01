@@ -16,6 +16,10 @@ final class WpMediaResolver
 {
     private const UPLOADS_MARKER = '/wp-content/uploads/';
 
+    /**
+     * $uploadsRoot: جذر النسخة المحلّية (يُستعمل في الوضع المحلّي فقط — يجوز أن
+     * يكون فارغاً عندما يكون التنزيل البعيد هو المصدر).
+     */
     public function __construct(private readonly string $uploadsRoot) {}
 
     public function resolve(string $src): MediaResolution
@@ -45,6 +49,26 @@ final class WpMediaResolver
 
     private function resolveLocal(string $rel, string $originalSrc): MediaResolution
     {
+        // ── المصدر الأساسي: الموقع الحيّ (WP_BASE_URL) ──────────────────────────
+        // عند ضبط الإعداد لا يُستشار القرص إطلاقاً ولا يُشترط وجود نسخة محلّية:
+        // يُعاد بناء الرابط على الأصل المُهيّأ (فيتغيّر النطاق بإعداد واحد)، ويُجرَّب
+        // الأصل أولاً ثم المشتقّ المُشار إليه — نفس ترتيب تفضيل الوضع المحلّي، فلا
+        // تنخفض الجودة عند توفّر الأصل ولا يضيع المرجع إن كان المشتقّ وحده منشوراً.
+        if (WpMediaSource::enabled()) {
+            $original = $this->stripSizeSuffix($rel);
+
+            $candidates = array_values(array_filter([
+                WpMediaSource::uploadsUrl($original),
+                WpMediaSource::uploadsUrl($rel),
+            ], static fn (?string $u): bool => $u !== null));
+
+            if ($candidates === []) {
+                return MediaResolution::unresolved('media_unresolved');
+            }
+
+            return MediaResolution::external($candidates[0], array_slice($candidates, 1));
+        }
+
         $original = $this->stripSizeSuffix($rel);
 
         // 1) الأصلية.

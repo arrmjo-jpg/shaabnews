@@ -48,7 +48,7 @@ export function VideoSpotlight({ lead, items }: { lead: VideoItem; items: VideoI
         </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] p-4 sm:p-6">
           {lead.category && <span className="text-caption font-extrabold text-white/90">{lead.category.name}</span>}
-          <h3 className="mt-1 line-clamp-2 text-xl font-extrabold leading-tight text-white sm:text-2xl lg:text-3xl">
+          <h3 className="mt-1 line-clamp-2 text-xl font-extrabold leading-tight text-white underline-offset-2 group-hover:underline group-has-[:focus-visible]:underline sm:text-2xl lg:text-3xl">
             {lead.title}
           </h3>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-white/80">
@@ -106,7 +106,7 @@ function SpotlightRow({ video }: { video: VideoItem }) {
       </div>
       <div className="min-w-0 flex-1">
         {video.category && <span className="text-[10px] font-extrabold text-primary">{video.category.name}</span>}
-        <h4 className="line-clamp-2 text-sm font-bold leading-snug text-fg transition-colors group-hover:text-primary">
+        <h4 className="line-clamp-2 text-sm font-bold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline">
           {video.title}
         </h4>
         <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted">

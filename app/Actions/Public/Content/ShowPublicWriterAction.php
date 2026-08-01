@@ -22,6 +22,8 @@ class ShowPublicWriterAction
             ->whereKey($id)
             ->where('is_writer', true)
             ->where('status', UserStatus::Active)
+            ->withCount('articles')
+            ->withMax('articles as last_activity_at', 'published_at')
             ->first();
 
         if ($writer === null) {

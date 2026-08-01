@@ -6,6 +6,7 @@ namespace App\Actions\Admin\Settings;
 
 use App\Http\Resources\Admin\Settings\GeneralSettingsResource;
 use App\Settings\GeneralSettings;
+use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
@@ -34,6 +35,13 @@ class UploadBrandingAction
         $settings->save();
 
         Cache::tags(['settings'])->flush();
+
+        // إبطال كاش الواجهة أيضاً — لا الباك إند وحده. الشعار/الفافيكون/العلامة المائية
+        // تُقرأ من GET /api/v1/site الموسوم site-settings في Next؛ بلا هذا السطر كان
+        // تفريغ كاش الباك إند يجعل الـAPI صحيحاً فوراً بينما تبقى الصفحات المُولَّدة على
+        // الشعار القديم حتى انقضاء سقف الـISR (300 ثانية) — أي أن المحرّر يحفظ ولا يرى
+        // أثراً. نفس السطر الموجود في UpdateGeneralSettingsAction لنفس الوسم بالضبط.
+        FrontendRevalidate::tags(['site-settings']);
 
         return ApiResponse::success(
             __('setting.branding_uploaded'),

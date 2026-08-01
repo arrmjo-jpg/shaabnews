@@ -77,7 +77,8 @@ export async function CultureSection({
                   <div className="size-full bg-surface-3" aria-hidden />
                 )}
               </div>
-              <h3 className="mt-4 text-lg font-extrabold leading-snug text-fg transition-colors group-hover:text-primary sm:text-xl">
+              <div className="featured-accent-marker" aria-hidden />
+              <h3 className="mt-4 text-lg font-extrabold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline sm:text-xl">
                 {feature.title}
               </h3>
               {feature.excerpt && (
@@ -111,7 +112,7 @@ function CultureListItem({ item }: { item: FeedItem }) {
     <li className="group relative py-3 first:pt-0 last:pb-0">
       <Link href={item.href} className="absolute inset-0 z-10" aria-label={item.title} />
       <div className="flex items-center gap-3">
-        <h4 className="line-clamp-2 flex-1 text-sm font-bold leading-6 text-fg transition-colors group-hover:text-primary">
+        <h4 className="line-clamp-2 flex-1 text-sm font-bold leading-6 text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline">
           {item.title}
         </h4>
         <div className="relative h-20 w-28 shrink-0 overflow-hidden bg-surface-2">

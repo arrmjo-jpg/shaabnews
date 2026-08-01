@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { Card, CardHeader } from '@/components/ui/card';
+
 // ويدجت قائمة عامّ (نمط 365: لوحة بيضاء + ترويسة + صفوف مضغوطة) — يُعاد استخدامه للبطولات/الفِرق/الدول.
 // عنصر برابط `href` ⇒ صفّ قابل للنقر (`<Link>` لصفحة التفاصيل، مثل بطاقة 365). شعار حقيقيّ أو مربّع لون+حرف (لا تلفيق).
 export interface EntityRow {
@@ -14,10 +16,10 @@ export interface EntityRow {
 export function EntityListBlock({ title, items }: { title: string; items: EntityRow[] }) {
   if (!items.length) return null;
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-3 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h3 className="text-sm font-extrabold text-fg">{title}</h3>
-      </div>
+      </CardHeader>
       <ul>
         {items.map((it) => {
           const inner = (
@@ -41,7 +43,7 @@ export function EntityListBlock({ title, items }: { title: string; items: Entity
           );
         })}
       </ul>
-    </section>
+    </Card>
   );
 }
 

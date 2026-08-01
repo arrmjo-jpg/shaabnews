@@ -8,7 +8,6 @@ use App\Actions\Admin\Media\StoreMediaAssetAction;
 use App\Enums\EpaperAccessLevel;
 use App\Enums\EpaperStatus;
 use App\Http\Resources\Admin\Epaper\EpaperResource;
-use App\Jobs\ExtractEpaperTextJob;
 use App\Jobs\GenerateEpaperCoverJob;
 use App\Models\Epaper;
 use App\Models\EpaperVersion;
@@ -65,9 +64,9 @@ class CreateEpaperAction
             return $epaper;
         });
 
-        // استخراج نصّ العدد (OCR) خارج دورة الطلب — Phase 4a (يضبط pending ويُجدوِل).
-        ExtractEpaperTextJob::enqueue($epaper);
-
+        // OCR/استخراج النص مُعطَّل عمداً بقرار منتج: القارئ للعرض والتنزيل فقط، لا بحث
+        // داخل النص ولا فهرسة. text_layer/ocr_status/page_count تبقى NULL — تعني صراحةً
+        // "غير مُستخدَم"، لا "قيد المعالجة" أو "فشل".
         // توليد غلاف العدد من الصفحة الأولى (مشتقّ conversions['cover']) — خارج دورة الطلب.
         GenerateEpaperCoverJob::enqueue($epaper);
 

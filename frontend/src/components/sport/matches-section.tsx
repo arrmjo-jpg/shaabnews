@@ -1,10 +1,15 @@
 import Link from 'next/link';
 import { FollowButton } from '@/components/sport/follow-button';
 import { MatchRow } from '@/components/sport/match-row';
+import { Card, CardHeader } from '@/components/ui/card';
 import { getMatchesByCompetition, type CompetitionGroup } from '@/lib/sport/games';
 
 // Block: مباريات اليوم — فلتر **مباشر/حسب التوقيت** (نمط 365) + تجميع بالبطولة (ترويسة شعار+اسم+دولة) + صفوف.
 // «مباشر» = المباريات الحيّة فقط (kind==='live')؛ «حسب التوقيت» = الكلّ بترتيب المصدر. SSR عبر `?live=1`.
+// إعادة تصميم بصريّ (طلب المستخدم: كل بطولة بطاقتها المستقلّة، لا كتلة واحدة مشتركة): كل بطولة
+// Card قائمة بذاتها بفراغ 24px بينها؛ المباريات داخلها تبقى صفوفًا مفصولة بخطّ (MatchRow، لم
+// يتغيّر) لا بطاقات منفصلة — نفس نمط Sofascore/365Scores الفعليّ المذكور في الطلب (بطولة واحدة
+// = بطاقة واحدة تحوي صفوف مبارياتها، لا صندوق منفصل لكل مباراة).
 export async function SportMatchesSection({
   sportId = 1,
   date,
@@ -42,14 +47,14 @@ export async function SportMatchesSection({
       </div>
 
       {groups.length === 0 ? (
-        <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 border border-border bg-surface p-8 text-center">
+        <Card className="flex min-h-[160px] flex-col items-center justify-center gap-2 p-8 text-center">
           <p className="text-base font-bold text-fg">{live ? 'لا مباريات مباشرة الآن' : 'لا تتوفّر مباريات حالياً'}</p>
           <p className="text-sm text-muted">
             {live ? 'جرّب «حسب التوقيت» لعرض كل المباريات.' : 'تعذّر جلب البيانات من المصدر الآن.'}
           </p>
-        </div>
+        </Card>
       ) : (
-        <div className="border border-border bg-surface">
+        <div className="flex flex-col gap-6">
           {groups.map((group) => (
             <CompetitionBlock key={group.id} group={group} />
           ))}
@@ -92,8 +97,8 @@ function FilterTab({
 
 function CompetitionBlock({ group }: { group: CompetitionGroup }) {
   return (
-    <div className="border-b border-border last:border-b-0">
-      <div className="flex items-center gap-2 bg-surface-2 px-3 py-1.5">
+    <Card>
+      <CardHeader className="bg-surface-2">
         <Link
           href={`/sport/competition/${group.id}`}
           className="flex min-w-0 flex-1 items-center gap-2 transition-colors hover:text-primary"
@@ -108,12 +113,12 @@ function CompetitionBlock({ group }: { group: CompetitionGroup }) {
           {group.country ? <span className="shrink-0 truncate text-[13px] text-muted">{group.country}</span> : null}
         </Link>
         <FollowButton type="competition" id={group.id} bare />
-      </div>
+      </CardHeader>
       <div>
         {group.matches.map((m) => (
           <MatchRow key={m.id} match={m} />
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

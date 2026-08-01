@@ -34,11 +34,28 @@ const nextConfig: NextConfig = {
   // permanent redirects for SEO link-equity. /en/* (English locale, fully removed) and /writers
   // (directory page removed, no replacement) don't have an equivalent page to point at — routed
   // home rather than left as a bare 404, but not asserted as a permanent 1:1 replacement.
+  //
+  // 2026-07-18 — public URL restructuring (/news/*): straight prefix renames with no DB lookup
+  // needed (search/live/videos/writer) are handled here at the edge, cheaper than a Server
+  // Component. Article (/articles/*) and category (/category/*) canonical URLs now embed data
+  // that only a DB read can resolve (published_at date, category ancestor chain) — those stay
+  // as redirect-only page.tsx stubs (frontend/src/app/(site)/articles/[idslug],
+  // frontend/src/app/(site)/category/[slug]) rather than static rules here. The two legacy
+  // /category/{id}/{slug} rules below now chain through that stub (one extra hop) rather than
+  // jumping straight to /news/category/{...} — acceptable for rarely-hit legacy links; the
+  // alternative would require duplicating the DB-dependent nested-path resolution here, which
+  // next.config.ts cannot do.
   async redirects() {
     return [
       { source: "/article/:path*", destination: "/articles/:path*", permanent: true },
       { source: "/category/:id(\\d+)/:slug*", destination: "/category/:slug*", permanent: true },
       { source: "/category-:id(\\d+)/:slug*", destination: "/category/:slug*", permanent: true },
+      { source: "/writer/:path*", destination: "/news/writer/:path*", permanent: true },
+      { source: "/search", destination: "/news/search", permanent: true },
+      { source: "/live", destination: "/news/live", permanent: true },
+      { source: "/live/:path*", destination: "/news/live/:path*", permanent: true },
+      { source: "/videos", destination: "/news/videos", permanent: true },
+      { source: "/videos/:path*", destination: "/news/videos/:path*", permanent: true },
       { source: "/writers", destination: "/", permanent: false },
       { source: "/en", destination: "/", permanent: false },
       { source: "/en/:path*", destination: "/", permanent: false },

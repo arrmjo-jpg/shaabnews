@@ -3,13 +3,16 @@ import { LivePulse } from '@/components/ui/live-pulse';
 // صورة الهيرو (تعويم يسار على الشاشات الكبيرة عبر .editorial-float-left في globals.css).
 //
 // ملاحظة تكيّف متعمَّدة عن النسخة المرجعية (D:\gasem\frontend): نوع `ArticleImage` في هذا المشروع
-// (lib/articles.ts) لا يحمل width/height/caption/photographer/source، ولا يحمل ArticleDetail
-// حقلي hasVideo/video — هذه الحقول غير موجودة في مخطّط الـZod الحالي. بدل توسيع الـDTO (ممنوع
-// صراحةً في مهمّة النقل البصري)، استُبدلت نسبة الارتفاع الديناميكية بنسبة ثابتة 16:9، وحُذفت شارة
-// المصوّر/المصدر وزر تشغيل الفيديو المضمّن. الشارات (مباشر/عاجل/تغطية خاصة) بصريًّا مطابقة تمامًا.
+// (lib/articles.ts) لا يحمل width/height/photographer/source، ولا يحمل ArticleDetail حقلي
+// hasVideo/video — هذه الحقول غير موجودة في مخطّط الـZod الحالي. بدل توسيع الـDTO لهذه الحقول
+// (ممنوع صراحةً في مهمّة النقل البصري الأصليّة)، استُبدلت نسبة الارتفاع الديناميكية بنسبة ثابتة
+// 16:9، وحُذفت شارة المصوّر/المصدر وزر تشغيل الفيديو المضمّن. الشارات (مباشر/عاجل/تغطية خاصة)
+// بصريًّا مطابقة تمامًا. caption أُضيف لاحقاً (وصف الصورة) — يُعرَض كسطر تحت الغلاف عند وجوده.
 interface HeroCover {
   url: string;
+  medium: string | null;
   alt: string | null;
+  caption: string | null;
 }
 
 interface HeroImageProps {
@@ -28,7 +31,11 @@ export function ArticleHero({ cover, defaultTitle, isLive = false, breaking = fa
       <div className="relative w-full aspect-[16/9] overflow-hidden bg-surface-3">
         {/* eslint-disable-next-line @next/next/no-img-element -- <img> مقصود: أعلى الطيّة، أداء أوّلي */}
         <img
-          src={cover.url}
+          // medium وليس url: الأصل الخام يبقى نظيفاً عمداً (بلا علامة مائية) — MediaConversions
+          // تختم thumb/medium فقط عند تفعيل العلامة من الإعدادات. صورة الهيرو هي أكثر صورة ظهوراً
+          // وقابلية للقصّ/إعادة النشر في المقال، فعرض url هنا كان يُسقط العلامة عن أبرز صورة تماماً
+          // رغم تفعيلها. fallback إلى url فقط حين medium غير متاح (مثال: صورة كاتب افتراضية).
+          src={cover.medium ?? cover.url}
           alt={cover.alt ?? defaultTitle}
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
@@ -51,6 +58,11 @@ export function ArticleHero({ cover, defaultTitle, isLive = false, breaking = fa
           </div>
         )}
       </div>
+      <div className="featured-accent-marker" aria-hidden />
+
+      {cover.caption && (
+        <figcaption className="px-2 py-1.5 text-xs text-muted">{cover.caption}</figcaption>
+      )}
     </figure>
   );
 }

@@ -76,7 +76,7 @@ export function VideoCard({
         {showCategory && video.category && (
           <span className="text-caption font-extrabold text-primary">{video.category.name}</span>
         )}
-        <h3 className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-fg transition-colors group-hover:text-primary sm:text-[15px]">
+        <h3 className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline sm:text-[15px]">
           {video.title}
         </h3>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-muted">

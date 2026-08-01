@@ -8,13 +8,13 @@ function Box({ className = '' }: { className?: string }) {
 
 export default function PlayerPageLoading() {
   return (
-    <div className="bg-surface-2">
+    <div className="bg-bg">
       <Container className="py-6">
         <Box className="mb-4 h-4 w-40" />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
           <main className="flex min-w-0 flex-col gap-6">
-            <div className="flex items-center gap-4 border border-border bg-surface p-5">
+            <div className="sport-card flex items-center gap-4 border border-border bg-surface p-5">
               <Box className="size-20 shrink-0 rounded-full" />
               <div className="min-w-0 flex-1 space-y-2">
                 <Box className="h-5 w-1/3" />

@@ -57,18 +57,79 @@ final class MediaConversions
         $base = pathinfo($asset->path, PATHINFO_FILENAME);
         $conversions = [];
 
+        // العلامة المائية تُحسَم مرّة واحدة هنا (وليس مرارًا داخل الحلقة): تُطبَّق على
+        // thumb/medium أنفسهما — وهما المشتقّان الوحيدان اللذان تستهلكهما الواجهات
+        // العامة فعليًا (ArticleMediaPresenter/PublicArticleResource/... تقرأ thumb/medium
+        // حصرًا؛ لا أحد يقرأ derivative 'watermarked' المنفصل أدناه). قبل هذا الإصلاح كانت
+        // العلامة تُبنى فقط كملف مشتقّ منعزل لا يربطه أي مورد عام بأي صورة مُقدَّمة —
+        // فتفعيلها من لوحة الإدارة لم يكن له أي أثر مرئي على الموقع مهما صحّ ضبطها.
+        $required = WatermarkPolicy::isRequired($asset);
+        $wmConfig = WatermarkSettings::current();
+        $wmLogoPath = $wmConfig !== null ? WatermarkSettings::resolveLogoPath() : null;
+        $stampSizes = $required && $wmConfig !== null && $wmLogoPath !== null;
+
         try {
             // ─── مشتقّات الحجم (thumb/medium) ───────────────────────────
             foreach (self::SIZES as $name => $size) {
                 $tmpOut = self::tempPath('mc_out_', '.webp');
                 try {
-                    Image::load($workingSource)
-                        ->fit(Fit::Contain, $size['w'], $size['h'])
-                        ->format('webp')
-                        ->save($tmpOut);
+                    if ($stampSizes) {
+                        $tmpResized = self::tempPath('mc_resize_', '.webp');
+                        try {
+                            Image::load($workingSource)
+                                ->fit(Fit::Contain, $size['w'], $size['h'])
+                                ->format('webp')
+                                ->save($tmpResized);
+
+                            (new WatermarkProcessor)->apply(
+                                $tmpResized,
+                                $wmLogoPath,
+                                $tmpOut,
+                                $wmConfig['opacity'],
+                                $wmConfig['width'],
+                                $wmConfig['margin'],
+                                $wmConfig['position'],
+                            );
+                        } finally {
+                            @unlink($tmpResized);
+                        }
+                    } else {
+                        Image::load($workingSource)
+                            ->fit(Fit::Contain, $size['w'], $size['h'])
+                            ->format('webp')
+                            ->save($tmpOut);
+                    }
 
                     $relPath = $prefix.$base.'-'.$name.'.webp';
-                    $disk->put($relPath, file_get_contents($tmpOut));
+
+                    // TEMP-INSTRUMENTATION [MEDIA-WRITE-PROBE] — تشخيص فقط، يُزال بعد تحديد السبب.
+                    // لا يغيّر السلوك: لا فحص لقيمة put() ولا رمي استثناء — يسجّل الوقائع فقط.
+                    $diskRoot = (string) config('filesystems.disks.'.$asset->disk.'.root');
+                    $absTarget = rtrim($diskRoot, '/').'/'.$relPath;
+                    $srcBytes = @filesize($tmpOut);
+                    $srcMd5 = @md5_file($tmpOut);
+                    Log::info('[MEDIA-WRITE-PROBE] before put', [
+                        'asset_id' => $asset->id, 'conversion' => $name, 'rel_path' => $relPath,
+                        'disk' => $asset->disk, 'disk_root' => $diskRoot, 'abs_target' => $absTarget,
+                        'driver' => (string) config('filesystems.disks.'.$asset->disk.'.driver'),
+                        'parent_dir_exists' => is_dir(dirname($absTarget)),
+                        'tmp_size' => $srcBytes, 'tmp_md5' => $srcMd5,
+                        'pid' => getmypid(), 'uid' => function_exists('posix_geteuid') ? posix_geteuid() : null,
+                    ]);
+
+                    $putReturn = $disk->put($relPath, file_get_contents($tmpOut));
+
+                    clearstatcache(true, $absTarget);
+                    Log::info('[MEDIA-WRITE-PROBE] after put', [
+                        'asset_id' => $asset->id, 'conversion' => $name,
+                        'put_return' => var_export($putReturn, true),
+                        'disk_exists' => $disk->exists($relPath),
+                        'file_exists_abs' => file_exists($absTarget),
+                        'realpath' => realpath($absTarget) ?: null,
+                        'size_on_disk' => @filesize($absTarget) ?: null,
+                        'md5_on_disk' => file_exists($absTarget) ? @md5_file($absTarget) : null,
+                        'md5_matches_tmp' => file_exists($absTarget) ? (@md5_file($absTarget) === $srcMd5) : null,
+                    ]);
 
                     [$w, $h] = @getimagesize($tmpOut) ?: [null, null];
                     $conversions[$name] = ['path' => $relPath, 'width' => $w, 'height' => $h];
@@ -82,12 +143,11 @@ final class MediaConversions
             // بالمقال (B.2a). إلزاميّتها تحكمها WatermarkPolicy وليس فقط توفّر
             // الإعداد: محتوى عام (visibility=Public — كل شيء اليوم) يجب أن يحمل
             // علامة؛ فشل صامت هنا لأصل إلزامي = أصل "جاهز" بلا علامته المطلوبة.
-            $watermarked = self::watermarkedDerivative($workingSource, $disk, $prefix, $base);
-            $required = WatermarkPolicy::isRequired($asset);
+            $watermarked = self::watermarkedDerivative($workingSource, $disk, $prefix, $base, $wmConfig, $wmLogoPath);
 
             if ($watermarked !== null) {
                 $conversions['watermarked'] = $watermarked;
-            } elseif ($required && WatermarkSettings::current() !== null) {
+            } elseif ($required && $wmConfig !== null) {
                 // الإعداد مفعّل والعلامة إلزامية، لكن التوليد فشل فعليًا (مثلاً تعذّر
                 // فتح ملف الشعار) — فشل صريح بدل أصل "جاهز" بلا علامته الإلزامية.
                 throw new RuntimeException(
@@ -110,6 +170,25 @@ final class MediaConversions
 
         $asset->conversions = $conversions;
         $asset->save();
+
+        // TEMP-INSTRUMENTATION [MEDIA-WRITE-PROBE] — حالة الملفات بعد حفظ السجل، لتحديد ما إذا
+        // كان الاختفاء (إن وُجد) يقع بعد الكتابة أم أنّ الكتابة لم تنجح أصلاً.
+        $diskRoot = (string) config('filesystems.disks.'.$asset->disk.'.root');
+        $post = [];
+        foreach ($conversions as $n => $c) {
+            $abs = rtrim($diskRoot, '/').'/'.$c['path'];
+            clearstatcache(true, $abs);
+            $post[$n] = [
+                'disk_exists' => $disk->exists($c['path']),
+                'file_exists_abs' => file_exists($abs),
+                'size' => @filesize($abs) ?: null,
+            ];
+        }
+        Log::info('[MEDIA-WRITE-PROBE] after save', [
+            'asset_id' => $asset->id,
+            'in_transaction_level' => \Illuminate\Support\Facades\DB::transactionLevel(),
+            'state' => $post,
+        ]);
     }
 
     /**
@@ -165,8 +244,11 @@ final class MediaConversions
     }
 
     /**
-     * يولّد مشتقّ علامة مائية من الأصل النظيف عند تفعيلها في الإعدادات.
+     * يولّد مشتقّ علامة مائية بدقّة الأصل من الأصل النظيف عند تفعيلها في الإعدادات.
+     * $cfg/$watermark مُحلَّلان مسبقًا في generate() (مرّة واحدة، مشتركان مع تعليم
+     * thumb/medium) بدل إعادة القراءة من الإعدادات هنا.
      *
+     * @param  array{path:string,position:string,opacity:int,width:int,margin:int}|null  $cfg
      * @return array{path:string,width:?int,height:?int}|null
      */
     private static function watermarkedDerivative(
@@ -174,15 +256,11 @@ final class MediaConversions
         Filesystem $disk,
         string $prefix,
         string $base,
+        ?array $cfg,
+        ?string $watermark,
     ): ?array {
-        $cfg = WatermarkSettings::current();
-        if ($cfg === null) {
-            return null; // العلامة معطّلة — لا مشتقّ
-        }
-
-        $watermark = WatermarkSettings::resolveLogoPath();
-        if ($watermark === null) {
-            return null; // مسار العلامة غير محلول — تخطٍّ آمن
+        if ($cfg === null || $watermark === null) {
+            return null; // معطّلة، أو مسار العلامة غير محلول — تخطٍّ آمن
         }
 
         $tmpOut = self::tempPath('mc_wm_', '.webp');

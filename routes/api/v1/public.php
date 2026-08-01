@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\Public\Content\LiveUpdateController;
 use App\Http\Controllers\Api\V1\Public\Content\PageController;
 use App\Http\Controllers\Api\V1\Public\Content\ReelController;
 use App\Http\Controllers\Api\V1\Public\Content\WriterArticleController;
+use App\Http\Controllers\Api\V1\Public\Content\WriterArticlesController;
 use App\Http\Controllers\Api\V1\Public\Content\WriterProfileController;
 use App\Http\Controllers\Api\V1\Public\Content\WriterReelController;
 use App\Http\Controllers\Api\V1\Public\Content\WriterVideoController;
@@ -67,13 +68,16 @@ Route::middleware(['public.cache', 'throttle:public.read'])
     ->where(['locale' => 'ar|en'])
     ->prefix('{locale}')
     ->group(function (): void {
-        // التصنيفات: شجرة كاملة + تفاصيل تصنيف بالـ slug
+        // التصنيفات: شجرة كاملة + تفاصيل تصنيف بمسار مفرد أو متداخل (2026-07-18: {path}
+        // يقبل «/» عبر where('.*') — /news/category/{...} الجديد قد يُمرِّر عدّة مقاطع).
         Route::get('/categories', [CategoryController::class, 'index']);
-        Route::get('/categories/{slug}', [CategoryController::class, 'show']);
+        Route::get('/categories/{path}', [CategoryController::class, 'show'])->where('path', '.*');
 
         // دليل الكتّاب (Writers Directory) + بروفيل كاتب عامّ بالـ id. {id} رقميّ فلا يتقاطع.
         Route::get('/writers', [WriterProfileController::class, 'index']);
         Route::get('/writers/{id}', [WriterProfileController::class, 'show'])->whereNumber('id');
+        // مقالات كاتب منشورة — Wrapper رقيق فوق ListPublicArticlesAction (لا استعلام مكرَّر).
+        Route::get('/writers/{id}/articles', [WriterArticlesController::class, 'index'])->whereNumber('id');
 
         // المقالات: قائمة (filter/sort/pagination) + المسار السريع للعاجل + تفاصيل بالـ slug.
         // المسار الثابت breaking قبل {slug} لتفادي التقاطه كـ slug.

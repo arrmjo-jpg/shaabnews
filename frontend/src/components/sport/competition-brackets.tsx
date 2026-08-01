@@ -1,5 +1,6 @@
 import { Trophy } from 'lucide-react';
 import Link from 'next/link';
+import { Card } from '@/components/ui/card';
 import type { CompetitionBracketMatch, CompetitionBracketParticipant, CompetitionBracketStage } from '@/lib/sport/domain/entities';
 
 // خروج المغلوب — رسم شجرة الأدوار (لوحة داكنة نمط 365): عمود لكلّ دور، يمين→يسار (RTL) حتى النهائي،
@@ -15,17 +16,15 @@ export function CompetitionBrackets({
   logo?: string | null;
 }) {
   if (!stages.length) {
-    return (
-      <div className="border border-border bg-surface p-8 text-center text-sm text-muted">
-        لا تتوفّر بيانات خروج المغلوب لهذه البطولة.
-      </div>
-    );
+    return <Card className="p-8 text-center text-sm text-muted">لا تتوفّر بيانات خروج المغلوب لهذه البطولة.</Card>;
   }
 
   const lastIndex = stages.length - 1;
 
   return (
-    <div dir="rtl" className="overflow-hidden border border-border bg-[#0e151b] text-white">
+    // خلفيّة داكنة ثابتة مقصودة (مطابقة لتصميم 365 للوحة الخروج المغلوب) — لا تتبدّل مع الثيم،
+    // نفس مبدأ SportHeader. Card تمنح الزوايا المدوّرة + الظلّ فقط هنا؛ اللون يبقى مُتجاوَزًا صراحةً.
+    <Card as="div" dir="rtl" className="border-white/10 bg-[#0e151b] text-white">
       <div className="flex items-center justify-center gap-2 border-b border-white/10 px-4 py-3">
         {logo && (
           // eslint-disable-next-line @next/next/no-img-element -- شعار البطولة من CDN 365
@@ -75,13 +74,13 @@ export function CompetitionBrackets({
           })}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
 function MatchCell({ m }: { m: CompetitionBracketMatch }) {
   const body = (
-    <div className="border border-white/10 bg-white/[0.04]">
+    <div className="sport-card overflow-hidden border border-white/10 bg-white/[0.04]">
       {m.date && <div className="px-2.5 pt-1.5 text-[10px] font-bold text-white/45">{formatWhen(m.date)}</div>}
       <ParticipantRow p={m.home} />
       <div className="mx-2.5 h-px bg-white/10" />

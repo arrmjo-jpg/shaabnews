@@ -88,9 +88,13 @@ final class WpPostReader
 
     private function attachmentUrl(int $attachmentId): ?string
     {
+        // المسار النسبيّ للأصل كما يسجّله ووردبريس («2024/05/image.jpg»).
         $file = $this->meta($attachmentId, '_wp_attached_file');
         if ($file !== null) {
-            return rtrim((string) $this->siteUrl, '/').'/wp-content/uploads/'.ltrim($file, '/');
+            // الأصل المُهيّأ (WP_BASE_URL) له الأولوية: تغيير النطاق بإعداد واحد،
+            // بلا اعتماد على site.url المُلتقَط وقت المعاينة.
+            return WpMediaSource::uploadsUrl($file)
+                ?? rtrim((string) $this->siteUrl, '/').'/wp-content/uploads/'.ltrim($file, '/');
         }
 
         $guid = $this->db->table('posts')->where('ID', $attachmentId)->value('guid');

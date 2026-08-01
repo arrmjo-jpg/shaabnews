@@ -101,6 +101,7 @@ function CategoryMegaPostCard({ item, borderColor }: { item: FeedItem; borderCol
           <div className="absolute inset-0 size-full bg-surface-3" />
         )}
       </picture>
+      <div className="featured-accent-marker" aria-hidden />
     </article>
   );
 }

@@ -18,12 +18,11 @@ class PublicWriterResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $slug = \Illuminate\Support\Str::slug($this->name);
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'slug' => $slug,
-            'url' => "/writer/{$this->id}",
+            'slug' => $this->slug,
+            'url' => "/news/writer/{$this->id}-{$this->slug}",
             'avatar' => $this->getFirstMediaUrl('avatar', 'thumb') ?: null,
             'bio' => $this->bio,
             'social_links' => (object) ($this->social_links ?? []),

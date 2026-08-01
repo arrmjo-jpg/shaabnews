@@ -38,6 +38,7 @@ class PublicArticleListItemResource extends JsonResource
             'author' => $this->whenLoaded('author', fn (): array => [
                 'id' => $this->author?->id,
                 'name' => $this->author?->name,
+                'slug' => $this->author?->slug,
                 // صورة الكاتب — يستخدمها الهيرو بديلاً عند غياب غلاف الخبر.
                 'avatar' => $this->authorAvatarUrl(),
                 // علم الكاتب المفعّل — الواجهة تربط الاسم ببروفيل عامّ فقط إن كان true (وإلّا نصّ).

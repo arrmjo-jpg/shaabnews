@@ -9,7 +9,6 @@ import {
   Printer,
   RotateCw,
   Scan,
-  Search,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
@@ -31,8 +30,6 @@ interface ReaderToolbarProps {
   onFitPage: () => void;
   onRotate: () => void;
   onToggleFullscreen: () => void;
-  onToggleSearch: () => void;
-  searchActive: boolean;
   onPrint: () => void;
 }
 
@@ -54,8 +51,6 @@ export function ReaderToolbar({
   onFitPage,
   onRotate,
   onToggleFullscreen,
-  onToggleSearch,
-  searchActive,
   onPrint,
 }: ReaderToolbarProps) {
   const [pageInput, setPageInput] = useState(String(currentPage));
@@ -100,17 +95,6 @@ export function ReaderToolbar({
         />
         <span className="tabular-nums">/ {numPages}</span>
       </div>
-
-      <button
-        type="button"
-        onClick={onToggleSearch}
-        aria-label="بحث داخل العدد"
-        aria-pressed={searchActive}
-        title="بحث (Ctrl+F)"
-        className={`${btn} ${searchActive ? 'bg-white/10' : ''}`}
-      >
-        <Search className="size-5" aria-hidden />
-      </button>
 
       <div className="mx-1 hidden h-6 w-px bg-white/10 sm:block" />
 

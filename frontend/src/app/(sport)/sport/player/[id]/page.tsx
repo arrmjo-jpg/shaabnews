@@ -6,6 +6,7 @@ import { FollowButton } from '@/components/sport/follow-button';
 import { PlayerStats } from '@/components/sport/player-stats';
 import { PlayerCareer, PlayerLastMatches, PlayerTrophies } from '@/components/sport/player-widgets';
 import { SportBreadcrumb } from '@/components/sport/sport-breadcrumb';
+import { Card, CardHeader } from '@/components/ui/card';
 import { env } from '@/lib/env';
 import { buildMetadata } from '@/lib/seo';
 import { getPlayerPageData, type PlayerPageTab } from '@/lib/sport/application/queries/getPlayerPageData';
@@ -94,7 +95,7 @@ export default async function PlayerPage({
   };
 
   return (
-    <div className="bg-surface-2">
+    <div className="bg-bg">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }} />
       <Container className="py-6">
         <SportBreadcrumb items={[{ name: p.name }]} />
@@ -102,7 +103,7 @@ export default async function PlayerPage({
         <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
           <main className="flex min-w-0 flex-col gap-6">
             {/* الترويسة */}
-            <section dir="rtl" className="border border-border bg-surface">
+            <Card as="section" dir="rtl">
               <div className="flex items-center gap-4 p-5">
                 <span className="avatar flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2">
                   {p.photo ? (
@@ -119,7 +120,7 @@ export default async function PlayerPage({
                 <FollowButton type="player" id={pid} className="ms-auto self-center" />
               </div>
               {bio && <p className="border-t border-border px-5 py-3 text-[13px] leading-relaxed text-muted">{bio}</p>}
-            </section>
+            </Card>
 
             {/* التبويبات (محفوظة دائماً) */}
             <div dir="rtl" className="flex border-b border-border">
@@ -202,10 +203,10 @@ function PlayerInfoCard({
   if (nationality) facts.push({ value: nationality, label: 'الجنسية' });
 
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">معلومات اللاعب</h2>
-      </div>
+      </CardHeader>
       {teamCards.length > 0 && (
         <div className="grid gap-px bg-border sm:grid-cols-2">
           {teamCards.map(({ team, role }) => (
@@ -239,7 +240,7 @@ function PlayerInfoCard({
           ))}
         </dl>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -260,10 +261,10 @@ function RelatedSidebar({ teammates, teams }: { teammates: SquadMember[]; teams:
 
   return (
     <aside dir="rtl" className="min-w-0">
-      <section className="border border-border bg-surface lg:sticky lg:top-24">
-        <div className="border-b border-border px-4 py-2.5">
+      <Card as="section" className="lg:sticky lg:top-24">
+        <CardHeader>
           <h2 className="text-sm font-extrabold text-fg">قد تكون مهتمًا بـ</h2>
-        </div>
+        </CardHeader>
         <ul>
           {items.map((it) => (
             <li key={it.key}>
@@ -291,7 +292,7 @@ function RelatedSidebar({ teammates, teams }: { teammates: SquadMember[]; teams:
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
     </aside>
   );
 }

@@ -16,8 +16,9 @@ class CategoryController extends Controller
         return (new ListPublicCategoriesAction)->handle($locale);
     }
 
-    public function show(string $locale, string $slug): JsonResponse
+    /** $path: مقطع slug مفرد أو سلسلة مقاطع متداخلة مفصولة بـ«/» (2026-07-18). */
+    public function show(string $locale, string $path): JsonResponse
     {
-        return (new ShowPublicCategoryAction)->handle($locale, $slug);
+        return (new ShowPublicCategoryAction)->handle($locale, $path);
     }
 }

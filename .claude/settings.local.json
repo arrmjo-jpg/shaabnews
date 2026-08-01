@@ -1426,7 +1426,9 @@
       "Bash(php -l app/Actions/Public/Sport/BuildMatchBarAction.php)",
       "Bash(curl -s \"http://localhost:57804/\")",
       "PowerShell(Get-CimInstance Win32_Process -Filter \"Name='php.exe'\")",
-      "PowerShell(Get-Process -Id 24664,4200,24836,1180)"
+      "PowerShell(Get-Process -Id 24664,4200,24836,1180)",
+      "Bash(mysql --version)",
+      "Bash(php -m)"
     ]
   }
 }

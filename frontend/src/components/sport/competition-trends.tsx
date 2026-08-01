@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { FixtureTrend, MatchListItem } from '@/lib/sport/domain/entities';
 
 // «الأكثر شيوعاً» (نمط 365 top-trends) — صفّ بطاقات أفقيّ، كلّ بطاقة مباراة قادمة: شارة موعد + مؤشّر ثقة (لهب من
@@ -12,16 +13,16 @@ export interface TrendCard {
 export function CompetitionTrends({ cards }: { cards: TrendCard[] }) {
   if (!cards.length) return null;
   return (
-    <section dir="rtl" className="border border-border bg-surface">
-      <div className="border-b border-border px-4 py-2.5">
+    <Card as="section" dir="rtl">
+      <CardHeader>
         <h2 className="text-sm font-extrabold text-fg">الأكثر شيوعاً</h2>
-      </div>
+      </CardHeader>
       <div className="flex gap-3 overflow-x-auto p-4 [scrollbar-width:thin]">
         {cards.map((c) => (
           <Link
             key={c.match.id}
             href={`/sport/match/${c.match.id}`}
-            className="flex w-72 shrink-0 snap-start flex-col gap-3 border border-border p-3 transition-colors hover:border-primary"
+            className="sport-card flex w-72 shrink-0 snap-start flex-col gap-3 border border-border p-3 transition-colors hover:border-primary"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-bold text-muted">{trendDay(c.match)}</span>
@@ -47,7 +48,7 @@ export function CompetitionTrends({ cards }: { cards: TrendCard[] }) {
           </Link>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }
 

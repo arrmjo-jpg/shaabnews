@@ -41,6 +41,7 @@ rr
 /public/storage
 /storage/logs
 /public/uploads
+/admin-app
 
 # -- Archives / backups (never intended for the repo — large, regenerable, or export snapshots) --
 *.zip

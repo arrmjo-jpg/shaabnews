@@ -52,6 +52,7 @@ class PublicArticleResource extends JsonResource
             'author' => $this->whenLoaded('author', fn (): array => [
                 'id' => $this->author?->id,
                 'name' => $this->author?->name,
+                'slug' => $this->author?->slug,
                 'bio' => $this->author?->bio,
                 'avatar' => $this->authorAvatarUrl(),
                 'is_writer' => (bool) $this->author?->is_writer,

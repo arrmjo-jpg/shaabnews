@@ -63,6 +63,7 @@ function assetToStaged(
     processingStatus: asset.processing_status,
     duration: asset.duration,
     hls: asset.hls,
+    caption: asset.caption,
   };
 }
 
@@ -93,6 +94,7 @@ export function stagedFromMedia(media: NonNullable<ArticleData['media']>): Stage
   if (media.cover) {
     out.push({
       assetId: media.cover.id,
+      uuid: media.cover.uuid ?? null,
       collection: 'cover',
       position: 0,
       url: media.cover.url,
@@ -100,11 +102,13 @@ export function stagedFromMedia(media: NonNullable<ArticleData['media']>): Stage
       isImage: true,
       mime: null,
       name: media.cover.name ?? null,
+      caption: media.cover.caption ?? null,
     });
   }
   media.gallery.forEach((g, i) =>
     out.push({
       assetId: g.id,
+      uuid: g.uuid ?? null,
       collection: 'gallery',
       position: i,
       url: g.url,
@@ -112,6 +116,7 @@ export function stagedFromMedia(media: NonNullable<ArticleData['media']>): Stage
       isImage: true,
       mime: null,
       name: g.name ?? null,
+      caption: g.caption ?? null,
     }),
   );
   media.video.forEach((v, i) =>

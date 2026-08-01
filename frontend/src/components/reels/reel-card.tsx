@@ -13,12 +13,15 @@ export function ReelCard({
   logo = null,
   onOpen,
   className = 'w-[170px] shrink-0 sm:w-[200px]',
+  flat = false,
 }: {
   reel: ReelItem;
   logo?: string | null;
   onOpen?: () => void;
   // العرض افتراضيّاً ثابت (شريط الكاروسيل)؛ تمرير `w-full` يملأ خليّة الشبكة (نشاط الحساب).
   className?: string;
+  // بلا حواف مدوّرة + ظل ناعم خفيف (كاروسيل الريلز في الرئيسية)، بدل الحواف الدائرية الافتراضية.
+  flat?: boolean;
 }) {
   const vidRef = useRef<HTMLVideoElement>(null);
   const duration = formatDuration(reel.durationSeconds);
@@ -38,8 +41,8 @@ export function ReelCard({
     }
   };
 
-  const wrapperClass = `group relative block aspect-[9/16] overflow-hidden bg-surface-2 text-start ${className}`;
-  const style = { borderRadius: '12px' } as const;
+  const wrapperClass = `group relative block aspect-[9/16] overflow-hidden bg-surface-2 text-start ${flat ? 'shadow-sm' : ''} ${className}`;
+  const style = flat ? undefined : ({ borderRadius: '12px' } as const);
 
   const inner = (
     <>
@@ -90,7 +93,7 @@ export function ReelCard({
         </span>
       )}
 
-      <h3 className="absolute inset-x-0 bottom-0 z-10 line-clamp-2 p-3 text-sm font-bold leading-snug text-white drop-shadow">
+      <h3 className="absolute inset-x-0 bottom-0 z-10 line-clamp-2 p-3 text-sm font-bold leading-snug text-white underline-offset-2 drop-shadow group-hover:underline group-focus-visible:underline">
         {reel.title}
       </h3>
     </>

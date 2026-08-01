@@ -23,7 +23,13 @@ class SiteController extends Controller
             $locale = 'ar';
         }
 
-        $social = array_filter([
+        // عقد ثابت: `social` خريطة {منصّة: رابط} دائماً. بلا الصبّ، يُعيد array_filter
+        // مصفوفة PHP فارغة حين لا رابط مضبوطاً، فيُصدرها json_encode كـ`[]` (مصفوفة) بدل
+        // `{}` (كائن) — أي أنّ **نوع الحقل يتبدّل بحسب البيانات**، وهو ما يكسر أيّ مستهلك
+        // يتوقّع خريطة (مُثبَت: فشل تحقّق Zod في الواجهة يُسقط كامل إعدادات الموقع إلى null،
+        // فيختفي الشعار والأيقونة والعنوان وJSON-LD). الصبّ إلى object يُثبّت النوع:
+        // `{}` حين تفرغ، و`{"facebook":"…"}` حين تُملأ.
+        $social = (object) array_filter([
             'facebook' => $settings->social_facebook ?: null,
             'x' => $settings->social_twitter_x ?: null,
             'instagram' => $settings->social_instagram ?: null,

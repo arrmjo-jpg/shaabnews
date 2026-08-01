@@ -50,8 +50,12 @@ class UpdateCategoryAction
             $category->parent_id = $validated['parent_id'];
         }
 
-        if (! empty($validated['slug'])) {
-            $category->slug = $validated['slug'];
+        if (array_key_exists('slug', $validated)) {
+            // slug مُرسَل صراحةً: قيمة ⇒ استبدال يدويّ، فارغ ⇒ null فيُعيد Sluggable توليده من
+            // الاسم عند الحفظ (needsSlugging يُعيد true حين القيمة null/فارغة بصرف النظر عن onUpdate).
+            $category->slug = $validated['slug'] !== null && $validated['slug'] !== ''
+                ? $validated['slug']
+                : null;
         }
 
         $category->save();

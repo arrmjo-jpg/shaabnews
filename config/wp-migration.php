@@ -7,6 +7,15 @@ return [
     // التشغيلة — ليس في .env لأن بيانات الاعتماد تُدخَل عبر الواجهة).
     'connection' => 'wp_source',
 
+    // ── أصل موقع ووردبريس المصدر: مصدر الوسائط الأساسي ──────────────────────────
+    // الإعداد الوحيد الذي يحدّد من أين تُجلَب الصور. عند ضبطه، تُنزَّل كل الوسائط
+    // مباشرةً من الموقع الحيّ (https://example.com/wp-content/uploads/…) عبر مسار
+    // الجلب الآمن من SSRF الموجود أصلاً — بلا اشتراط نسخة محلّية من
+    // wp-content/uploads وبلا نسخ أيّ مجلّد إلى الحاوية.
+    // تغيير النطاق = تغيير هذا السطر وحده (لا نطاق مكتوب في الشيفرة).
+    // إن تُرِك فارغاً ⇒ يعود الخطّ لسلوكه السابق حرفيّاً: حلّ محلّي من uploads_path.
+    'base_url' => env('WP_BASE_URL'),
+
     // طابور مهام الترحيل (على اتصال الطابور الافتراضي للتطبيق).
     'queue' => env('WP_MIGRATION_QUEUE', 'migration'),
 
@@ -33,7 +42,8 @@ return [
     'media' => [
         'max_bytes' => (int) env('WP_MIGRATION_MEDIA_MAX_BYTES', 26214400),   // 25 ميبي
         'per_post_max' => (int) env('WP_MIGRATION_MEDIA_PER_POST_MAX', 40),   // حدّ التشعّب لكل منشور
-        'fetch_timeout' => (int) env('WP_MIGRATION_FETCH_TIMEOUT', 10),       // ثوانٍ
+        'fetch_timeout' => (int) env('WP_MIGRATION_FETCH_TIMEOUT', 10),       // ثوانٍ — مهلة التنزيل
+        'fetch_connect_timeout' => (int) env('WP_MIGRATION_FETCH_CONNECT_TIMEOUT', 5), // مهلة الاتصال
         'fetch_retries' => (int) env('WP_MIGRATION_FETCH_RETRIES', 2),
         'fetch_max_redirects' => (int) env('WP_MIGRATION_FETCH_MAX_REDIRECTS', 2),
         'allowed_mimes' => ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'],
@@ -42,6 +52,9 @@ return [
         'max_attempts' => (int) env('WP_MIGRATION_MEDIA_MAX_ATTEMPTS', 3),
     ],
 
+    // ⚠️ يخصّ الوضع المحلّي فقط (base_url فارغ). عند ضبط base_url يصبح التنزيل
+    // البعيد هو المصدر الأساسي فلا معنى لـ«بديل» — هذا العلم يُتجاهَل عندئذٍ.
+    //
     // إيقاف افتراضي عمداً: عندما لا يُعثَر على ملف محلياً داخل uploads_path لمرجع
     // /wp-content/uploads/، السلوك الافتراضي (WpMediaResolver) هو ترك المرجع دون
     // حلّ — لا جلب شبكي تلقائي. هذا العلم صريح الاشتراك (opt-in) يُفعِّل بديلاً

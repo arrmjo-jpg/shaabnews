@@ -9,7 +9,7 @@ function Box({ className = '' }: { className?: string }) {
 
 export default function TeamPageLoading() {
   return (
-    <div className="bg-surface-2">
+    <div className="bg-bg">
       <Container className="py-6">
         <Box className="mb-4 h-4 w-40" />
 

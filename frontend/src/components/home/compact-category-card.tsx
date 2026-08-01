@@ -84,7 +84,7 @@ function ItemMini({ item }: { item: FeedItem }) {
     <div className="group relative">
       <Link href={item.href} className="absolute inset-0 z-10" aria-label={item.title} />
       <div className="flex items-start gap-2 p-1 transition-colors hover:bg-surface-2">
-        <p className="line-clamp-2 flex-1 text-[13px] font-bold leading-snug text-fg transition-colors group-hover:text-primary">
+        <p className="line-clamp-2 flex-1 text-[13px] font-bold leading-snug text-fg underline-offset-2 transition-colors group-hover:text-primary group-hover:underline group-has-[:focus-visible]:underline">
           {item.title}
         </p>
         <div className="h-[52px] w-[74px] shrink-0 overflow-hidden bg-surface-2">

@@ -7,6 +7,7 @@ namespace App\Actions\Admin\WpMigration;
 use App\Http\Resources\Admin\WpMigration\MigrationRunResource;
 use App\Models\MigrationRun;
 use App\Support\Responses\ApiResponse;
+use App\Support\WpMigration\WpMediaSource;
 use App\Support\WpMigration\WpSourceInspector;
 use Illuminate\Http\JsonResponse;
 
@@ -32,6 +33,12 @@ class AuditMigrationRunAction
         $facts['media']['uploads_readable'] = $uploadsPath !== ''
             && is_dir($uploadsPath)
             && is_readable($uploadsPath);
+
+        // مصدر الوسائط الفعليّ: «remote» عند ضبط WP_BASE_URL (تنزيل من الموقع الحيّ
+        // — لا نسخة محلّية مطلوبة) وإلا «local». يُعرَض كي لا يُقرَأ
+        // uploads_readable=false على أنه مانع بينما المصدر بعيد أصلاً.
+        $facts['media']['source'] = WpMediaSource::enabled() ? 'remote' : 'local';
+        $facts['media']['base_url'] = WpMediaSource::baseUrl();
 
         $run->update(['source_facts' => $facts]);
 

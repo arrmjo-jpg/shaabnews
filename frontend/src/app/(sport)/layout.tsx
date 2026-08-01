@@ -17,7 +17,10 @@ import { buildThemeBootstrapScript, DEFAULT_SPORT_THEME_COOKIE } from '@/lib/spo
 // never from cookies()/next-headers (would break ISR — see use-auth-session.ts). Theme SCOPE
 // correction (post-1.7): `.sport-scope` on <main> means the theme now governs the content area +
 // Footer only — Header is permanently dark via its own `.sport-header-scope` (sport-header.tsx),
-// entirely outside [data-sport-theme]'s reach.
+// entirely outside [data-sport-theme]'s reach. `bg-bg` on <main> itself (palette refinement):
+// <body>'s own bg-bg sits outside .sport-scope, so without this <main> stayed transparent and let
+// the page's light backdrop show through gaps/margins around dark cards — a real gap found while
+// verifying, not present before cards themselves went theme-aware.
 export default async function SportLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSiteSettings();
   const themeScript = buildThemeBootstrapScript(
@@ -29,7 +32,7 @@ export default async function SportLayout({ children }: { children: React.ReactN
     <FollowProvider>
       <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       <SportHeader />
-      <main className="sport-scope flex-1">{children}</main>
+      <main className="sport-scope flex-1 bg-bg">{children}</main>
       <SportFooter />
       {/* فاصل يمنع شريط التنقّل السفليّ الثابت من تغطية آخر الفوتر على الموبايل (نفس نمط (site)) */}
       <div className="h-14 lg:hidden" aria-hidden />

@@ -46,7 +46,7 @@ export function HeroVideo({
             {video.isFeatured ? 'مميّز' : 'الأحدث'}
             {video.category ? ` · ${video.category.name}` : ''}
           </span>
-          <h2 className="mt-3 text-2xl font-extrabold leading-[1.1] sm:text-4xl lg:text-5xl">{video.title}</h2>
+          <h2 className="mt-3 text-2xl font-extrabold leading-[1.1] underline-offset-2 group-hover:underline group-has-[:focus-visible]:underline sm:text-4xl lg:text-5xl">{video.title}</h2>
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/85">
             <span className="inline-flex items-center gap-1 tabular-nums">
               <Eye className="size-4 shrink-0" aria-hidden />

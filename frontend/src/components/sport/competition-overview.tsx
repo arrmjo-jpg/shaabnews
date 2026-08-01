@@ -4,6 +4,7 @@ import { FeaturedMatchWidget } from '@/components/sport/featured-match-widget';
 import { MatchRow } from '@/components/sport/match-row';
 import { SportNews } from '@/components/sport/sport-news';
 import { StandingsPreview } from '@/components/sport/standings-view';
+import { Card, CardHeader } from '@/components/ui/card';
 import type {
   CompetitionChampion,
   CompetitionProfile,
@@ -45,21 +46,21 @@ export function CompetitionOverview({
       {featured ? (
         <FeaturedMatchWidget detail={featured} meta={meta} />
       ) : nextMatch ? (
-        <section dir="rtl" className="border border-border bg-surface">
-          <div className="border-b border-border px-4 py-2.5">
+        <Card as="section" dir="rtl">
+          <CardHeader>
             <h2 className="text-sm font-extrabold text-fg">
               {nextMatch.kind === 'finished' ? 'آخر مباراة' : 'المباراة القادمة'}
             </h2>
-          </div>
+          </CardHeader>
           <MatchRow match={nextMatch} />
-        </section>
+        </Card>
       ) : null}
 
       {hasScorers && (
-        <section dir="rtl" className="flex flex-col border border-border bg-surface">
-          <div className="border-b border-border px-4 py-2.5">
+        <Card as="section" dir="rtl" className="flex flex-col">
+          <CardHeader>
             <h2 className="text-sm font-extrabold text-fg">أبرز الهدّافين</h2>
-          </div>
+          </CardHeader>
           {meta.logo && (
             <div className="flex items-center gap-2 border-b border-border px-4 py-2">
               {/* eslint-disable-next-line @next/next/no-img-element -- شعار بطولة 365 من CDN */}
@@ -100,23 +101,23 @@ export function CompetitionOverview({
           >
             عرض كل الإحصائيات
           </Link>
-        </section>
+        </Card>
       )}
 
       <CompetitionTrends cards={trends} />
 
       {hasStandings && standings && <StandingsPreview data={standings} meta={meta} />}
 
-      <section dir="rtl" className="border border-border bg-surface">
-        <div className="border-b border-border px-4 py-2.5">
+      <Card as="section" dir="rtl">
+        <CardHeader>
           <h2 className="text-sm font-extrabold text-fg">عن البطولة</h2>
-        </div>
+        </CardHeader>
         <dl>
           <InfoRow k="الاسم" v={meta.name} />
           {meta.country && <InfoRow k="الدولة" v={meta.country} />}
           {holder?.name && <InfoRow k="حامل اللقب" v={holder.name} />}
         </dl>
-      </section>
+      </Card>
 
       <SportNews />
     </div>

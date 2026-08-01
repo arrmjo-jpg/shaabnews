@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Card, CardHeader } from '@/components/ui/card';
 import type { CompetitionInsightGame, CompetitionInsightsSummary } from '@/lib/sport/domain/entities';
 import { CompetitionInsightsSlider } from './competition-insights-slider';
 
@@ -9,26 +10,26 @@ export function CompetitionInsightsView({ data }: { data: CompetitionInsightsSum
   return (
     <div className="flex flex-col gap-6">
       {data.top.length > 0 && (
-        <section dir="rtl" className="border border-border bg-surface">
-          <div className="border-b border-border px-4 py-2.5">
+        <Card as="section" dir="rtl">
+          <CardHeader>
             <h2 className="text-sm font-extrabold text-fg">أبرز التريندات</h2>
-          </div>
+          </CardHeader>
           <div className="p-4">
             <CompetitionInsightsSlider games={data.top} />
           </div>
-        </section>
+        </Card>
       )}
 
-      <section dir="rtl" className="border border-border bg-surface">
-        <div className="border-b border-border px-4 py-2.5">
+      <Card as="section" dir="rtl">
+        <CardHeader>
           <h2 className="text-sm font-extrabold text-fg">شائع</h2>
-        </div>
+        </CardHeader>
         <div className="divide-y divide-border">
           {data.all.map((g) => (
             <GameTrends key={g.gameId} g={g} />
           ))}
         </div>
-      </section>
+      </Card>
     </div>
   );
 }

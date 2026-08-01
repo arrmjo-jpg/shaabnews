@@ -5,11 +5,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 
 import { ReaderCanvasPage } from './reader-canvas-page';
 import { ReaderMobileBar } from './reader-mobile-bar';
-import { ReaderSearchPanel } from './reader-search-panel';
 import { ReaderThumbnails } from './reader-thumbnails';
 import { ReaderToolbar } from './reader-toolbar';
 import { usePdfDocument } from './use-pdf-document';
-import { usePdfSearch } from './use-pdf-search';
 import { useReadingMemory } from './use-reading-memory';
 
 const MIN_SCALE = 0.2;
@@ -52,7 +50,6 @@ function useMediaQuery(query: string): boolean {
 export function NewspaperReader({ src, storageId, title, backHref, downloadUrl }: NewspaperReaderProps) {
   const { doc, numPages, baseWidth, baseHeight, status } = usePdfDocument(src);
   const { read: readMemory, save: saveMemory } = useReadingMemory(storageId);
-  const { hits, searching, query, search, clear } = usePdfSearch(doc, numPages);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -64,7 +61,6 @@ export function NewspaperReader({ src, storageId, title, backHref, downloadUrl }
   const [rotation, setRotation] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [chromeVisible, setChromeVisible] = useState(true);
-  const [searchOpen, setSearchOpen] = useState(false);
 
   const isMobile = useMediaQuery('(max-width: 640px)');
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -229,16 +225,10 @@ export function NewspaperReader({ src, storageId, title, backHref, downloadUrl }
   }, [isFullscreen]);
 
   const print = useCallback(() => window.open(src, '_blank', 'noopener'), [src]);
-  const toggleSearch = useCallback(() => {
-    setSearchOpen((v) => {
-      if (v) clear();
-      return !v;
-    });
-  }, [clear]);
 
   // أوامر حيّة عبر ref.
-  const cmd = useRef({ scale, avail, zoomed, next, prev, goToPage, applyZoom, toggleFullscreen, toggleSearch });
-  cmd.current = { scale, avail, zoomed, next, prev, goToPage, applyZoom, toggleFullscreen, toggleSearch };
+  const cmd = useRef({ scale, avail, zoomed, next, prev, goToPage, applyZoom, toggleFullscreen });
+  cmd.current = { scale, avail, zoomed, next, prev, goToPage, applyZoom, toggleFullscreen };
 
   // لوحة المفاتيح.
   useEffect(() => {
@@ -256,9 +246,6 @@ export function NewspaperReader({ src, storageId, title, backHref, downloadUrl }
           e.preventDefault();
         } else if (e.key === '0') {
           setFitMode('width');
-          e.preventDefault();
-        } else if (e.key === 'f') {
-          c.toggleSearch();
           e.preventDefault();
         }
         return;
@@ -411,7 +398,6 @@ export function NewspaperReader({ src, storageId, title, backHref, downloadUrl }
           backHref={backHref}
           downloadUrl={downloadUrl}
           isFullscreen={isFullscreen}
-          searchActive={searchOpen}
           onGoToPage={(n) => goToPage(n)}
           onZoomIn={() => applyZoom(scale * 1.2)}
           onZoomOut={() => applyZoom(scale / 1.2)}
@@ -419,26 +405,11 @@ export function NewspaperReader({ src, storageId, title, backHref, downloadUrl }
           onFitPage={() => setFitMode('page')}
           onRotate={() => setRotation((r) => (r + 90) % 360)}
           onToggleFullscreen={toggleFullscreen}
-          onToggleSearch={toggleSearch}
           onPrint={print}
         />
       </div>
 
       <div className="relative flex min-h-0 flex-1">
-        <ReaderSearchPanel
-          open={searchOpen}
-          hits={hits}
-          searching={searching}
-          query={query}
-          currentPage={firstPage}
-          onSearch={search}
-          onJump={(p) => {
-            goToPage(p);
-            if (isMobile) setSearchOpen(false);
-          }}
-          onClose={toggleSearch}
-        />
-
         <div ref={stageRef} className="relative flex flex-1 touch-pan-y overflow-auto overscroll-contain">
           {status === 'loading' || !doc ? (
             <div className="m-auto">
