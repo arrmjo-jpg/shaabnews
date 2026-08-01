@@ -5,6 +5,12 @@
 
 import { PREFLIGHT_ENDPOINTS } from './critical-routes.mjs';
 
+// Deploy-verification marker (temporary — see the investigation that added this): if this line
+// is absent from a Coolify build log, Coolify is not building this commit, full stop.
+console.error('==================================================');
+console.error('BUILD-GATE-PREFLIGHT VERSION: de6aafa');
+console.error('==================================================');
+
 const base = (process.env.BUILD_API_BASE_URL ?? '').replace(/\/$/, '');
 const headers = process.env.INTERNAL_API_TOKEN
   ? { 'X-Internal-Token': process.env.INTERNAL_API_TOKEN }
