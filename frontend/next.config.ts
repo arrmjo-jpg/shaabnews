@@ -20,11 +20,19 @@ const nextConfig: NextConfig = {
   // قارئ الجريدة (Blade/SSR) يعيش في تطبيق Laravel؛ نمرّر مساراته وأصوله إلى أصل Next
   // ليصير القارئ القائم متاحاً من دومين الموقع دون إعادة بناء. مسبوق باللغة (ar|en) فلا
   // يتعارض مع صفحة /epaper (الهبوط في Next). /build/* أصول القارئ المبنيّة (pdf.js/cmaps/css).
+  //
+  // ROOT CAUSE FIX (كل تنزيل/عرض PDF للجريدة الرقمية يفشل بـ404 في الإنتاج): EpaperDocumentDelivery
+  // ::mint() يوقّع رابط بثّ احتياطي على /epaper/stream/{epaper} (بلا بادئة لغة — راجع
+  // routes/web.php) حين يتعذّر/يُعطَّل التخزين البعيد (RemoteStorage::enabled() === false فعليًا في
+  // الإنتاج الآن). هذا المسار لم يكن ضمن قواعد rewrites أعلاه (فقط /:locale/epaper/* و/build/*
+  // مغطّيان) فيسقط على راوتر Next نفسه ⇒ 404 قبل أن يصل لارافيل إطلاقاً — يفسّر فشل كل عرض/تنزيل
+  // PDF للجريدة حاليًا (لا استثناء نادر).
   async rewrites() {
     if (!API) return [];
     return [
       { source: "/:locale(ar|en)/epaper", destination: `${API}/:locale/epaper` },
       { source: "/:locale(ar|en)/epaper/:path*", destination: `${API}/:locale/epaper/:path*` },
+      { source: "/epaper/stream/:path*", destination: `${API}/epaper/stream/:path*` },
       { source: "/build/:path*", destination: `${API}/build/:path*` },
     ];
   },
