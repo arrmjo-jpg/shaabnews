@@ -8,11 +8,11 @@ import { HeroCard } from './featured-hero';
 
 const AUTOPLAY_MS = 5000;
 
-// كاروسيل الهيرو للموبايل فقط — نمط خبرني.كوم/الجزيرة: بطاقة كبيرة واحدة قابلة للسحب (سكرول-سناب
-// أصليّ، بلا مكتبة JS) بامتداد كامل الشاشة (بلا هوامش صفحة — يُعرَض خارج Container في
-// featured-hero.tsx)، مع تشغيل تلقائي، تكبير Ken Burns بطيء للصورة النشطة، وعمق بصري (تصغير/تعتيم
-// خفيف) للشرائح غير النشطة. على سطح المكتب هذا المكوّن لا يُستخدم إطلاقاً (FeaturedHero يبقي
-// التخطيط القديم: كرت رئيسي + شبكة 2×2 — بلا أي تغيير هناك).
+// كاروسيل الهيرو للموبايل فقط — نمط خبرني.كوم: بطاقة كبيرة واحدة قابلة للسحب (سكرول-سناب أصليّ،
+// بلا مكتبة JS)، داخل هوامش الصفحة العادية (لا امتداد كامل الشاشة)، بزوايا مدوّرة، أسهم دائريّة
+// شبه-شفّافة، ونقاط تنقّل بسيطة أسفل البطاقة. تشغيل تلقائي + تكبير Ken Burns بطيء للصورة النشطة
+// لمسة حيويّة إضافية بلا تعارض مع النمط المرجعي. على سطح المكتب هذا المكوّن لا يُستخدم إطلاقاً
+// (FeaturedHero يبقي التخطيط القديم: كرت رئيسي + شبكة 2×2 — بلا أي تغيير هناك).
 // scroll-snap بدل مكتبة كاروسيل: سحب لمسي أصيل من المتصفح، صفر إضافة حزمة جافاسكربت.
 export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -48,7 +48,7 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
   };
 
   // إيقاف مؤقت للتشغيل التلقائي عند أي تفاعل يدوي (سحب/سهم/نقطة)، يستأنف تلقائيًا بعد فترة خمول
-  // قصيرة — بنمط ستوريز إنستغرام، لا يقاطع المستخدم وهو يتصفّح يدويًا.
+  // قصيرة — لا يقاطع المستخدم وهو يتصفّح يدويًا.
   const pauseThenResume = () => {
     pausedRef.current = true;
     if (resumeTimer.current) clearTimeout(resumeTimer.current);
@@ -66,21 +66,17 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
       goTo(next);
     }, AUTOPLAY_MS);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- goTo/active عمداً: نعيد ضبط المؤقّت
-    // بعد كل تغيّر شريحة (يدويّ أو تلقائيّ) بدل تراكم مؤقّتات متوازية.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- active عمداً: نعيد ضبط المؤقّت بعد
+    // كل تغيّر شريحة (يدويّ أو تلقائيّ) بدل تراكم مؤقّتات متوازية.
   }, [items.length, active]);
 
   if (items.length === 0) return null;
 
   return (
-    <div
-      className="relative"
-      onTouchStart={pauseThenResume}
-      onPointerDown={pauseThenResume}
-    >
+    <div className="relative" onTouchStart={pauseThenResume} onPointerDown={pauseThenResume}>
       <div
         ref={trackRef}
-        className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="carousel-card-frame flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item, i) => (
           <div
@@ -88,22 +84,27 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
             ref={(el) => {
               slideRefs.current[i] = el;
             }}
-            className={`w-full shrink-0 snap-start transition-[transform,opacity] duration-500 ease-out ${
-              i === active ? 'carousel-slide-active scale-100 opacity-100' : 'scale-[0.97] opacity-80'
-            }`}
+            className="w-full shrink-0 snap-start"
           >
             {/* key يتغيّر مع تفعيل الشريحة فقط — يُعيد تركيب الصورة فيُعيد تشغيل Ken Burns من الصفر
                 في كل مرة تصبح هذه الشريحة نشطة (لا أول تحميل فقط). */}
-            <HeroCard key={i === active ? 'active' : 'idle'} item={item} variant="lead" priority={i === 0} cornerClassName="" />
+            <HeroCard
+              key={i === active ? 'active' : 'idle'}
+              item={item}
+              variant="lead"
+              priority={i === 0}
+              cornerClassName={i === active ? 'carousel-slide-active' : ''}
+            />
           </div>
         ))}
       </div>
 
       {items.length > 1 && (
         <>
-          {/* أسهم التنقّل — scrollIntoView على الشريحة الهدف (لا scrollBy) فيتفادى تمامًا مشكلة
-              إشارة scrollLeft المتضاربة بين المتصفحات في حاويات RTL. carousel-pill بدل rounded-full:
-              راجع globals.css — قاعدة "Square design" العامة تُسطّح rounded-full بلا هذا الاستثناء. */}
+          {/* أسهم دائريّة شبه-شفّافة، بحجم أكبر يناسب اللمس (48px) — carousel-pill بدل rounded-full:
+              راجع globals.css، قاعدة "Square design" العامة تُسطّح rounded-full بلا هذا الاستثناء.
+              scrollIntoView على الشريحة الهدف (لا scrollBy) يتفادى تمامًا مشكلة إشارة scrollLeft
+              المتضاربة بين المتصفحات في حاويات RTL. */}
           <button
             type="button"
             aria-label="الشريحة السابقة"
@@ -112,9 +113,9 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
               pauseThenResume();
             }}
             disabled={active === 0}
-            className="carousel-pill absolute start-3 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center border border-white/20 bg-black/35 text-white shadow-lg backdrop-blur-md transition-opacity active:scale-95 disabled:opacity-0"
+            className="carousel-pill absolute start-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-black/40 text-white shadow-lg backdrop-blur-sm transition-opacity active:scale-95 disabled:opacity-0"
           >
-            <span aria-hidden className="text-xl leading-none">‹</span>
+            <span aria-hidden className="text-2xl leading-none">‹</span>
           </button>
           <button
             type="button"
@@ -124,15 +125,14 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
               pauseThenResume();
             }}
             disabled={active === items.length - 1}
-            className="carousel-pill absolute end-3 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center border border-white/20 bg-black/35 text-white shadow-lg backdrop-blur-md transition-opacity active:scale-95 disabled:opacity-0"
+            className="carousel-pill absolute end-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-black/40 text-white shadow-lg backdrop-blur-sm transition-opacity active:scale-95 disabled:opacity-0"
           >
-            <span aria-hidden className="text-xl leading-none">›</span>
+            <span aria-hidden className="text-2xl leading-none">›</span>
           </button>
 
-          {/* نقاط التنقّل — تتحوّل النقطة النشطة لشريط تقدّم صغير يمتلئ بمدّة التشغيل التلقائي،
-              بنمط ستوريز إنستغرام/الجزيرة، بدل نقطة ثابتة بلا حركة. */}
+          {/* نقاط تنقّل بسيطة (بلا شريط تقدّم) — النشطة أكبر وأكثر تباينًا، الباقي صغير شبه-شفّاف. */}
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex items-center justify-center gap-1.5 px-4"
+            className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex items-center justify-center gap-1.5"
             role="tablist"
             aria-label="شرائح الأخبار المميّزة"
           >
@@ -147,19 +147,10 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
                   goTo(i);
                   pauseThenResume();
                 }}
-                className={`carousel-pill pointer-events-auto relative h-1.5 overflow-hidden bg-white/35 backdrop-blur-sm transition-all duration-300 ${
-                  i === active ? 'w-8' : 'w-1.5'
+                className={`carousel-pill pointer-events-auto transition-all duration-300 ${
+                  i === active ? 'size-2.5 bg-white' : 'size-2 bg-white/50'
                 }`}
-              >
-                {i === active && (
-                  <span
-                    key={`progress-${active}`}
-                    className="carousel-pill carousel-progress-fill absolute inset-y-0 start-0 bg-white"
-                    style={{ animationDuration: `${AUTOPLAY_MS}ms` }}
-                    aria-hidden
-                  />
-                )}
-              </button>
+              />
             ))}
           </div>
         </>

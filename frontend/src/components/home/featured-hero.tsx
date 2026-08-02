@@ -26,32 +26,30 @@ export function FeaturedHero({ items }: { items: FeedItem[] }) {
   const grid = rest.slice(0, 4);
 
   return (
-    <div className="py-6 sm:py-8">
-      {/* الموبايل فقط: كاروسيل قابل للسحب بامتداد كامل الشاشة (بلا هوامش Container — عمدًا خارج
-          الحاوية أدناه) — بطاقة واحدة كبيرة تعرض نفس الأخبار (lead + grid) كشرائح، بنمط
-          خبرني.كوم/الجزيرة (تشغيل تلقائي + نقاط-تقدّم + أسهم + Ken Burns، بلا شبكة 2×2 ظاهرة على
+    <Container className="py-6 sm:py-8">
+      {/* الموبايل فقط: كاروسيل قابل للسحب داخل هوامش الصفحة العادية (كما Container أدناه — لا
+          امتداد كامل الشاشة) — بطاقة واحدة كبيرة بزوايا مدوّرة تعرض نفس الأخبار (lead + grid)
+          كشرائح، بنمط خبرني.كوم (تشغيل تلقائي + أسهم دائرية + نقاط، بلا شبكة 2×2 ظاهرة على
           الموبايل إطلاقاً — راجع mobile-hero-carousel.tsx). سطح المكتب غير متأثر بتاتًا: التخطيط
           القديم أدناه (كرت رئيسي + شبكة) يبقى hidden لحد lg فقط، بلا أي تعديل على منطقه أو مظهره. */}
       <div className="lg:hidden">
         <MobileHeroCarousel items={items.slice(0, 5)} />
       </div>
 
-      <Container className="hidden lg:block">
-        <div className="flex transform-gpu flex-row will-change-transform">
-          <div className="relative lg:w-1/2">
-            <HeroCard item={lead} variant="lead" priority cornerClassName="hero-corner-lead" />
-            <div className="featured-accent-marker" aria-hidden />
-          </div>
-          {grid.length > 0 && (
-            <div className="grid grid-cols-2 lg:w-1/2">
-              {grid.map((item, i) => (
-                <HeroCard key={item.id} item={item} variant="grid" cornerClassName={GRID_CORNER_CLASSES[i]} />
-              ))}
-            </div>
-          )}
+      <div className="hidden transform-gpu will-change-transform lg:flex lg:flex-row">
+        <div className="relative lg:w-1/2">
+          <HeroCard item={lead} variant="lead" priority cornerClassName="hero-corner-lead" />
+          <div className="featured-accent-marker" aria-hidden />
         </div>
-      </Container>
-    </div>
+        {grid.length > 0 && (
+          <div className="grid grid-cols-2 lg:w-1/2">
+            {grid.map((item, i) => (
+              <HeroCard key={item.id} item={item} variant="grid" cornerClassName={GRID_CORNER_CLASSES[i]} />
+            ))}
+          </div>
+        )}
+      </div>
+    </Container>
   );
 }
 
