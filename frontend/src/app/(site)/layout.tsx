@@ -8,7 +8,7 @@ import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
 import { LeagueMatchesTicker } from '@/components/sport/league-matches-ticker';
 import { getMatchBar } from '@/lib/match-bar';
-import { getSiteSettings, resolveNewspaperGate } from '@/lib/site-settings';
+import { getNavCategories, getSiteSettings, resolveNewspaperGate } from '@/lib/site-settings';
 
 // سقف ISR على مستوى الـlayout — لا الصفحة — لأنّ SiteHeader/SiteFooter (يعتمدان
 // getSiteSettings/getNavCategories) يُعرَّفان هنا، لا في أيّ صفحة فرديّة. أي صفحة بلا
@@ -25,13 +25,25 @@ export const revalidate = 36000;
 // Public news-site chrome. شريط أسفل الهيدر متجاوب: الموبايل = أقسام الموقع التحريريّة، سطح المكتب = روابط الوسائط.
 // (الوسائط على الموبايل في القائمة الجانبيّة + الشريط السفليّ.) لوحة /account خارج هذه المجموعة بقالب خاصّ.
 export default async function SiteLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [settings, matchBarMatches] = await Promise.all([getSiteSettings(), getMatchBar()]);
+  const [settings, matchBarMatches, navCategories] = await Promise.all([
+    getSiteSettings(),
+    getMatchBar(),
+    getNavCategories(),
+  ]);
   // ظهور الرابط سياسة "معروفة ومفعّلة فقط" — غير معروف/معطّل كلاهما يُخفيان الرابط (سلوك
   // قائم لم يتغيّر)؛ خلافاً لبوّابة notFound() في epaper/newspaper، التي تفرّق الآن بين
   // 'unknown' و'disabled' (راجع resolveNewspaperGate).
   const mediaSections = resolveNewspaperGate(settings) === 'enabled'
     ? [...SECTIONS_NAV, { label: 'الجريدة الرقمية', href: '/epaper' }]
     : SECTIONS_NAV;
+
+  // أقسام الموبايل الحقيقية (CMS، نفس مصدر MainNav على سطح المكتب) — بدل التسميات الثابتة
+  // القديمة (MOBILE_SECTION_NAV) اللي كانت تربط لصفحة بحث، لا لقسم حقيقي. مستوى أوّل فقط
+  // (بلا الأبناء) يناسب شريطاً أفقياً قابلاً للسكرول. Fallback لنفس القائمة الثابتة القديمة
+  // حين لا توجد أقسام مفعَّلة بالـCMS — يطابق سلوك MainNav (main-nav.tsx) تماماً.
+  const mobileCategorySections = navCategories.length > 0
+    ? navCategories.map((cat) => ({ label: cat.name, href: cat.href }))
+    : MOBILE_SECTION_NAV;
 
   return (
     <>
@@ -40,8 +52,8 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
           الإبداع يتوسّط أفقيًّا؛ بلا إعلان ⇒ null (صفر DOM/مساحة فوق الهيدر). */}
       <AdZone zone="aalan_fwq_alhydr" className="flex justify-center px-4 py-2" />
       <SiteHeader />
-      {/* الموبايل: أقسام الموقع التحريريّة (سكرول) */}
-      <SectionsBar items={MOBILE_SECTION_NAV} className="lg:hidden" />
+      {/* الموبايل: أقسام الموقع التحريريّة الحقيقية من الـCMS (سكرول) */}
+      <SectionsBar items={mobileCategorySections} className="lg:hidden" />
       {/* سطح المكتب: روابط الوسائط (كما كان) */}
       <SectionsBar items={mediaSections} className="hidden lg:block" />
       {/* شريط المباريات — من Laravel حصريًّا (GET /api/v1/match-bar)، تحت شريط الريلز/الفيديو،

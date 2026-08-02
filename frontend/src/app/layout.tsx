@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 
 import './globals.css';
+import { SiteLogo } from '@/components/branding/site-logo';
+import { RouteLoadingOverlay } from '@/components/layout/route-loading-overlay';
 import { Analytics } from '@/components/seo/analytics';
 import { JsonLd } from '@/components/seo/json-ld';
 import { ResourceHints } from '@/components/seo/resource-hints';
@@ -24,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // Root shell only — global head/SEO/perf. Site chrome lives in (site)/layout; the dashboard
 // (/account) ships its own shell. So route groups decide their own chrome.
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   // suppressHydrationWarning على <html>: إضافات المتصفّح (مثل crxlauncher) تحقن سمات قبل ترطيب React ⇒ عدم تطابق
   // زائف؛ يُسكِت سمات <html> نفسه فقط، لا الأبناء (فلا يُخفي عدم تطابق حقيقيّ في التطبيق).
   return (
@@ -34,6 +36,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {children}
         <JsonLd />
         <Analytics />
+        {/* شعار Server Component (يجيب إعدادات الموقع) يُمرَّر children لمكوّن عميليّ — لا يقدر
+            RouteLoadingOverlay ('use client') يستدعي SiteLogo غير المتزامن بنفسه. */}
+        <RouteLoadingOverlay logo={<SiteLogo variant="light" priority />} />
       </body>
     </html>
   );

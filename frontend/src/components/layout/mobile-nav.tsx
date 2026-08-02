@@ -13,9 +13,21 @@ export type MobileNavPage = { id: number; title: string; href: string };
 
 // القائمة الجانبيّة (Radix Sheet، Focus-trap + Escape + scroll-lock) — **روابط الوسائط** (فيديوهات/الريلز/البث/جدول
 // الرياضة/أسعار الذهب/الطقس) + **الصفحات الثابتة** (CMS). أقسام الموقع التحريريّة في الشريط الأفقيّ تحت الهيدر (لا تُكرَّر).
-export function MobileNav({ staticPages = [] }: { staticPages?: MobileNavPage[] }) {
+export function MobileNav({
+  staticPages = [],
+  newspaperEnabled = false,
+}: {
+  staticPages?: MobileNavPage[];
+  /** بوّابة المنتج newspaper_enabled (نفس القيمة المحسوبة في SiteHeader) — تضيف "الجريدة
+   * الرقمية" لهذي القائمة تمامًا كما تُضاف لشريط الوسائط على سطح المكتب (mediaSections في
+   * (site)/layout.tsx). كانت غائبة هنا لأنّ SECTIONS_NAV يُستورَد خامًا بلا هذا المنطق. */
+  newspaperEnabled?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const sections = newspaperEnabled
+    ? [...SECTIONS_NAV, { label: 'الجريدة الرقمية', href: '/epaper' }]
+    : SECTIONS_NAV;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -37,7 +49,7 @@ export function MobileNav({ staticPages = [] }: { staticPages?: MobileNavPage[] 
         </div>
 
         <nav aria-label="التنقّل" className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
-          {SECTIONS_NAV.map((item) => (
+          {sections.map((item) => (
             <Link
               key={item.label}
               href={item.href}

@@ -4,6 +4,8 @@ import { Container } from '@/components/layout/container';
 import type { FeedItem } from '@/lib/feed';
 import { formatRelativeTime } from '@/lib/format';
 
+import { MobileHeroCarousel } from './mobile-hero-carousel';
+
 // كتلة الهيرو (الأخبار المميّزة is_featured): كرت رئيسيّ كبير + شبكة 2×2 — خمس صور تبدو ملاصقة
 // داخل كتلة واحدة بزوايا 15px مدوَّرة (الأربع الخارجية فقط، الحواف الداخلية بينها حادّة).
 // **لا حاوية أمّ تقصّ (overflow:hidden) بعد الآن** — كانت موجودة على الصفّ الخارجي، لكنها تقصّ
@@ -24,21 +26,32 @@ export function FeaturedHero({ items }: { items: FeedItem[] }) {
   const grid = rest.slice(0, 4);
 
   return (
-    <Container className="py-6 sm:py-8">
-      <div className="flex transform-gpu flex-col will-change-transform lg:flex-row">
-        <div className="relative lg:w-1/2">
-          <HeroCard item={lead} variant="lead" priority cornerClassName="hero-corner-lead" />
-          <div className="featured-accent-marker" aria-hidden />
-        </div>
-        {grid.length > 0 && (
-          <div className="grid grid-cols-2 lg:w-1/2">
-            {grid.map((item, i) => (
-              <HeroCard key={item.id} item={item} variant="grid" cornerClassName={GRID_CORNER_CLASSES[i]} />
-            ))}
-          </div>
-        )}
+    <div className="py-6 sm:py-8">
+      {/* الموبايل فقط: كاروسيل قابل للسحب بامتداد كامل الشاشة (بلا هوامش Container — عمدًا خارج
+          الحاوية أدناه) — بطاقة واحدة كبيرة تعرض نفس الأخبار (lead + grid) كشرائح، بنمط
+          خبرني.كوم/الجزيرة (تشغيل تلقائي + نقاط-تقدّم + أسهم + Ken Burns، بلا شبكة 2×2 ظاهرة على
+          الموبايل إطلاقاً — راجع mobile-hero-carousel.tsx). سطح المكتب غير متأثر بتاتًا: التخطيط
+          القديم أدناه (كرت رئيسي + شبكة) يبقى hidden لحد lg فقط، بلا أي تعديل على منطقه أو مظهره. */}
+      <div className="lg:hidden">
+        <MobileHeroCarousel items={items.slice(0, 5)} />
       </div>
-    </Container>
+
+      <Container className="hidden lg:block">
+        <div className="flex transform-gpu flex-row will-change-transform">
+          <div className="relative lg:w-1/2">
+            <HeroCard item={lead} variant="lead" priority cornerClassName="hero-corner-lead" />
+            <div className="featured-accent-marker" aria-hidden />
+          </div>
+          {grid.length > 0 && (
+            <div className="grid grid-cols-2 lg:w-1/2">
+              {grid.map((item, i) => (
+                <HeroCard key={item.id} item={item} variant="grid" cornerClassName={GRID_CORNER_CLASSES[i]} />
+              ))}
+            </div>
+          )}
+        </div>
+      </Container>
+    </div>
   );
 }
 
