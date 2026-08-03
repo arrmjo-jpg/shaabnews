@@ -43,8 +43,18 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
     return () => observer.disconnect();
   }, [items.length]);
 
+  // تمرير أفقيّ داخل المسار حصرًا — لا scrollIntoView: تلك تُصعِّد أحيانًا إلى تمرير الصفحة
+  // الرأسيّ كاملةً حتى نافذة العرض (window) لإعادة إظهار الشريحة، فيُرجع المستخدم لأعلى الصفحة
+  // كل خمس ثوانٍ (كل تبديل تلقائيّ) — خلل مُبلَّغ عنه. الفرق بين حافّتي الشريحة والمسار (بالبكسل
+  // الفعليّ من getBoundingClientRect) يعمل صحيحًا LTR/RTL كليهما بلا الحاجة لمعرفة إشارة
+  // scrollLeft (موجب/سالب) التي تختلف بين المتصفحات في RTL — نفس السبب الذي دفع لتفادي scrollBy
+  // المباشر سابقًا، لكن هنا القيمة مُشتقّة نسبيًّا من bounding rects لا من scrollLeft المطلق.
   const goTo = (index: number) => {
-    slideRefs.current[index]?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    const track = trackRef.current;
+    const slide = slideRefs.current[index];
+    if (!track || !slide) return;
+    const delta = slide.getBoundingClientRect().left - track.getBoundingClientRect().left;
+    track.scrollBy({ left: delta, behavior: 'smooth' });
   };
 
   // إيقاف مؤقت للتشغيل التلقائي عند أي تفاعل يدوي (سحب/سهم/نقطة)، يستأنف تلقائيًا بعد فترة خمول
@@ -103,8 +113,7 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
         <>
           {/* أسهم دائريّة شبه-شفّافة، بحجم أكبر يناسب اللمس (48px) — carousel-pill بدل rounded-full:
               راجع globals.css، قاعدة "Square design" العامة تُسطّح rounded-full بلا هذا الاستثناء.
-              scrollIntoView على الشريحة الهدف (لا scrollBy) يتفادى تمامًا مشكلة إشارة scrollLeft
-              المتضاربة بين المتصفحات في حاويات RTL. */}
+              goTo أعلاه تُمرِّر المسار حصرًا (راجع تعليقها) — لا تأثير على تمرير الصفحة هنا. */}
           <button
             type="button"
             aria-label="الشريحة السابقة"
