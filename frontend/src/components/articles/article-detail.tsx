@@ -2,6 +2,7 @@ import { ChevronDown, PenLine } from 'lucide-react';
 import Link from 'next/link';
 
 import { ArticleHeader } from './blocks/article-header';
+import { FontSizeControls } from './blocks/font-size-controls';
 import { ArticleMetadata } from './blocks/metadata-row';
 import { ReadingToolsBar } from './blocks/reading-tools';
 import { ArticleHero } from './blocks/hero-image';
@@ -123,7 +124,12 @@ export function ArticleDetailView({
       {!isOpinion && (
         <div className="space-y-2">
           <div className="border-t border-border/80 pt-1">
-            <ArticleMetadata publishedAt={article.publishedAt} readingTime={minutes} author={article.author} />
+            <ArticleMetadata
+              publishedAt={article.publishedAt}
+              readingTime={minutes}
+              author={article.author}
+              fontControlsClassName="hidden lg:flex"
+            />
           </div>
 
           <h1 className="text-[18px] font-extrabold leading-snug text-fg !mt-2 py-0">{article.title}</h1>
@@ -166,6 +172,12 @@ export function ArticleDetailView({
                   </div>
                 )
               )}
+
+              {/* الموبايل فقط: تحكّم حجم الخط أسفل الصورة مباشرة (نمط الجزيرة) بدل أعلى العنوان —
+                  سطح المكتب يبقى كما كان (داخل ArticleMetadata أعلاه، fontControlsClassName هناك). */}
+              <div className="mb-4 flex justify-end lg:hidden">
+                <FontSizeControls />
+              </div>
 
               <ArticleBody contentHtml={bodyHtml} excerpt={cleanExcerpt} />
             </div>

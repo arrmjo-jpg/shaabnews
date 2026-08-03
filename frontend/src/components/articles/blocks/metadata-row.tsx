@@ -8,9 +8,12 @@ interface MetadataRowProps {
   publishedAt: string | null;
   readingTime: number;
   author: { id: number | null; name: string; isWriter: boolean } | null;
+  /** يُمرَّر لإخفاء تحكّم حجم الخط هنا على الموبايل حين يُعاد وضعه أسفل الصورة بدلاً منه
+   * (article-detail.tsx، مقالات الأخبار العادية فقط) — راجع FontSizeControls. */
+  fontControlsClassName?: string;
 }
 
-export function ArticleMetadata({ publishedAt, readingTime }: MetadataRowProps) {
+export function ArticleMetadata({ publishedAt, readingTime, fontControlsClassName }: MetadataRowProps) {
   const formatFullDateTime = (iso: string | null) => {
     if (!iso) return '';
     const d = new Date(iso);
@@ -82,7 +85,7 @@ export function ArticleMetadata({ publishedAt, readingTime }: MetadataRowProps) 
         ))}
       </div>
 
-      <FontSizeControls />
+      <FontSizeControls className={fontControlsClassName} />
     </div>
   );
 }

@@ -174,14 +174,17 @@ export function WeatherCard({ initial = null, compact = false }: { initial?: Wea
           // ── الوضع الكامل (عرض الموقع): عمودان ──
           <>
             <p className="mt-2 text-center text-sm text-white/80">{todayLabel()}</p>
-            <div className="mt-4 grid gap-6 lg:grid-cols-2 lg:gap-8">
+            <div className="mt-4 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
               {/* العمود 1 (يمين): الحالة الآن */}
-              <div className="flex flex-col justify-center lg:border-e lg:border-white/15 lg:pe-8">
+              <div className="flex min-w-0 flex-col justify-center lg:border-e lg:border-white/15 lg:pe-8">
                 <Hero c={c} big />
                 <DetailTiles c={c} />
               </div>
-              {/* العمود 2 (يسار): الساعيّ + الأسبوعيّ */}
-              <div className="flex flex-col justify-center gap-4">
+              {/* العمود 2 (يسار): الساعيّ + الأسبوعيّ — min-w-0 إلزاميّ: صناديق Grid/Flex تُبقي
+                  min-width:auto افتراضيًّا، فيمتدّ العمود ليطابق أقصى عرض محتوى HourlyStrip
+                  (السحب الأفقيّ) بدل احترام overflow-x-auto الداخليّ — يكسر البطاقة على الموبايل
+                  (تُقصّ بفعل overflow-hidden للأصل). */}
+              <div className="flex min-w-0 flex-col justify-center gap-4">
                 <HourlyStrip hourly={hourly} />
                 <DailyList days={days} />
               </div>
@@ -240,7 +243,7 @@ function DetailTile({ icon, value, label }: { icon: ReactNode; value: string; la
 function HourlyStrip({ hourly }: { hourly: Hourly[] }) {
   if (hourly.length === 0) return null;
   return (
-    <div className="backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ background: GLASS, borderRadius: 18 }}>
+    <div className="min-w-0 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ background: GLASS, borderRadius: 18 }}>
       <div className="flex gap-5 overflow-x-auto px-4 py-3">
         {hourly.map((h, i) => (
           <div key={i} className="flex shrink-0 flex-col items-center gap-1">

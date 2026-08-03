@@ -31,7 +31,7 @@ export async function SportPrimaryNav() {
         href="/"
         className="rounded-sm text-base font-bold text-muted outline-none transition-colors hover:text-fg focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none"
       >
-        الأخبار
+        الرجوع إلى الأخبار
       </Link>
       <SportSectionsDropdown items={resolved} />
     </nav>

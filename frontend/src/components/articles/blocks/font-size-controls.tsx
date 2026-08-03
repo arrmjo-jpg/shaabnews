@@ -6,7 +6,7 @@ import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 // أدوات التحكّم بحجم خط متن المقال — تكتب متغيّر CSS `--article-font-size` على <html>،
 // و`article-body.tsx` يقرأه عبر inline style مُقيَّد لمتن المقال فقط (لا يمسّ .tiptap-content
 // العام المستخدم في التعليقات/الصفحات الثابتة). حالة عرض بحتة (localStorage) — بلا اتصال شبكي.
-export function FontSizeControls() {
+export function FontSizeControls({ className = 'flex' }: { className?: string }) {
   const [, setFontSize] = useState(19);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function FontSizeControls() {
   };
 
   return (
-    <div className="flex items-center gap-1.5 text-xs sm:text-sm font-sans select-none print:hidden" dir="rtl">
+    <div className={`${className} items-center gap-1.5 text-xs sm:text-sm font-sans select-none print:hidden`} dir="rtl">
       <span className="text-muted font-bold me-1">التحكم بالخط:</span>
       <button
         type="button"

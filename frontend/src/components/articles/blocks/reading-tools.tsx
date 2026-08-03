@@ -81,8 +81,8 @@ export function ReadingToolsBar({ articleId, url, title, initialMetrics, ttsEnab
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 lg:hidden">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-nowrap items-center justify-between gap-2 border-t border-border pt-3 lg:hidden">
+        <div className="flex items-center gap-1.5">
           {getNetworks(url, title).map(({ key, label, href, Icon }) => (
             <button
               key={key}
@@ -90,9 +90,9 @@ export function ReadingToolsBar({ articleId, url, title, initialMetrics, ttsEnab
               onClick={() => handleShareClick(href)}
               aria-label={`مشاركة عبر ${label}`}
               title={label}
-              className="flex size-9 items-center justify-center bg-primary text-white transition-all hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-primary"
+              className="flex size-8 shrink-0 items-center justify-center bg-primary text-white transition-all hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-primary"
             >
-              <Icon size={18} />
+              <Icon size={16} />
             </button>
           ))}
 
@@ -101,31 +101,21 @@ export function ReadingToolsBar({ articleId, url, title, initialMetrics, ttsEnab
             onClick={() => void handleNativeShare()}
             aria-label="مشاركة عبر النظام"
             title="مشاركة"
-            className="flex size-9 items-center justify-center bg-surface-2 text-fg transition-all hover:-translate-y-0.5 hover:bg-surface-3 sm:hidden"
+            className="flex size-8 shrink-0 items-center justify-center bg-surface-2 text-fg transition-all hover:-translate-y-0.5 hover:bg-surface-3 sm:hidden"
           >
-            <Share2 className="size-[18px]" aria-hidden />
+            <Share2 className="size-4" aria-hidden />
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => void handleCopyLink()}
             aria-label="نسخ الرابط"
-            title="نسخ الرابط"
-            className="flex h-9 px-3 items-center gap-1.5 bg-primary text-white text-xs font-bold transition-all hover:bg-primary/90"
+            title={copied ? 'تم النسخ' : 'نسخ الرابط'}
+            className="flex size-8 shrink-0 items-center justify-center bg-primary text-white transition-all hover:bg-primary/90"
           >
-            {copied ? (
-              <>
-                <Check className="size-4 text-white animate-pulse" />
-                <span className="text-white font-bold">تم النسخ</span>
-              </>
-            ) : (
-              <>
-                <Link2 className="size-4" />
-                <span>نسخ الرابط</span>
-              </>
-            )}
+            {copied ? <Check className="size-3.5 animate-pulse" /> : <Link2 className="size-3.5" />}
           </button>
 
           <button
@@ -133,9 +123,9 @@ export function ReadingToolsBar({ articleId, url, title, initialMetrics, ttsEnab
             onClick={handlePrint}
             aria-label="طباعة الخبر"
             title="طباعة"
-            className="flex size-9 items-center justify-center bg-primary text-white transition-all hover:bg-primary/90"
+            className="flex size-8 shrink-0 items-center justify-center bg-primary text-white transition-all hover:bg-primary/90"
           >
-            <Printer className="size-4" />
+            <Printer className="size-3.5" />
           </button>
 
           <button
@@ -143,10 +133,9 @@ export function ReadingToolsBar({ articleId, url, title, initialMetrics, ttsEnab
             onClick={() => void toggleFavorite()}
             aria-label={favorited ? 'إزالة من المفضّلة' : 'حفظ في المفضّلة'}
             title={favorited ? 'محفوظ' : 'حفظ'}
-            className="flex h-9 px-3 items-center gap-1.5 bg-primary text-white font-bold transition-all hover:bg-primary/90"
+            className="flex size-8 shrink-0 items-center justify-center bg-primary text-white transition-all hover:bg-primary/90"
           >
-            <Bookmark className={`size-4 ${favorited ? 'fill-current' : ''}`} />
-            <span>{favorited ? 'محفوظ' : 'حفظ'}</span>
+            <Bookmark className={`size-3.5 ${favorited ? 'fill-current' : ''}`} />
           </button>
         </div>
       </div>
