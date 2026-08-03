@@ -15,12 +15,17 @@
 
 ### تسجيل الدخول
 ```
-POST /api/v1/admin/auth/login
-Body: { email, password, recaptcha_token? }
+POST /api/v1/admin/auth/login          — الويب (admin-frontend). محمي بـ reCAPTCHA.
+POST /api/v1/admin/auth/mobile-login   — تطبيق الموبايل. نفس المنطق تماماً، بلا reCAPTCHA.
+Body: { email, password }
 ```
-- Middleware: `throttle:admin.login` + `recaptcha:admin_login` (انظر §٣ في
-  [`03-TECHNICAL-CONSIDERATIONS-AND-GAPS.md`](03-TECHNICAL-CONSIDERATIONS-AND-GAPS.md) بخصوص أثر
-  reCAPTCHA v3 على عميل موبايل).
+- كلا المسارين ينفّذان نفس `AdminAuthController::login` → `AdminLoginAction` حرفياً — لا فرق في
+  منطق التحقّق أو الاستجابة، الفرق الوحيد في Middleware:
+  - `/login` (الويب): `throttle:admin.login` + `recaptcha:admin_login`.
+  - `/mobile-login`: `throttle:admin.login` فقط — **معفى عمداً من reCAPTCHA**، لأن v3 مصمَّم لسياق
+    متصفح ولا يعمل من عميل native. التفصيل والمقايضة الأمنية في
+    [`architecture/adr/ADR-012-mobile-login-recaptcha-exemption.md`](architecture/adr/ADR-012-mobile-login-recaptcha-exemption.md).
+  - لا حقل `recaptcha_token` في جسم الطلب من الموبايل إطلاقاً (لم يعد اختيارياً — المسار لا يفحصه).
 - منطق الرفض (بترتيب الفحص، `AdminLoginAction`):
   1. بريد/كلمة مرور غير صحيحين → رسالة خطأ موحّدة (لا تكشف وجود الحساب من عدمه).
   2. حساب `suspended` أو `banned` → `403`.
@@ -190,7 +195,7 @@ author{id,name}, published_at`.
 | PUT | `/epapers/{id}` | تعديل بيانات وصفية (لا يستبدل الملف) |
 | POST | `/epapers/{id}/replace-pdf` | استبدال ملف PDF (نسخة/إصدار جديد) |
 | POST | `/epapers/{id}/cover` | تعيين غلاف يدوياً (صورة) — بديل عن التوليد التلقائي |
-| POST | `/epapers/{id}/ocr/rerun` | إعادة تشغيل استخراج النص (**معطَّل بقرار منتج حالياً** — انظر §٣) |
+| POST | `/epapers/{id}/ocr/rerun` | إعادة تشغيل استخراج النص — **خط أنابيب حقيقي فعّال على الـ Backend (انظر أدناه)، لكن قرار منتج نهائي: خارج نطاق تطبيق الموبايل V1 بالكامل. لا يُستدعى من التطبيق، ولا شاشة/زر/حالة له. انظر §٣ للتفصيل** |
 | PATCH | `/epapers/{id}/status` | انتقال حالة |
 | POST | `/epapers/{id}/duplicate` | تكرار عدد كقالب لعدد جديد |
 | DELETE / restore / force | `/epapers/{id}` | حذف ناعم / استرجاع / نهائي |
@@ -200,15 +205,31 @@ author{id,name}, published_at`.
   `locale` (`ar`/`en`)، `access_level` (`public`/`subscriber`/`private`).
 - حقول تحريرية اختيارية منظَّمة: `brief_points[]` (نقاط موجزة)، `highlights[]` (أبرز الاقتباسات)،
   `inside_this_issue[]` (فهرس داخل العدد) — كل عنصر كائن صغير (title/why أو title/quote/page إلخ).
-- **`file`** إلزامي — `mimetypes:application/pdf`، **الحد الأقصى ~100 ميجابايت افتراضياً**
-  (`config('performance.media.pdf_max_kb', 102400)`). انظر §٢ من
-  [`03-TECHNICAL-CONSIDERATIONS-AND-GAPS.md`](03-TECHNICAL-CONSIDERATIONS-AND-GAPS.md) لأثر هذا على
-  تجربة الرفع من شبكة موبايل.
-- عند الإنشاء: يُخزَّن الـ PDF عبر نظام الوسائط المركزي، تُنشأ أول نسخة (`EpaperVersion`)، ويُجدوَل
-  توليد غلاف تلقائي من الصفحة الأولى في الخلفية (Job منفصل، لا ينتظره الطلب).
-- **ملاحظة صريحة من الكود:** استخراج النص/OCR معطَّل عمداً — "القارئ للعرض والتنزيل فقط، لا بحث
-  داخل النص ولا فهرسة" — رغم وجود مسار `ocr/rerun`، الحقول `text_layer`/`ocr_status`/`page_count`
-  تبقى فارغة حالياً بقرار منتج، ليست عيباً تقنياً.
+- **`file`** إلزامي — `mimetypes:application/pdf`، **الحد الأقصى ~100 ميجابايت** — لكن **تحقّق دقيق
+  لاحق (قبل Sprint 6) وجد أن `config('performance.media.pdf_max_kb', 102400)` يشير لمفتاح **غير
+  موجود فعليًا** في `config/performance.php` ولا أي env مقابل — القيمة `102400` تُستخدَم دائمًا
+  كافتراضية صامتة، **ليست قابلة للتهيئة فعليًا رغم أن الشكل يوحي بذلك**. انظر §٢ من
+  [`03-TECHNICAL-CONSIDERATIONS-AND-GAPS.md`](03-TECHNICAL-CONSIDERATIONS-AND-GAPS.md) لأثر الحجم
+  على تجربة الرفع من شبكة موبايل.
+- عند الإنشاء: يُخزَّن الـ PDF عبر نفس نظام الوسائط المركزي المستخدَم للأخبار/الريلز/الفيديو
+  (`StoreMediaAssetAction`، بما فيه Dedupe بـSHA-256) — لا مسار تخزين منفصل. يُجدوَل توليد غلاف تلقائي
+  من الصفحة الأولى في الخلفية عبر `pdftoppm` (Job منفصل، لا ينتظره الطلب).
+- **حالة استخراج النص/OCR على الـ Backend (للسياق فقط — انظر الفقرة التالية للنطاق الفعلي بالموبايل):**
+  خط الأنابيب فعلي وعامل (`pdftotext` أولاً، ثم Google Document AI اختياريًا كبديل احتياطي) وينتج نتائج
+  حقيقية عند تشغيله، لكنه لا يُشغَّل تلقائيًا عند الإنشاء أو استبدال الملف (قرار منتج Backend مقصود) —
+  فقط عبر استدعاء يدوي لـ `POST /{id}/ocr/rerun`. الحقول `text_layer`/`ocr_status`/`page_count` تبقى
+  فارغة حتى يُستدعى هذا المسار فعليًا لعدد معيّن.
+- **قرار منتج نهائي وخاص بتطبيق الموبايل (منفصل تمامًا عن حالة الـ Backend أعلاه):** OCR **ملغى
+  بالكامل من تطبيق الموبايل في V1**. لا استدعاء لـ `POST /{id}/ocr/rerun` من التطبيق، لا زر/شاشة/حالة
+  متعلقة بـ OCR أو Text Layer أو Page Count، ولا أي Repository/Controller/Provider مخصَّص له. تفصيل
+  إضافي في [`03-TECHNICAL-CONSIDERATIONS-AND-GAPS.md`](03-TECHNICAL-CONSIDERATIONS-AND-GAPS.md) §٣.
+- **لا يوجد مسار Preview مخصَّص** (بخلاف الأخبار) — تحقّقت من `EpaperController` بالكامل، لا `preview`
+  method ولا route مطابقة.
+- **سير العمل أبسط من الأخبار/الريلز/الفيديو:** أربع حالات فقط (`draft→scheduled→published→archived`،
+  لا `submitted/in_review/rejected`). النشر/الجدولة يتطلبان `media_asset_id` موجودًا فعلاً (خطأ
+  `epaper.media_required` 422 إن لم يوجد ملف بعد) — الحقل `status` نفس النمط الحرفي للأخبار.
+  الجدولة الفعلية تعمل عبر Cron حقيقي (`epapers:publish-due`، كل دقيقة) يفحص `published_at`، **وليس**
+  `publication_date` (ذلك حقل تحريري وصفي منفصل — تاريخ الغلاف، لا آلية الجدولة).
 
 **غلاف يدوي** (`POST /{id}/cover`, multipart): `mimetypes:image/jpeg,image/png,image/webp`،
 حد أقصى ~5 ميجابايت (`config('performance.media.image_max_kb', 5120)`).

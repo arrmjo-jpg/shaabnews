@@ -19,6 +19,12 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AdminAuthController::class, 'login'])
     ->middleware(['throttle:admin.login', 'recaptcha:admin_login']);
 
+// تسجيل دخول تطبيق الموبايل — نفس المنطق تمامًا، بلا reCAPTCHA (v3 مصمَّم لصفحة ويب، لا يعمل من
+// عميل native؛ الحماية التعويضية هي نفس throttle:admin.login الصارم: 5 محاولات/دقيقة لكل IP).
+// راجع docs/mobile/architecture/adr/ADR-012-mobile-login-recaptcha-exemption.md.
+Route::post('/mobile-login', [AdminAuthController::class, 'login'])
+    ->middleware(['throttle:admin.login']);
+
 Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword'])
     ->middleware(['throttle:admin.forgot-password', 'recaptcha:admin_forgot_password']);
 

@@ -7,6 +7,25 @@
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      جسر مصادقة تطبيق الموبايل (ADR-013): يقرأ توكن Sanctum من fragment الرابط
+      (لا query string — يُرسَل مع الطلب فيظهر في سجلّات الخادم) ويكتبه في
+      localStorage قبل تحميل React، لتفادي سباق AuthProvider.hydrate() الذي
+      يقرأ localStorage synchronous عند أول mount. المفتاح 'alphacms.admin.token'
+      حرفي مطابق لـ STORAGE_KEYS.token في src/lib/constants.ts.
+    -->
+    <script>
+      (function () {
+        var m = (window.location.hash || '').match(/(?:^#|&)mobile_token=([^&]+)/);
+        if (!m) return;
+        try {
+          window.localStorage.setItem('alphacms.admin.token', decodeURIComponent(m[1]));
+        } catch (e) {}
+        var cleaned = window.location.hash.replace(/(?:^#|&)mobile_token=[^&]+/, '');
+        if (cleaned === '#') cleaned = '';
+        history.replaceState(null, '', window.location.pathname + window.location.search + cleaned);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

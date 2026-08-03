@@ -138,3 +138,27 @@ it('protects admin login with recaptcha', function (): void {
         'email' => 'admin@a.test', 'password' => 'password123', 'recaptcha_token' => 'tok',
     ])->assertOk();
 });
+
+// ─── Enforcement: mobile login (معفى عمداً من reCAPTCHA) ───────────────
+
+it('exempts mobile login from recaptcha even when enabled', function (): void {
+    enableRecaptcha('v3', 0.5);
+    $admin = User::factory()->create(['email' => 'admin@a.test', 'password' => Hash::make('password123')]);
+    $admin->assignRole('super_admin');
+
+    // بلا recaptcha_token إطلاقًا → ينجح رغم أن الحماية مفعّلة
+    $this->postJson('/api/v1/admin/auth/mobile-login', [
+        'email' => 'admin@a.test', 'password' => 'password123',
+    ])->assertOk();
+});
+
+it('keeps web admin login enforcing recaptcha independently of the mobile exemption', function (): void {
+    enableRecaptcha('v3', 0.5);
+    $admin = User::factory()->create(['email' => 'admin@a.test', 'password' => Hash::make('password123')]);
+    $admin->assignRole('super_admin');
+
+    // مسار الويب /login لا يتأثر بوجود /mobile-login — يبقى يرفض بلا token
+    $this->postJson('/api/v1/admin/auth/login', [
+        'email' => 'admin@a.test', 'password' => 'password123',
+    ])->assertStatus(422);
+});

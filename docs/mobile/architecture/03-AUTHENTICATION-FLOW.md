@@ -9,7 +9,7 @@
 
 ```
 شاشة الدخول (بريد + كلمة مرور)
-  → POST /admin/auth/login  (+ recaptcha_token إن كانت مفعّلة — انظر ⚠ أدناه)
+  → POST /admin/auth/mobile-login
   → نجاح: { token, user }
   → تخزين التوكن في flutter_secure_storage فورًا (لا يُترك في الذاكرة فقط)
   → GET /admin/auth/me  (تأكيد + جلب permissions[] الفعلية)
@@ -17,11 +17,11 @@
   → go_router redirect → '/'
 ```
 
-**⚠ اعتماد غير محسوم (موثَّق في `../requirements/03-TECHNICAL-CONSIDERATIONS-AND-GAPS.md` §١):**
-لو كانت حماية reCAPTCHA v3 مفعَّلة فعليًا على `/admin/auth/login` في هذا التنصيب، شاشة الدخول تحتاج
-حلاً تقنيًا لالتقاط `recaptcha_token` (لا حل SDK أصلي مباشر لـ reCAPTCHA v3 من تطبيق Flutter). **هذا
-قرار أمني منفصل يجب حسمه قبل بناء شاشة الدخول الفعلية** — التصميم هنا يفترض وجود الحقل اختياريًا في
-جسم الطلب دون افتراض الحل التقني له.
+**محسوم (كان اعتمادًا مفتوحًا هنا سابقًا):** التطبيق يستدعي `/admin/auth/mobile-login`، وهو مسار
+Backend مخصَّص للموبايل **معفى عمداً من حماية reCAPTCHA** التي يبقى مسار الويب `/admin/auth/login`
+محميًا بها كما هو. لا حقل `recaptcha_token` في جسم الطلب إطلاقًا — ليس لأنه اختياري، بل لأن هذا المسار
+لا يتحقّق منه أصلاً. التفصيل والمقايضة الأمنية في
+[`adr/ADR-012-mobile-login-recaptcha-exemption.md`](adr/ADR-012-mobile-login-recaptcha-exemption.md).
 
 ## ٢) تسلسل بدء التشغيل (Bootstrap) — كل فتحة تطبيق
 
