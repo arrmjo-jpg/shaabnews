@@ -43,11 +43,12 @@
 x-dev-container-network: &dev-container-network
   environment:
     DB_HOST: host.docker.internal
-    # منفذ 3307 لا 3306: منفذ 3306 على هذا الجهاز يحتله أحيانًا مشروع Docker آخر غير مرتبط
+    # منفذ 3309 لا 3306: منفذ 3306 على هذا الجهاز يحتله أحيانًا مشروع Docker آخر غير مرتبط
     # (quran_platform)، فتفشل app-db أدناه في ربط 3306 بصمت (لا خطأ صريح، فقط لا نشر للمنفذ)
-    # ويصبح host.docker.internal:3306 غير قابل للوصول. 3307 يتجنّب أي تعارض محتمل بدل الاعتماد
-    # على أن يكون 3306 حرًا دائمًا على مضيف مشترك بين عدة مشاريع.
-    DB_PORT: 3307
+    # ويصبح host.docker.internal:3306 غير قابل للوصول. 3307 كان الاختيار الأصليّ لتفادي هذا
+    # التعارض، لكن حاوية يتيمة أخرى (shaabjo-legacy-db-1، من مشروع/تهيئة سابقة) احتلّت 3307
+    # فعليًّا على هذا الجهاز — 3309 يتفادى كلا التعارضين المعروفين بدل إيقاف تلك الحاوية اليتيمة.
+    DB_PORT: 3309
     REDIS_HOST: host.docker.internal
     # نفس سبب DB_PORT أعلاه — 6379 قد يحتلّه مشروع آخر على هذا الجهاز.
     REDIS_PORT: 6380
@@ -95,9 +96,9 @@ services:
       # is the official mysql-image mechanism for a blank-password root login (not a workaround).
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     ports:
-      # 3307 (not 3306): must match DB_PORT in the x-dev-container-network anchor above — see its
-      # comment for why 3306 isn't used directly.
-      - "3307:3306"
+      # 3309 (not 3306): must match DB_PORT in the x-dev-container-network anchor above — see its
+      # comment for why 3306/3307 aren't used.
+      - "3309:3306"
     volumes:
       - app_db_data:/var/lib/mysql
     healthcheck:

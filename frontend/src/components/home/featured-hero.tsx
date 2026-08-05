@@ -74,16 +74,13 @@ export function HeroCard({
   const isLead = variant === 'lead';
 
   return (
-    // الجوّال: lead بارتفاع ثابت 500px (الصغير بنسبة 16:9، لا يظهر على الجوّال أصلاً)؛
-    // سطح المكتب (fixedHeight): ارتفاع ثابت أطول (lead 470px، الصغير 235px×2 = يطابق ارتفاع lead).
-    // w-full إلزاميّ مع h-[500px] هنا: aspect-video (aspect-ratio) يتجاهل width:auto العاديّ لصندوق
-    // block ويحسب العرض من الارتفاع الصريح بدلاً منه إن بقي width:auto — يُنتج عرضًا فائضًا هائلاً
-    // (500×16/9≈889px) يكسر الكاروسيل. width صريح (w-full) يُسقط أثر aspect-ratio على العرض.
+    // الجوّال: نسبة 16:9 لكلا variant (aspect-video من الصنف الأساسي أدناه)؛ سطح المكتب
+    // (fixedHeight): ارتفاع ثابت أطول (lead 470px، الصغير 235px×2 = يطابق ارتفاع lead).
     <div
       className={`hero-slider-item group relative block aspect-video transform-gpu overflow-hidden bg-surface-2 will-change-transform ${
         fixedHeight
           ? isLead
-            ? 'w-full h-[500px] lg:aspect-auto lg:h-[470px]'
+            ? 'lg:aspect-auto lg:h-[470px]'
             : 'lg:aspect-auto lg:h-[235px]'
           : ''
       } ${cornerClassName}`}
