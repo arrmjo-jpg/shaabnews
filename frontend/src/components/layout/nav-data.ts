@@ -57,7 +57,11 @@ export const MEDIA_FOOTER_LINKS: NavLink[] = [
 // Platform links not modeled as CMS pages. "الكتّاب" (writers directory) and "فرص العمل"
 // (careers) were dropped: the writers directory page/components were removed in the site
 // refactor and careers has no backend feature at all — neither had a real destination to link to.
+// "فريق العمل" points at /team (frontend/src/app/(site)/team) — backed by a real CMS model
+// (TeamMember) with its own API, but not modeled as a generic CMS "page", hence hardcoded here
+// like its siblings rather than coming through getStaticPages().
 export const PLATFORM_LINKS: NavLink[] = [
   { label: 'اتصل بنا', href: '/contact' },
+  { label: 'فريق العمل', href: '/team' },
   { label: 'أعلن معنا', href: '/advertise' },
 ];

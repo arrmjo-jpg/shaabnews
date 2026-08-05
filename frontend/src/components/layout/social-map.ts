@@ -3,14 +3,19 @@ import type { ComponentType } from 'react';
 import {
   FacebookIcon,
   InstagramIcon,
+  LinkedinIcon,
+  TikTokIcon,
+  WebsiteIcon,
   WhatsappIcon,
   XIcon,
   YoutubeIcon,
   type SocialIconProps,
 } from '@/components/icons';
 
-// خريطة مفاتيح التواصل (من إعدادات الموقع `social`) → أيقونة العلامة + تسمية وصوليّة.
-// مصدر واحد يتشاركه الفوتر ولوحة «بيانات التواصل» (اتصل بنا/أعلن معنا) — لا منطق مكرَّر.
+// خريطة مفاتيح التواصل (من إعدادات الموقع `social` أو TeamMember::SOCIAL_KEYS) → أيقونة العلامة +
+// تسمية وصوليّة. مصدر واحد يتشاركه الفوتر ولوحة «بيانات التواصل» (اتصل بنا/أعلن معنا) وصفحات فريق
+// العمل — لا منطق مكرَّر. tiktok/linkedin/website/twitter_x أُضيفت خصّيصًا لتغطية
+// TeamMember::SOCIAL_KEYS بالكامل (كانت مفاتيحها الإضافية تُسقَط بصمت قبل هذا التوسيع).
 export interface SocialEntry {
   key: string;
   url: string;
@@ -22,9 +27,13 @@ const SOCIAL: Record<string, { Icon: ComponentType<SocialIconProps>; label: stri
   facebook: { Icon: FacebookIcon, label: 'فيسبوك' },
   x: { Icon: XIcon, label: 'إكس' },
   twitter: { Icon: XIcon, label: 'إكس' },
+  twitter_x: { Icon: XIcon, label: 'إكس' },
   instagram: { Icon: InstagramIcon, label: 'إنستغرام' },
   youtube: { Icon: YoutubeIcon, label: 'يوتيوب' },
   whatsapp: { Icon: WhatsappIcon, label: 'واتساب' },
+  tiktok: { Icon: TikTokIcon, label: 'تيك توك' },
+  linkedin: { Icon: LinkedinIcon, label: 'لينكدإن' },
+  website: { Icon: WebsiteIcon, label: 'الموقع الإلكتروني' },
 };
 
 const isHttpUrl = (v: unknown): v is string => typeof v === 'string' && /^https?:\/\//i.test(v);

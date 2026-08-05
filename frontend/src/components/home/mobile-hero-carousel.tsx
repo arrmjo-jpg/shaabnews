@@ -114,15 +114,16 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
           {/* أسهم دائريّة شبه-شفّافة، بحجم أكبر يناسب اللمس (48px) — carousel-pill بدل rounded-full:
               راجع globals.css، قاعدة "Square design" العامة تُسطّح rounded-full بلا هذا الاستثناء.
               goTo أعلاه تُمرِّر المسار حصرًا (راجع تعليقها) — لا تأثير على تمرير الصفحة هنا. */}
+          {/* الأسهم تدور بلا توقّف (نفس منطق التشغيل التلقائي % items.length) — لا تعطيل/اختفاء
+              عند أوّل/آخر شريحة؛ الوصول لآخر خبر يُعيد للأوّل بدل توقّف السهم. */}
           <button
             type="button"
             aria-label="الشريحة السابقة"
             onClick={() => {
-              goTo(Math.max(0, active - 1));
+              goTo((active - 1 + items.length) % items.length);
               pauseThenResume();
             }}
-            disabled={active === 0}
-            className="carousel-pill absolute start-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-black/40 text-white shadow-lg backdrop-blur-sm transition-opacity active:scale-95 disabled:opacity-0"
+            className="carousel-pill absolute start-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-black/40 text-white shadow-lg backdrop-blur-sm transition-opacity active:scale-95"
           >
             <span aria-hidden className="text-2xl leading-none">‹</span>
           </button>
@@ -130,11 +131,10 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
             type="button"
             aria-label="الشريحة التالية"
             onClick={() => {
-              goTo(Math.min(items.length - 1, active + 1));
+              goTo((active + 1) % items.length);
               pauseThenResume();
             }}
-            disabled={active === items.length - 1}
-            className="carousel-pill absolute end-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-black/40 text-white shadow-lg backdrop-blur-sm transition-opacity active:scale-95 disabled:opacity-0"
+            className="carousel-pill absolute end-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-black/40 text-white shadow-lg backdrop-blur-sm transition-opacity active:scale-95"
           >
             <span aria-hidden className="text-2xl leading-none">›</span>
           </button>

@@ -70,7 +70,7 @@ export async function SiteHeader() {
                 نفسه (داخل UserAuthSlot) فلا تظهر أي قفزة تخطيطية (Layout Shift). */}
             <UserAuthSlot variant="header" />
 
-            <MobileNav staticPages={staticPages} newspaperEnabled={newspaperEnabled} />
+            <MobileNav categories={navCategories} staticPages={staticPages} newspaperEnabled={newspaperEnabled} />
           </div>
         </Container>
       </header>

@@ -74,3 +74,21 @@ export function LinkedinIcon({ size = 20, ...props }: SocialIconProps) {
     </svg>
   );
 }
+
+export function TikTokIcon({ size = 20, ...props }: SocialIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false" {...props}>
+      <path d="M16.6 5.82c-.9-.9-1.4-2.12-1.4-3.4V2h-3.45v13.4a2.59 2.59 0 0 1-4.65 1.56 2.59 2.59 0 0 1 2.17-4.04c.24 0 .48.03.7.1V9.4a5.9 5.9 0 0 0-.7-.04A6.05 6.05 0 0 0 3.22 15.4 6.05 6.05 0 0 0 9.28 21.46a6.05 6.05 0 0 0 6.05-6.05V9.1a8.35 8.35 0 0 0 4.87 1.56V7.2a4.9 4.9 0 0 1-3.6-1.38z" />
+    </svg>
+  );
+}
+
+// أيقونة موقع إلكتروني عامّة (website) — كرة أرضية بسيطة، بنمط أيقونة إنستغرام (خطّ لا تعبئة).
+export function WebsiteIcon({ size = 20, ...props }: SocialIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false" {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
