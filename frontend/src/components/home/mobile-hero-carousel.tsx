@@ -111,9 +111,10 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
 
       {items.length > 1 && (
         <>
-          {/* أسهم دائريّة شبه-شفّافة، بحجم أكبر يناسب اللمس (48px) — carousel-pill بدل rounded-full:
-              راجع globals.css، قاعدة "Square design" العامة تُسطّح rounded-full بلا هذا الاستثناء.
-              goTo أعلاه تُمرِّر المسار حصرًا (راجع تعليقها) — لا تأثير على تمرير الصفحة هنا. */}
+          {/* أسهم دائريّة حمراء (bg-primary) بحجم أكبر يناسب اللمس (48px) — carousel-pill بدل
+              rounded-full: راجع globals.css، قاعدة "Square design" العامة تُسطّح rounded-full بلا
+              هذا الاستثناء. goTo أعلاه تُمرِّر المسار حصرًا (راجع تعليقها) — لا تأثير على تمرير
+              الصفحة هنا. */}
           {/* الأسهم تدور بلا توقّف (نفس منطق التشغيل التلقائي % items.length) — لا تعطيل/اختفاء
               عند أوّل/آخر شريحة؛ الوصول لآخر خبر يُعيد للأوّل بدل توقّف السهم. */}
           <button
@@ -123,7 +124,7 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
               goTo((active - 1 + items.length) % items.length);
               pauseThenResume();
             }}
-            className="carousel-pill absolute start-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-black/40 text-white shadow-lg backdrop-blur-sm transition-opacity active:scale-95"
+            className="carousel-pill absolute start-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-primary text-white shadow-lg transition-colors hover:bg-primary/90 active:scale-95"
           >
             <span aria-hidden className="text-2xl leading-none">‹</span>
           </button>
@@ -134,7 +135,7 @@ export function MobileHeroCarousel({ items }: { items: FeedItem[] }) {
               goTo((active + 1) % items.length);
               pauseThenResume();
             }}
-            className="carousel-pill absolute end-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-black/40 text-white shadow-lg backdrop-blur-sm transition-opacity active:scale-95"
+            className="carousel-pill absolute end-3 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-primary text-white shadow-lg transition-colors hover:bg-primary/90 active:scale-95"
           >
             <span aria-hidden className="text-2xl leading-none">›</span>
           </button>

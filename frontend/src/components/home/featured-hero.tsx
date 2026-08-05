@@ -74,13 +74,18 @@ export function HeroCard({
   const isLead = variant === 'lead';
 
   return (
-    // الجوّال: نسبة 16:9 لكلا variant (aspect-video من الصنف الأساسي أدناه)؛ سطح المكتب
-    // (fixedHeight): ارتفاع ثابت أطول (lead 470px، الصغير 235px×2 = يطابق ارتفاع lead).
+    // الجوّال: lead = نسبة 16:9 + 40px إضافية (calc بدل رقم ثابت: 56.25vw هو ارتفاع 16:9 الفعليّ
+    // لعرض المسار داخل Container بعد خصم حشوته الأفقيّة px-4 على الجوّال؛ يبقى +40px صحيحًا مهما
+    // اختلف عرض الجهاز، بعكس رقم px ثابت يصحّ لعرض واحد فقط). الصغير يبقى 16:9 صِرفة (aspect-video
+    // الأساسي أدناه، لا يظهر على الجوّال أصلاً). w-full إلزاميّ مع أي ارتفاع صريح هنا: aspect-video
+    // (aspect-ratio) يتجاهل width:auto العاديّ لصندوق block ويحسب العرض من الارتفاع الصريح بدلاً
+    // منه إن بقي width:auto — عرض صريح (w-full) يُسقط أثر aspect-ratio على العرض.
+    // سطح المكتب (fixedHeight): ارتفاع ثابت أطول (lead 470px، الصغير 235px×2 = يطابق ارتفاع lead).
     <div
       className={`hero-slider-item group relative block aspect-video transform-gpu overflow-hidden bg-surface-2 will-change-transform ${
         fixedHeight
           ? isLead
-            ? 'lg:aspect-auto lg:h-[470px]'
+            ? 'w-full h-[calc(56.25vw_+_22px)] lg:aspect-auto lg:h-[470px]'
             : 'lg:aspect-auto lg:h-[235px]'
           : ''
       } ${cornerClassName}`}
@@ -110,8 +115,8 @@ export function HeroCard({
       <FeedBadge badge={item.badge} />
 
       <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-start gap-1.5 sm:gap-2 ${
-          isLead ? 'p-3 sm:p-4' : 'p-2 sm:p-3'
+        className={`pointer-events-none absolute inset-x-0 z-20 flex flex-col items-start gap-1.5 sm:gap-2 ${
+          isLead ? 'bottom-3 p-3 sm:p-4 lg:bottom-0' : 'bottom-0 p-2 sm:p-3'
         }`}
       >
         <div className="flex flex-wrap items-center gap-2">
