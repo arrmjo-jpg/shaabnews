@@ -54,7 +54,7 @@ export function BreakingBar({ items }: BreakingBarProps) {
     >
       {/* شارة «عاجل» بيضاء مع حافة مائلة تنفذ في لون الأساس */}
       <div className="breaking-badge relative z-10 flex shrink-0 items-center bg-surface px-4 sm:px-6">
-        <span className="text-base font-black tracking-tight text-primary motion-safe:animate-pulse sm:text-lg">عاجل</span>
+        <span className="text-2xl font-black tracking-tight text-primary motion-safe:animate-pulse lg:text-lg">عاجل</span>
         <span className="breaking-badge-skew absolute inset-y-0 bg-surface" aria-hidden />
       </div>
 

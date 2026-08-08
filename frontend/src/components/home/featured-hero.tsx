@@ -74,8 +74,8 @@ export function HeroCard({
   const isLead = variant === 'lead';
 
   return (
-    // الجوّال: lead = نسبة 16:9 + 40px إضافية (calc بدل رقم ثابت: 56.25vw هو ارتفاع 16:9 الفعليّ
-    // لعرض المسار داخل Container بعد خصم حشوته الأفقيّة px-4 على الجوّال؛ يبقى +40px صحيحًا مهما
+    // الجوّال: lead = نسبة 16:9 + 60px إضافية (calc بدل رقم ثابت: 56.25vw هو ارتفاع 16:9 الفعليّ
+    // لعرض المسار داخل Container بعد خصم حشوته الأفقيّة px-4 على الجوّال؛ يبقى +60px صحيحًا مهما
     // اختلف عرض الجهاز، بعكس رقم px ثابت يصحّ لعرض واحد فقط). الصغير يبقى 16:9 صِرفة (aspect-video
     // الأساسي أدناه، لا يظهر على الجوّال أصلاً). w-full إلزاميّ مع أي ارتفاع صريح هنا: aspect-video
     // (aspect-ratio) يتجاهل width:auto العاديّ لصندوق block ويحسب العرض من الارتفاع الصريح بدلاً
@@ -85,7 +85,7 @@ export function HeroCard({
       className={`hero-slider-item group relative block aspect-video transform-gpu overflow-hidden bg-surface-2 will-change-transform ${
         fixedHeight
           ? isLead
-            ? 'w-full h-[calc(56.25vw_+_22px)] lg:aspect-auto lg:h-[470px]'
+            ? 'w-full h-[calc(56.25vw_+_42px)] lg:aspect-auto lg:h-[470px]'
             : 'lg:aspect-auto lg:h-[235px]'
           : ''
       } ${cornerClassName}`}
@@ -130,7 +130,7 @@ export function HeroCard({
         <h3
           className={`underline-offset-2 group-hover:underline group-has-[:focus-visible]:underline ${
             isLead
-              ? 'line-clamp-3 font-heading text-base font-extrabold leading-tight text-white sm:text-lg'
+              ? 'line-clamp-3 font-heading text-[18px] font-extrabold leading-tight text-white sm:text-lg'
               : 'line-clamp-2 font-heading text-sm font-extrabold leading-tight text-white'
           }`}
         >
