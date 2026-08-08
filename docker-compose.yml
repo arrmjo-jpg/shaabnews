@@ -85,6 +85,33 @@ services:
       dockerfile: docker/php/Dockerfile
     expose:
       - "80"
+    # ROOT CAUSE FIX (outage 2026-08-07/08): frontend's build-gate-preflight.mjs must reach a
+    # LIVE backend during `npm run build` (BUILD_API_BASE_URL) — it previously pointed at the
+    # public https://api.harer.store, which only resolves through Traefik + DNS + TLS + an
+    # already-running backend container. When the backend was ever down for any reason, every
+    # subsequent deploy's frontend build failed at this gate too (since Coolify builds all
+    # images before replacing any container, a failed build left nothing running) — a
+    # self-perpetuating outage with no way to redeploy out of it. Publishing to the host here,
+    # reachable via host.docker.internal regardless of Traefik/DNS/TLS/container state, breaks
+    # that dependency chain.
+    # BACKEND_HOST_BIND: production (.env on the server) sets this to the docker0 bridge
+    # gateway IP (verified live: 10.0.0.1 on the current server — check `ip -4 addr show` there
+    # before reusing this value elsewhere, it is NOT a Docker-wide constant, just this daemon's
+    # configured default-address-pool). **NOT 127.0.0.1** — tried and empirically disproven
+    # during the 2026-08-08 fix: `host.docker.internal:host-gateway` (what BuildKit needs to
+    # resolve BUILD_API_BASE_URL above) resolves to the bridge gateway IP, a DIFFERENT interface
+    # than loopback — a service bound only to 127.0.0.1 refuses that traffic and every build
+    # timed out identically to the original outage. The bridge gateway IP is reachable from any
+    # container via host-gateway (confirmed with a real `docker build --add-host`) but NOT from
+    # the public internet (confirmed: curl to the public IP on this port times out) — traffic
+    # addressed to the server's public IP never lands on this interface, only traffic actually
+    # routed via the docker bridge does. Left unset here (default 0.0.0.0) so local dev keeps
+    # its existing LAN reachability (e.g. testing from a real phone at 192.168.x.x:8082,
+    # admin-app's "Real Device" launch config) unchanged — docker-compose.override.yml no
+    # longer redeclares this port itself, precisely to avoid two conflicting bind entries for
+    # the same host port.
+    ports:
+      - "${BACKEND_HOST_BIND:-0.0.0.0}:8082:80"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/up"]
       interval: 30s
@@ -180,6 +207,13 @@ services:
       secrets:
         - openweather_api_key
         - internal_api_token
+      # مطلوب لحلّ host.docker.internal *وقت البناء تحديدًا* — Docker Desktop (Windows/macOS) يحلّه
+      # تلقائيًا فيصير هذا السطر بلا أثر هناك، لكن على Linux Engine الحقيقي (سيرفر الإنتاج) لا حلّ
+      # تلقائي إطلاقًا حتى مع extra_hosts على مستوى الخدمة (ذاك وقت التشغيل فقط) — BuildKit يحتاج
+      # هذا المفتاح تحديدًا داخل build: نفسه. بلا هذا، backend:ports أعلاه بلا فائدة وقت البناء رغم
+      # صحّته وقت التشغيل، ويعود نفس عطل 2026-08-07/08 (BUILD_API_BASE_URL غير قابل للحلّ).
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
     image: alphacms-frontend:${CLIENT:-shaabjo}
     restart: unless-stopped
     environment:

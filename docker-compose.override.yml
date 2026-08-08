@@ -134,11 +134,13 @@ services:
     volumes:
       - ./storage/app/public:/var/www/html/storage/app/public:rw
       - ./public/uploads:/var/www/html/public/uploads:rw
-    ports:
-      # 8082 لا 8080: نفس سبب DB_PORT/REDIS_PORT/meilisearch أعلاه (تعارض منفذ محتمل مع مشروع
-      # Docker آخر على هذا الجهاز). يجب تحديث VITE_API_BASE_URL أدناه و.vscode/launch.json في
-      # admin-app بالتناسق مع أي تغيير هنا.
-      - "8082:80"
+    # المنفذ 8082 صار يُنشَر من docker-compose.yml نفسه (BACKEND_HOST_BIND) بدل تكراره هنا —
+    # Compose يدمج قوائم ports: (لا يستبدلها) بين الملفات، فإعادة إعلانه هنا كان سينتج مُدخلَين
+    # متنافسَين لنفس منفذ المضيف 8082 (واحد 127.0.0.1 محتمل من ملف الإنتاج، وآخر مفتوح من هنا)
+    # ويفشل `docker compose up` بخطأ "port is already allocated". الإعداد الافتراضي (0.0.0.0)
+    # في الملف الأساسي يطابق تمامًا السلوك السابق هنا (تعارض منفذ محتمل مع مشروع Docker آخر على
+    # هذا الجهاز هو سبب اختيار 8082 لا 8080 أصلاً) — أي تغيير للمنفذ يجب تحديث VITE_API_BASE_URL
+    # أدناه و.vscode/launch.json في admin-app بالتناسق معه كما كان سابقًا.
 
   worker:
     <<: *dev-container-network
