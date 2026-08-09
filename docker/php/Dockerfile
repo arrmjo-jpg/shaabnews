@@ -4,12 +4,22 @@
 # two queue workers, and the scheduler. Includes ffmpeg (video transcode) + image optimizers
 # (spatie/image-optimizer) + Redis ext, all needed by every role since they share job classes.
 #
-# Two-stage build:
+# Three-stage build:
 #   1) `vendor`  — resolves composer dependencies using the official composer:2 image. Isolated
 #      from the runtime image so git/composer (build-only tools, no legitimate use once the app
 #      is deployed) never end up in the final image, and so a PHP-extension change in the runtime
 #      stage can never invalidate this stage's cache (it only depends on composer.json/lock).
-#   2) `runtime` — the actual php:8.4-fpm image the containers run. Application code is copied
+#   2) `assets`  — builds resources/js + resources/css via Vite (laravel-vite-plugin) into
+#      public/build/manifest.json + compiled assets, INSIDE Docker. ROOT CAUSE FIX (2026-08-10):
+#      .dockerignore historically documented an "intentional" non-exclusion of public/build on the
+#      assumption a developer runs `npm run build` on the host BEFORE `docker build`, so the plain
+#      `COPY public ./public` below picks it up — worked by accident on a local checkout that had
+#      already run it once, but Coolify (and any fresh CI clone) never has public/build present at
+#      all (git-ignored, never built), so every @vite(...) call in resources/views/epaper/*.blade.php
+#      failed live with "Vite manifest not found at: public/build/manifest.json" on every request —
+#      confirmed via storage/logs/laravel.log on a freshly-built backend. This stage makes the build
+#      self-contained: no host-side pre-step required, works identically on any fresh clone.
+#   3) `runtime` — the actual php:8.4-fpm image the containers run. Application code is copied
 #      with an explicit allow-list (not `COPY . .`) so nothing outside Laravel's real runtime
 #      footprint can end up in the image, regardless of what the .dockerignore does or doesn't
 #      catch in the future (defense in depth — see .dockerignore for the primary fix).
@@ -29,6 +39,20 @@ COPY composer.json composer.lock ./
 RUN --mount=type=cache,target=/tmp/composer-cache,id=alphacms-composer \
     composer install --no-dev --no-interaction --no-progress --prefer-dist \
       --optimize-autoloader --no-scripts --ignore-platform-reqs
+
+FROM node:22-alpine AS assets
+WORKDIR /app
+# package*.json copied alone first (same cache-isolation pattern as the vendor stage above): this
+# layer only invalidates when a dependency actually changes, not on every resources/ edit.
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm,id=alphacms-npm npm ci
+COPY vite.config.js ./
+COPY resources ./resources
+# Writes public/build/manifest.json + compiled assets + (via vite.config.js's copyPdfjsAssets
+# plugin, a closeBundle hook) public/build/pdfjs/{cmaps,standard_fonts} — everything
+# resources/views/epaper/layout.blade.php's @vite(...) call and the PDF reader need, produced
+# entirely inside this stage with no dependency on the runtime stage or host state.
+RUN npm run build
 
 FROM php:8.4-fpm AS runtime
 
@@ -115,6 +139,9 @@ COPY lang ./lang
 # happened to name it. uploads/storage are belt-and-suspenders (docker-compose.yml bind-mounts
 # them at runtime); the archive globs are the actual fix for a repeat of that incident.
 COPY --exclude=uploads --exclude=storage --exclude=*.zip --exclude=*.tar --exclude=*.tar.gz public ./public
+# بعد COPY public أعلاه عمدًا كي لا يُستبدَل — الأصول المبنيّة من مرحلة assets (public/build)، لا
+# جزء من المستودع نفسه (gitignored)، فلا يوجد تعارض فعليّ، لكن الترتيب أوضح لقارئ الملف.
+COPY --from=assets /app/public/build ./public/build
 COPY resources ./resources
 COPY routes ./routes
 COPY artisan ./artisan

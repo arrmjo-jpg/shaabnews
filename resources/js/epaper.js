@@ -5,7 +5,6 @@
 
 import '../css/epaper.css';
 import { PdfReader } from './epaper/reader.js';
-import { ArchiveSearch } from './epaper/archive-search.js';
 
 function readJson(el) {
   if (!el) return {};
@@ -23,13 +22,6 @@ function boot() {
   if (reader && reader.getAttribute('data-doc-endpoint')) {
     const labels = readJson(reader.querySelector('script[data-epaper-i18n]'));
     void new PdfReader(reader, labels).init();
-  }
-
-  // بحث الأرشيف (صفحة الفهرس): تحسين تدريجيّ على شبكة الأعداد المُروّاة خادمياً.
-  const archive = document.querySelector('[data-epaper-archive]');
-  if (archive && archive.getAttribute('data-endpoint')) {
-    const labels = readJson(archive.querySelector('script[data-epaper-archive-i18n]'));
-    new ArchiveSearch(archive, labels).init();
   }
 }
 
