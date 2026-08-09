@@ -1,0 +1,107 @@
+# ── shaabnews-workers — independent Coolify Application ─────────────────────────────────────────
+#
+# worker / worker-media / scheduler, split out of the former unified docker-compose.yml.
+#
+# ROOT CAUSE this file exists to fix: previously these three ran `php artisan queue:work` /
+# `schedule:work` directly as the container's PID 1 (docker-compose `command:` replaces the
+# image's default CMD; docker/php/entrypoint.sh ends in `exec "$@"`, so the compose command
+# itself becomes PID 1). `queue:work --max-time=3600` exits *by design* every hour to guard
+# against memory leaks (exit 0, not a crash) — but since that was the container's own PID 1,
+# the WHOLE CONTAINER exited every hour too, and Docker's native RestartCount (which Coolify
+# reads via `docker container inspect` with zero distinction between a clean recycle and a real
+# crash) climbed accordingly. Once it crossed Coolify's "Max Restarts" threshold, Coolify called
+# StopApplication on the entire Application — which, before this split, was the SAME Application
+# as backend/frontend, so intentional hourly worker recycling was capable of taking down the
+# whole production site. Confirmed live via `journalctl -u docker` (exitCode=0 on every
+# high-restart-count container) during the 2026-08-09 incident investigation.
+#
+# THE FIX: each container's PID 1 is now `supervisord` (see docker/php/supervisord-*.conf),
+# which manages `queue:work`/`schedule:work` as a *child* process with autorestart=true.
+# Normal hourly recycling (exit 0, or any exit after the process has been up longer than
+# `startsecs`) is invisible to Docker — supervisord itself never exits, so RestartCount stays 0
+# and Coolify never sees a signal at all for this case. A GENUINE rapid, repeated crash (child
+# exits within `startsecs` more than `startretries` times) puts the program into supervisord's
+# FATAL state — at which point a small eventlistener (supervisor-fatal-exit.py, event
+# PROCESS_STATE_FATAL) deliberately terminates supervisord itself, so the *container* exits and
+# Docker's RestartCount DOES climb for a real failure — preserving a genuine crash signal for
+# Coolify/monitoring instead of silently swallowing every kind of failure forever.
+#
+# Separate Application from backend (not just a separate service in the same Application):
+# if a real, unrecoverable crash-loop does happen here despite the above, Coolify's
+# StopApplication only ever touches this Application — backend/frontend/admin are structurally
+# unable to be affected, no matter what.
+
+services:
+  worker:
+    image: alphacms-backend:latest
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: supervisord -c /etc/supervisor/conf.d-roles/worker.conf
+    volumes:
+      - ${STORAGE_PUBLIC_HOST_PATH:-/data/storage-public}:/var/www/html/storage/app/public:rw
+      - ${UPLOADS_HOST_PATH:-/data/uploads}:/var/www/html/public/uploads:rw
+    # الحد الأقصى الذي يمنحه Docker بين SIGTERM وSIGKILL للحاوية كلها — أعلى من stopwaitsecs=900
+    # في supervisord-worker.conf (الذي يُدير المهلة الفعلية لإنهاء queue:work بلطف)، كي يكمل
+    # supervisord مهلته الداخلية قبل أن يقطعها Docker من الخارج بقسوة.
+    stop_grace_period: 930s
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "queue:work redis --queue=default"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  worker-media:
+    image: alphacms-backend:latest
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: supervisord -c /etc/supervisor/conf.d-roles/worker-media.conf
+    volumes:
+      - ${STORAGE_PUBLIC_HOST_PATH:-/data/storage-public}:/var/www/html/storage/app/public:rw
+      - ${UPLOADS_HOST_PATH:-/data/uploads}:/var/www/html/public/uploads:rw
+    stop_grace_period: 2550s
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "queue:work redis-media"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  scheduler:
+    image: alphacms-backend:latest
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    command: supervisord -c /etc/supervisor/conf.d-roles/scheduler.conf
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "schedule:work"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+# GIT_SHA: يُمرَّر كـbuild arg من GitHub Actions (نفس github.sha المستخدَم لبناء backend في نفس
+# الخطوة/الـjob) ويُخبَز كـLABEL على الصورة (انظر docker/php/Dockerfile) — إثبات تتبّعي فعلي بأن
+# صورتَي backend وworkers جاءتا من نفس الالتزام، بدل الاعتماد على وسم `latest` كدليل تطابق (كان
+# قد يخفي أن أحدهما بُني من التزام مختلف عن الآخر لو أُعيد بناء واحد منهما بمعزل عن الآخر).
+
+# TODO (Phase E — يحتاج تحققًا حيًّا): عناوين Redis/MySQL/Meilisearch من شبكة هذا الـApplication —
+# نفس الملاحظة الموجودة في docker-compose.backend.yml. لا قيم مفترضة هنا.

@@ -32,6 +32,16 @@ RUN --mount=type=cache,target=/tmp/composer-cache,id=alphacms-composer \
 
 FROM php:8.4-fpm AS runtime
 
+# يُخبَز كتسمية تتبّعية على الصورة (لا سجلّ صور/registry بعد — قرار مُتَّخَذ عمدًا في مرحلة الانقسام
+# الحالية لتفادي تعقيد إضافي غير ضروريّ الآن). backend وworkers يُبنيان كلاهما من هذا الـDockerfile
+# بشكل مستقل (Coolify Application مختلف لكلّ منهما)، وبلا سجلّ مشترك لا يوجد إثبات آليّ بأنّ صورتيهما
+# جاءتا من نفس الالتزام سوى هذه التسمية — GitHub Actions يمرّر نفس github.sha لكليهما في نفس الخطوة
+# (انظر .github/workflows/deploy.yml)، وهذه التسمية تجعل ذلك قابلاً للتحقق فعليًا عبر
+# `docker inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}'`
+# بدل الاعتماد على وسم `latest` كدليل تطابق (لا يثبت شيئًا لو أُعيد بناء أحدهما بمعزل عن الآخر).
+ARG GIT_SHA=unknown
+LABEL org.opencontainers.image.revision=$GIT_SHA
+
 # System libraries + media tooling (all needed at RUNTIME, unlike git/composer which stay in the
 # `vendor` stage above). ffmpeg/ffprobe → video HLS/MP4 transcode; the optimizer binaries are
 # auto-detected by spatie/laravel-image-optimizer. unzip is kept (tiny, ~200KB) as a safety net
@@ -66,6 +76,19 @@ COPY docker/php/zz-fpm.conf /usr/local/etc/php-fpm.d/zz-fpm.conf
 COPY docker/php/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/php/nginx-backend.conf /etc/nginx/sites-available/default
 RUN rm -f /etc/nginx/sites-enabled/default && ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+
+# إعدادات Supervisor الخاصّة بأدوار worker/worker-media/scheduler (shaabnews-workers Application،
+# انظر docker-compose.workers.yml) — تعيش في مجلّد منفصل عن /etc/supervisor/conf.d/ عمدًا: ذاك
+# الأخير يُحمَّل تلقائيًا بالكامل عند أيّ استدعاء `supervisord` بلا `-c` صريح (كما يحدث لدور
+# backend عبر CMD الافتراضي أدناه)، فعزلها هنا يمنع تحميل worker.conf بالخطأ داخل حاوية backend
+# أو العكس. تُستدعى صراحةً بـ`supervisord -c /etc/supervisor/conf.d-roles/<role>.conf` من
+# docker-compose.workers.yml's command:.
+RUN mkdir -p /etc/supervisor/conf.d-roles
+COPY docker/php/supervisord-worker.conf /etc/supervisor/conf.d-roles/worker.conf
+COPY docker/php/supervisord-worker-media.conf /etc/supervisor/conf.d-roles/worker-media.conf
+COPY docker/php/supervisord-scheduler.conf /etc/supervisor/conf.d-roles/scheduler.conf
+COPY docker/php/supervisor-fatal-exit.py /usr/local/bin/supervisor-fatal-exit.py
+RUN chmod +x /usr/local/bin/supervisor-fatal-exit.py
 
 WORKDIR /var/www/html
 

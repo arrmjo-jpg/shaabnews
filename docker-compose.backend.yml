@@ -1,0 +1,60 @@
+# ── shaabnews-backend — independent Coolify Application ────────────────────────────────────────
+#
+# Split out of the former single docker-compose.yml (Phase A/B/C investigation, see
+# docs/architecture — architectural split to stop worker restart-loops and frontend build
+# failures from taking down the whole stack together). This Application owns ONLY the Laravel
+# API (php-fpm + nginx via docker/php/supervisord.conf, unchanged). Workers/scheduler live in
+# docker-compose.workers.yml as a separate Application — see that file for why.
+#
+# BACKEND_DOMAIN is a variable, not a hardcoded harer.store literal, on purpose: during
+# migration this Application is deployed and fully smoke-tested under a temporary domain
+# (e.g. api-new.harer.store) while the OLD unified Application still serves api.harer.store for
+# real traffic — Traefik must never see two routers claim the same Host() rule at once. Cutover
+# = flip BACKEND_DOMAIN to the real domain in Coolify's env vars and redeploy; no file edit.
+
+services:
+  backend:
+    image: alphacms-backend:latest
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ${STORAGE_PUBLIC_HOST_PATH:-/data/storage-public}:/var/www/html/storage/app/public:rw
+      - ${UPLOADS_HOST_PATH:-/data/uploads}:/var/www/html/public/uploads:rw
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend.rule=Host(`${BACKEND_DOMAIN:?BACKEND_DOMAIN is required — e.g. api.harer.store in production, api-new.harer.store during migration testing}`)
+      - traefik.http.routers.backend.entrypoints=https
+      - traefik.http.routers.backend.tls=true
+      - traefik.http.routers.backend.tls.certresolver=letsencrypt
+      - traefik.http.services.backend.loadbalancer.server.port=80
+      # نفس راوتر public-storage الموجود سابقًا في docker-compose.yml الموحَّد — يخدم /storage من
+      # nginx الخاص بـbackend مباشرة على دومين الـFRONTEND العام (لا دومين الـbackend نفسه). هذا
+      # يُبقي backend مرتبطًا بـFRONTEND_DOMAIN لسبب واحد فقط: تقديم الوسائط العامة — قيد قائم من
+      # قبل الانقسام، لا شيء جديد أضافه هذا الملف.
+      - traefik.http.routers.public-storage.rule=Host(`${FRONTEND_DOMAIN:?FRONTEND_DOMAIN is required — backend serves /storage on the frontend's public domain}`) && PathPrefix(`/storage`)
+      - traefik.http.routers.public-storage.entrypoints=https
+      - traefik.http.routers.public-storage.tls=true
+      - traefik.http.routers.public-storage.tls.certresolver=letsencrypt
+      - traefik.http.routers.public-storage.priority=100
+      - traefik.http.routers.public-storage.service=public-storage
+      - traefik.http.services.public-storage.loadbalancer.server.port=80
+
+# TODO (Phase E — يحتاج تحققًا حيًّا، لا افتراضًا): عنوان/شبكة الوصول إلى MySQL و Redis و
+# Meilisearch من هذا الـApplication بعد الانقسام. DB_HOST/REDIS_HOST/MEILISEARCH_HOST تصل عبر
+# .env كما كانت دومًا (غير معرَّفة هنا) — لكن يجب تأكيد أنها لا تزال قابلة للوصول فعليًا من شبكة
+# Docker الخاصة بهذا الـApplication تحديدًا (منفصلة الآن عن شبكة الـApplication الموحَّد القديم)
+# قبل أي نشر حقيقي. لا نكتب هنا أي قيمة مفترضة لعناوين هذه الخدمات.

@@ -1,0 +1,60 @@
+# ── shaabnews-frontend — independent Coolify Application ────────────────────────────────────────
+#
+# BUILD_API_BASE_URL and API_BASE_URL are now the SAME public URL for build-time *and* runtime
+# (decision confirmed after the Phase A/B/C review): once `shaabnews-backend` is its own
+# independently-deployed, always-up Application, the only requirement is that it be healthy
+# *before this Application's build starts* — a deployment-ordering problem (see
+# .github/workflows/deploy.yml), not a Docker networking problem. This removes the
+# host.docker.internal / BACKEND_HOST_BIND / extra_hosts workaround entirely — that whole
+# mechanism existed only to reach a backend on the SAME docker-compose project from inside
+# BuildKit's network-isolated builder, which no longer applies once backend is a fully separate,
+# independently-reachable-over-HTTPS Application.
+#
+# FRONTEND_DOMAIN is a variable (see docker-compose.backend.yml's comment for why) — temporary
+# domain during migration testing, real harer.store only after cutover.
+
+services:
+  frontend:
+    image: alphacms-frontend:${CLIENT:-shaabjo}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        CLIENT: ${CLIENT:-shaabjo}
+        BUILD_API_BASE_URL: ${BUILD_API_BASE_URL:?BUILD_API_BASE_URL is required — the backend's public URL, e.g. https://api.harer.store}
+        SITE_URL: ${SITE_URL:?SITE_URL is required}
+      secrets:
+        - openweather_api_key
+        - internal_api_token
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: ${API_BASE_URL:?API_BASE_URL is required — must equal BUILD_API_BASE_URL, see frontend/scripts/build-gate-config.mjs}
+      SITE_URL: ${SITE_URL:?SITE_URL is required}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?REVALIDATE_SECRET is required — must equal backend's FRONTEND_REVALIDATE_SECRET exactly}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+    volumes:
+      - frontend-cache:/app/.next/cache
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://$$HOSTNAME:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN:?FRONTEND_DOMAIN is required — e.g. harer.store in production, harer-new.store during migration testing}`)
+      - traefik.http.routers.frontend.entrypoints=https
+      - traefik.http.routers.frontend.tls=true
+      - traefik.http.routers.frontend.tls.certresolver=letsencrypt
+      - traefik.http.services.frontend.loadbalancer.server.port=3000
+
+volumes:
+  frontend-cache:
+
+secrets:
+  openweather_api_key:
+    environment: OPENWEATHER_API_KEY
+  internal_api_token:
+    environment: INTERNAL_API_TOKEN

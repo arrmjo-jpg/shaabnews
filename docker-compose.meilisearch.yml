@@ -1,0 +1,43 @@
+# ── shaabnews-meilisearch — independent Coolify Application ─────────────────────────────────────
+#
+# Split out for failure isolation (Phase C review decision, point 8): only `backend` consumes
+# Meilisearch (search feature) — no other service does. Kept in its own Application so a
+# Meilisearch problem degrades search only, never touches backend/workers/frontend/admin.
+#
+# meili-data must bind to the EXACT SAME Docker volume the current unified docker-compose.yml's
+# `meilisearch` service already uses — NOT a fresh empty volume — or the entire search index is
+# lost and must be rebuilt from scratch (scout:import). The real volume name is confirmed on the
+# server (`docker volume ls`) during Phase E, never guessed; the placeholder below MUST be
+# replaced with that confirmed name before this file is ever deployed.
+#
+# TODO (Phase E — يحتاج تحققًا حيًّا، لا افتراضًا): كيف يصل backend (وworkers، إن احتاجت مستقبلاً)
+# إلى meilisearch:7700 بعد أن يصبح Application منفصلاً — Coolify Applications منفصلة تحصل على
+# شبكات Docker مستقلة افتراضيًا، فـhttp://meilisearch لن يُحلّ تلقائيًا من backend كما كان في
+# الملف الموحَّد القديم. الخيار المرجَّح (يحتاج تأكيدًا حيًّا، ليس قرارًا نهائيًا هنا): إلحاق هذا
+# الـApplication وbackend وworkers بشبكة Docker مشتركة صغيرة عبر خيار Coolify "Connect To
+# Predefined Network" (نفس الآلية المستخدَمة فعليًا مع Stalwart) — محصورة بالثلاثة هذه فقط، لا
+# تشمل frontend/admin إطلاقًا (يطابق القرار الصريح بعدم الحاجة لشبكة مشتركة لهما). لا `networks:`
+# مكتوب هنا حتى يُحسَم هذا فعليًا في Phase E.
+
+services:
+  meilisearch:
+    image: getmeili/meilisearch:v1.16
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_KEY:?MEILISEARCH_KEY is required (>=16 bytes)}
+      MEILI_ENV: production
+    volumes:
+      - meili-data:/meili_data
+    expose:
+      - "7700"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  meili-data:
+    external: true
+    name: __CONFIRM_EXACT_VOLUME_NAME_ON_SERVER_BEFORE_DEPLOY__

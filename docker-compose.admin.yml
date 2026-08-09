@@ -1,0 +1,35 @@
+# ── shaabnews-admin — independent Coolify Application ────────────────────────────────────────────
+#
+# No build-time dependency on backend being live — Vite bakes VITE_API_BASE_URL as a plain string
+# into the compiled bundle, it never makes a network call during `npm run build`. This Application
+# can deploy at any time, independently of backend/frontend/workers' state.
+#
+# ADMIN_DOMAIN is a variable — same migration-vs-cutover reasoning as the other split files.
+
+services:
+  admin:
+    build:
+      context: ./admin-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?VITE_API_BASE_URL is required — e.g. https://api.harer.store/api/v1}
+        VITE_PUBLIC_SITE_URL: ${VITE_PUBLIC_SITE_URL:?VITE_PUBLIC_SITE_URL is required — e.g. https://harer.store}
+    restart: unless-stopped
+    expose:
+      - "80"
+    # ملاحظة صادقة (Phase C/D): nginx.conf الحالي لا يملك مسار /health مخصَّصًا — هذا الفحص يتحقق
+    # فقط من توفّر nginx وتقديمه للصفحة الرئيسية الثابتة، لا من صحة الـbundle نفسه. تحسين مستقبلي
+    # اختياري (إضافة `location = /healthz { return 200; }` صريح)، ليس حاجزًا لهذا الترحيل.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.admin.rule=Host(`${ADMIN_DOMAIN:?ADMIN_DOMAIN is required — e.g. admin.harer.store in production, admin-new.harer.store during migration testing}`)
+      - traefik.http.routers.admin.entrypoints=https
+      - traefik.http.routers.admin.tls=true
+      - traefik.http.routers.admin.tls.certresolver=letsencrypt
+      - traefik.http.services.admin.loadbalancer.server.port=80
