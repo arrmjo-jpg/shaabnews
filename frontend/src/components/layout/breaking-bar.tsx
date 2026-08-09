@@ -28,6 +28,8 @@ export function BreakingBar({ items }: BreakingBarProps) {
   const [index, setIndex] = useState(0);
   const [open, setOpen] = useState(true);
   const [origin, setOrigin] = useState('');
+  const [paused, setPaused] = useState(false);
+  const [desktopPaused, setDesktopPaused] = useState(false);
 
   // بعد التركيب: أصل الرابط (لروابط المشاركة) — عميليّ بحت لتفادي اختلاف SSR/CSR.
   useEffect(() => {
@@ -36,11 +38,12 @@ export function BreakingBar({ items }: BreakingBarProps) {
   }, [items.length]);
 
   // تدوير العناوين كل ٥ ثوانٍ (سطح المكتب فقط بصريًّا، لكن المنطق مشترك لبساطة الحالة).
+  // يتوقّف طول ما الموس فوق المسرح (desktopPaused) — تفريغ الفاصل الزمني بدل تركه شغّالًا.
   useEffect(() => {
-    if (items.length <= 1) return;
+    if (items.length <= 1 || desktopPaused) return;
     const t = setInterval(() => setIndex((i) => (i + 1) % items.length), 5000);
     return () => clearInterval(t);
-  }, [items.length]);
+  }, [items.length, desktopPaused]);
 
   if (items.length === 0 || !open) return null;
 
@@ -53,13 +56,17 @@ export function BreakingBar({ items }: BreakingBarProps) {
       aria-label="أخبار عاجلة"
     >
       {/* شارة «عاجل» بيضاء مع حافة مائلة تنفذ في لون الأساس */}
-      <div className="breaking-badge relative z-10 flex shrink-0 items-center bg-surface px-4 sm:px-6">
-        <span className="text-2xl font-black tracking-tight text-primary motion-safe:animate-pulse lg:text-lg">عاجل</span>
+      <div className="breaking-badge relative z-10 flex shrink-0 items-center bg-surface px-3 sm:px-6">
+        <span className="text-3xl font-black tracking-tight text-primary motion-safe:animate-pulse lg:text-2xl">عاجل</span>
         <span className="breaking-badge-skew absolute inset-y-0 bg-surface" aria-hidden />
       </div>
 
       {/* مسرح العناوين — خبر واحد ظاهر، يتلاشى/ينزلق عند التبديل — سطح المكتب فقط */}
-      <div className="relative hidden min-w-0 flex-1 lg:block">
+      <div
+        className="relative hidden min-w-0 flex-1 lg:block"
+        onMouseEnter={() => setDesktopPaused(true)}
+        onMouseLeave={() => setDesktopPaused(false)}
+      >
         {items.map((it, i) => (
           <div
             key={it.id}
@@ -110,10 +117,19 @@ export function BreakingBar({ items }: BreakingBarProps) {
       {/* Marquee متصل لكلّ العناوين معًا — الجوّال فقط. نافذة dir=ltr لتثبيت المسار يسارًا (تصحيح
           RTL، انظر التعليق المطابق في ase-market-bar.tsx)، والمسار نفسه يعيد استخدام حركة
           ase-ticker-scroll المعرَّفة في globals.css. */}
-      <div className="breaking-marquee-viewport relative flex min-w-0 flex-1 items-center overflow-hidden lg:hidden" dir="ltr">
+      <div
+        className="breaking-marquee-viewport relative flex min-w-0 flex-1 items-center overflow-hidden lg:hidden"
+        dir="ltr"
+        onTouchStart={() => setPaused(true)}
+        onTouchEnd={() => setPaused(false)}
+        onTouchCancel={() => setPaused(false)}
+      >
         <div
           className="breaking-marquee-track absolute inset-y-0 left-0 flex w-max items-center"
-          style={{ animationDuration: `${Math.max(20, items.length * 6)}s` }}
+          style={{
+            animationDuration: `${Math.max(16, items.length * 5)}s`,
+            animationPlayState: paused ? 'paused' : 'running',
+          }}
         >
           {loop.map((it, i) => (
             <span key={`${it.id}-${i}`} className="flex items-center whitespace-nowrap px-4 text-sm font-black" dir="rtl">
