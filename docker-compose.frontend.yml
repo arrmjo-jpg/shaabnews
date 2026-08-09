@@ -41,8 +41,11 @@ services:
       - frontend-cache:/app/.next/cache
     expose:
       - "3000"
+    # 127.0.0.1 لا $HOSTNAME: صيغة CMD (exec مباشر) لا تستدعي أي شِل — مؤكَّد حيًّا (Phase F،
+    # 2026-08-09) أن $HOSTNAME كان يصل حرفيًا بعلامة الدولار (`wget: bad address '$HOSTNAME:3000'`)
+    # فيفشل الفحص دومًا رغم أن التطبيق نفسه سليم، وTraefik يرفض التوجيه لحاوية "unhealthy" (503).
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://$$HOSTNAME:3000/api/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
