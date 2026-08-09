@@ -4,7 +4,9 @@
 # into the compiled bundle, it never makes a network call during `npm run build`. This Application
 # can deploy at any time, independently of backend/frontend/workers' state.
 #
-# ADMIN_DOMAIN is a variable — same migration-vs-cutover reasoning as the other split files.
+# Domain below is a LITERAL string, not ${ADMIN_DOMAIN} — see docker-compose.backend.yml's header
+# comment: Coolify does not interpolate variables inside `labels:`, confirmed live 2026-08-09.
+# Cutover swaps it to admin.harer.store via a small Git diff, not an env var change.
 
 services:
   admin:
@@ -28,7 +30,7 @@ services:
       start_period: 10s
     labels:
       - traefik.enable=true
-      - traefik.http.routers.admin.rule=Host(`${ADMIN_DOMAIN:?ADMIN_DOMAIN is required — e.g. admin.harer.store in production, admin-new.harer.store during migration testing}`)
+      - traefik.http.routers.admin.rule=Host(`admin-new.harer.store`)
       - traefik.http.routers.admin.entrypoints=https
       - traefik.http.routers.admin.tls=true
       - traefik.http.routers.admin.tls.certresolver=letsencrypt

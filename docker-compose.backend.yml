@@ -6,11 +6,23 @@
 # API (php-fpm + nginx via docker/php/supervisord.conf, unchanged). Workers/scheduler live in
 # docker-compose.workers.yml as a separate Application — see that file for why.
 #
-# BACKEND_DOMAIN is a variable, not a hardcoded harer.store literal, on purpose: during
-# migration this Application is deployed and fully smoke-tested under a temporary domain
-# (e.g. api-new.harer.store) while the OLD unified Application still serves api.harer.store for
-# real traffic — Traefik must never see two routers claim the same Host() rule at once. Cutover
-# = flip BACKEND_DOMAIN to the real domain in Coolify's env vars and redeploy; no file edit.
+# Domains below are LITERAL strings, not ${VAR} placeholders — confirmed live (Phase F, 2026-08-09)
+# that Coolify does NOT interpolate environment variables inside a compose file's `labels:` block:
+# `docker exec <container> env` showed BACKEND_DOMAIN/FRONTEND_DOMAIN correctly injected into the
+# container's actual runtime environment, but `docker inspect`'s Labels still held the raw
+# unresolved `${BACKEND_DOMAIN:?...}` text — Coolify passes `labels:` through as opaque strings,
+# unlike `environment:`/`build.args:` which it does resolve. This matches the original unified
+# docker-compose.yml's own proven-working pattern (literal `Host(\`harer.store\`)`, no variables)
+# — restored here after the variable-based attempt above failed a live deploy test.
+#
+# Also do NOT set a "Domain" in Coolify's own UI for this Application: its own automatic
+# FQDN-to-router generation errored live ("cannot be linked automatically with multiple
+# Services: [backend public-storage]") because this file defines two separate Traefik services
+# on one container — Coolify's auto-domain mechanism assumes exactly one. Manual labels only.
+#
+# Currently set to migration-testing domains (api-new.harer.store / new.harer.store) while the
+# OLD unified Application still serves the real api.harer.store — cutover is a small, deliberate
+# Git diff (swap the literal domains below to the production ones), not an env var flip.
 
 services:
   backend:
@@ -36,16 +48,16 @@ services:
       start_period: 15s
     labels:
       - traefik.enable=true
-      - traefik.http.routers.backend.rule=Host(`${BACKEND_DOMAIN:?BACKEND_DOMAIN is required — e.g. api.harer.store in production, api-new.harer.store during migration testing}`)
+      - traefik.http.routers.backend.rule=Host(`api-new.harer.store`)
       - traefik.http.routers.backend.entrypoints=https
       - traefik.http.routers.backend.tls=true
       - traefik.http.routers.backend.tls.certresolver=letsencrypt
       - traefik.http.services.backend.loadbalancer.server.port=80
       # نفس راوتر public-storage الموجود سابقًا في docker-compose.yml الموحَّد — يخدم /storage من
-      # nginx الخاص بـbackend مباشرة على دومين الـFRONTEND العام (لا دومين الـbackend نفسه). هذا
-      # يُبقي backend مرتبطًا بـFRONTEND_DOMAIN لسبب واحد فقط: تقديم الوسائط العامة — قيد قائم من
-      # قبل الانقسام، لا شيء جديد أضافه هذا الملف.
-      - traefik.http.routers.public-storage.rule=Host(`${FRONTEND_DOMAIN:?FRONTEND_DOMAIN is required — backend serves /storage on the frontend's public domain}`) && PathPrefix(`/storage`)
+      # nginx الخاص بـbackend مباشرة على دومين الـFRONTEND العام (لا دومين الـbackend نفسه) — قيد
+      # قائم من قبل الانقسام، لا شيء جديد أضافه هذا الملف. القيمة هنا يجب أن تطابق frontend's
+      # الدومين الفعلي دومًا (docker-compose.frontend.yml) — كلاهما يُحدَّثان معًا عند cutover.
+      - traefik.http.routers.public-storage.rule=Host(`new.harer.store`) && PathPrefix(`/storage`)
       - traefik.http.routers.public-storage.entrypoints=https
       - traefik.http.routers.public-storage.tls=true
       - traefik.http.routers.public-storage.tls.certresolver=letsencrypt
@@ -53,8 +65,8 @@ services:
       - traefik.http.routers.public-storage.service=public-storage
       - traefik.http.services.public-storage.loadbalancer.server.port=80
 
-# TODO (Phase E — يحتاج تحققًا حيًّا، لا افتراضًا): عنوان/شبكة الوصول إلى MySQL و Redis و
-# Meilisearch من هذا الـApplication بعد الانقسام. DB_HOST/REDIS_HOST/MEILISEARCH_HOST تصل عبر
-# .env كما كانت دومًا (غير معرَّفة هنا) — لكن يجب تأكيد أنها لا تزال قابلة للوصول فعليًا من شبكة
-# Docker الخاصة بهذا الـApplication تحديدًا (منفصلة الآن عن شبكة الـApplication الموحَّد القديم)
-# قبل أي نشر حقيقي. لا نكتب هنا أي قيمة مفترضة لعناوين هذه الخدمات.
+# مؤكَّد حيًّا (Phase F، 2026-08-09): MySQL (hdgwlw3u51qago2q117ll8zj) وRedis
+# (bpj18n7r1br3ufuglnsd8z0m) موردا Coolify Standalone Database فعليان، متصلان بشبكة `coolify`
+# المشتركة — accessible من هذا الـApplication عبر connect_to_docker_network=true (مفعَّل). القيم
+# الفعلية لـDB_HOST/REDIS_HOST/MEILISEARCH_HOST تصل عبر متغيرات بيئة Coolify (نُسخت من shaabnews
+# القديم)، مؤكَّدة مطابقة من قِبل المستخدم عبر واجهة Coolify مباشرة (لا فكّ تشفير من طرف الوكيل).

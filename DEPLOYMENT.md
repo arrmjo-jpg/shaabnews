@@ -96,8 +96,8 @@ config.mjs` يفشل البناء إن اختلفا)، `SITE_URL`، `REVALIDATE_
 `CACHE_STORE=redis`، `FRONTEND_REVALIDATE_URL` + `FRONTEND_REVALIDATE_SECRET` (**يجب أن يطابق**
 `REVALIDATE_SECRET` الخاص بـfrontend حرفيًّا — الآن اعتماد **عابر لـApplications منفصلة**، لا
 مجرّد متغيّرين في نفس الملف كما سابقًا)، `MEILISEARCH_*`، إلخ.
-**Traefik domains:** `BACKEND_DOMAIN`، `FRONTEND_DOMAIN`، `ADMIN_DOMAIN` — انظر §6 لسبب كونها
-متغيّرات لا قيمًا ثابتة.
+**Traefik domains:** قيم حرفية داخل `labels:` كل ملف Compose (**ليست** متغيّرات بيئة) — انظر §6
+للسبب.
 
 **السرّية:** جميع الأسرار تعيش فقط في متغيّرات بيئة Coolify الخاصّة بكل Application — لا في Git،
 لا في الصورة. `OPENWEATHER_API_KEY`/`INTERNAL_API_TOKEN` عبر BuildKit secret mounts حصرًا.
@@ -145,12 +145,24 @@ Application آخر بنيويًّا.
 
 ## 6. Migration domains (مؤقّت، أثناء الترحيل من المعمارية القديمة فقط)
 
-`BACKEND_DOMAIN`/`FRONTEND_DOMAIN`/`ADMIN_DOMAIN` متغيّرات بيئة لا قيمًا ثابتة في ملفات Compose
-عمدًا: أثناء بناء واختبار الـ5 Applications الجديدة، الـApplication الموحَّد القديم لا يزال يخدم
-الدومينات الحقيقية (`api.harer.store` إلخ) — Traefik لا يجوز أن يرى راوترين يطالبان بنفس
-`Host()` في آن واحد. الجديد يُختبَر تحت دومينات مؤقّتة (مثلاً `api-new.harer.store`). فقط بعد نجاح
-كل اختبارات §8 تُغيَّر هذه المتغيرات في Coolify إلى الدومينات الحقيقية ويُعاد النشر — بلا أي تعديل
-ملف. القديم يبقى **موجودًا وموقوفًا (لا محذوفًا)** كمسار تراجع فوريّ بعد الانتقال.
+⚠️ **مُصحَّح بعد اختبار حيّ فعليّ (Phase F، 2026-08-09):** المحاولة الأولى استخدمت
+`BACKEND_DOMAIN`/`FRONTEND_DOMAIN`/`ADMIN_DOMAIN` كمتغيّرات بيئة `${...}` داخل `labels:` — فشلت
+حيًّا: **Coolify لا يُفسِّر متغيّرات البيئة داخل قسم `labels:` إطلاقًا** (يمرّرها كنصّ خام، خلافًا
+لـ`environment:`/`build.args:` التي يحلّها بشكل صحيح — مؤكَّد بمقارنة `docker exec ... env` مقابل
+`docker inspect` على نفس الحاوية الفعلية: المتغيّر محقون بشكل صحيح داخل بيئة التشغيل، لكن الـlabel
+الفعليّ ظلّ يحمل النص الحرفيّ غير المُفسَّر). **كذلك**: لا تُستخدَم خانة "Domain" المدمجة في واجهة
+Coolify لـ`shaabnews-backend` — فشلت أيضًا حيًّا ("cannot be linked automatically with multiple
+Services") لأن هذا الملف يعرّف خدمتَي Traefik (`backend` و`public-storage`) على حاوية واحدة، وآلية
+Coolify التلقائية تفترض خدمة واحدة فقط.
+
+**الحل المُعتمَد الآن**: دومينات **حرفية مباشرة** داخل `labels:` كل ملف Compose — يطابق تمامًا نمط
+`docker-compose.yml` الموحَّد القديم المُثبَت العمل فعليًا. أثناء بناء واختبار الـ5 Applications
+الجديدة، القديم لا يزال يخدم الدومينات الحقيقية (`api.harer.store` إلخ) — الجديد يستخدم دومينات
+مؤقّتة (`api-new.harer.store`, `new.harer.store`, `admin-new.harer.store`) بحيث لا يرى Traefik
+راوترين يطالبان بنفس `Host()` في آن واحد. **الانتقال النهائيّ (cutover) الآن تعديل ملف صريح**:
+تبديل الدومينات الحرفية في `docker-compose.{backend,frontend,admin}.yml` للدومينات الحقيقية، ثم
+commit → push → إعادة نشر — **ليس** مجرّد تغيير متغيّر بيئة في Coolify كما افتُرِض أوّلاً. القديم
+يبقى **موجودًا وموقوفًا (لا محذوفًا)** كمسار تراجع فوريّ بعد الانتقال.
 
 ---
 

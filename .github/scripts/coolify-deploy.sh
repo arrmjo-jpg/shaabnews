@@ -5,12 +5,15 @@ set -euo pipefail
 # لنجاح النشر — لا يكتفي بأن HTTP endpoint يُرجِع 200، لأن نسخة قديمة لا تزال تعمل يمكن أن تُرجِع
 # 200 بينما فشل النشر الجديد فعليًّا وبقيت القديمة قائمة (بالضبط ما نريد تجنّب الخلط معه).
 #
-# ⚠️ TODO (يجب تنفيذه قبل ربط أي Secret حقيقيّ بهذا الملف — لا يزال Phase D، بلا أسرار فعلية بعد):
-# شكل الـendpoints وأسماء الحقول أدناه (`/deploy?uuid=`, `/deployments/{uuid}`, `.status`,
-# `.deployments[0].deployment_uuid`) مبنيّة على التوثيق العامّ المعروف لـCoolify v4 REST API —
-# لم تُؤكَّد بعد مقابل توثيق API الفعليّ لهذه النسخة تحديدًا لأن Phase D يمنع صراحةً أي وصول إلى
-# Coolify. راجع https://<coolify-host>/docs/api على السيرفر الفعليّ وصحِّح هذا الملف إن اختلف
-# الشكل الفعليّ، قبل تفعيله بأي Secret حقيقيّ.
+# ✅ مؤكَّد فعليًا (Phase F، قراءة مباشرة من كود Coolify 4.1.2 المُشغَّل على السيرفر —
+# app/Http/Controllers/Api/DeployController.php وapp/Enums/ApplicationDeploymentStatus.php،
+# عبر `docker exec coolify cat ...`، بلا أي تعديل): شكل الـendpoints صحيح كما هو —
+# `GET|POST /api/v1/deploy?uuid=<uuid>` يُرجِع `{"deployments":[{"deployment_uuid":...}]}`،
+# و`GET /api/v1/deployments/{deployment_uuid}` يُرجِع كائن ApplicationDeploymentQueue الخام
+# (يحوي `.status`). الاستيثاق: `Authorization: Bearer <token>` (Sanctum)؛ التوكن يحتاج صلاحيتَي
+# `deploy` و`read` على الأقل (وسوم `api.ability:*` في routes/api.php). القيم الفعلية لـ.status
+# (enum ApplicationDeploymentStatus): queued, in_progress, finished, failed, cancelled-by-user —
+# **وليس** `cancelled` كما كان مكتوبًا هنا سابقًا؛ صُحِّح أدناه.
 
 app_uuid="$1"
 coolify_api="${COOLIFY_API_URL:?COOLIFY_API_URL is required}"
@@ -35,7 +38,7 @@ for _ in $(seq 1 60); do
       echo "Deployment ${deployment_uuid} finished successfully."
       exit 0
       ;;
-    failed | cancelled)
+    failed | cancelled-by-user)
       echo "Deployment ${deployment_uuid} ended with status: ${status}" >&2
       exit 1
       ;;

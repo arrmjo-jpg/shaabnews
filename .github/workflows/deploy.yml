@@ -6,10 +6,11 @@ name: Deploy
 # build starts" from outside, since that dependency can no longer be expressed inside a single
 # docker-compose.yml after the Option A+ split.
 #
-# ⚠️ Phase D state: no real secrets/App UUIDs are wired in yet (see repo secrets list below) —
-# this file defines the *shape* of the pipeline for review before Coolify Applications exist.
-# .github/scripts/coolify-deploy.sh also has its own TODO about confirming the exact Coolify API
-# response shape against this instance's live docs before enabling.
+# ⚠️ Phase F state: the Coolify API shape used by coolify-deploy.sh is now verified against this
+# server's actual running Coolify 4.1.2 source (read-only `docker exec coolify cat ...`, no
+# changes made) — see that script's header comment. Still no real secrets/App UUIDs wired in here
+# yet, because the 5 Applications themselves don't exist yet — this file defines the pipeline
+# *shape* for review; it stays inert until Phase F creates the Applications and their tokens.
 #
 # Required repo secrets once real (not set yet):
 #   COOLIFY_API_URL, COOLIFY_API_TOKEN

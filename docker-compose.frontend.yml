@@ -10,8 +10,13 @@
 # BuildKit's network-isolated builder, which no longer applies once backend is a fully separate,
 # independently-reachable-over-HTTPS Application.
 #
-# FRONTEND_DOMAIN is a variable (see docker-compose.backend.yml's comment for why) — temporary
-# domain during migration testing, real harer.store only after cutover.
+# Domain below is a LITERAL string, not ${FRONTEND_DOMAIN} — confirmed live (Phase F, 2026-08-09)
+# that Coolify does not interpolate variables inside `labels:` (see docker-compose.backend.yml's
+# header comment for the full evidence/explanation). Currently set to the migration-testing
+# domain; cutover swaps it to harer.store via a small Git diff, not an env var change. Do not set
+# a "Domain" in Coolify's own UI for this Application either — keep it purely on manual labels for
+# consistency with backend/admin, even though frontend only has one Traefik service (so Coolify's
+# auto-domain wouldn't hit the same multi-service error backend did — still avoided for uniformity).
 
 services:
   frontend:
@@ -44,7 +49,7 @@ services:
       start_period: 15s
     labels:
       - traefik.enable=true
-      - traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN:?FRONTEND_DOMAIN is required — e.g. harer.store in production, harer-new.store during migration testing}`)
+      - traefik.http.routers.frontend.rule=Host(`new.harer.store`)
       - traefik.http.routers.frontend.entrypoints=https
       - traefik.http.routers.frontend.tls=true
       - traefik.http.routers.frontend.tls.certresolver=letsencrypt
