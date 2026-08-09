@@ -15,8 +15,6 @@ use App\Health\Checks\BroadcastPushHealthCheck;
 use App\Health\Checks\BroadcastSearchHealthCheck;
 use App\Health\Checks\BroadcastSourceHealthCheck;
 use App\Health\Checks\CacheTaggingCheck;
-use App\Health\Checks\EpaperOcrHealthCheck;
-use App\Health\Checks\EpaperSearchHealthCheck;
 use App\Health\Checks\MediaProcessingHealthCheck;
 use App\Health\Checks\RedisProductionCheck;
 use App\Health\Checks\ReelSearchHealthCheck;
@@ -43,8 +41,6 @@ use App\Support\Content\Listeners\PurgeReelCdnOnStatusChanged;
 use App\Support\Content\Listeners\RevalidateVideoFrontendOnStatusChanged;
 use App\Support\Epaper\DefaultEpaperAccessPolicy;
 use App\Support\Epaper\EpaperAccessPolicy;
-use App\Support\Epaper\Ocr\DefaultEpaperOcrProvider;
-use App\Support\Epaper\Ocr\EpaperOcrProvider;
 use App\Support\Media\RemoteStorage;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -89,10 +85,6 @@ class AppServiceProvider extends ServiceProvider
         // عقد الوصول للعدد — سياسة افتراضية محافظة (لا محرّك اشتراكات). يعيد المضيف
         // ربطه في مزوّده لدمج منطق الاشتراك/الاستحقاق الفعليّ.
         $this->app->bind(EpaperAccessPolicy::class, DefaultEpaperAccessPolicy::class);
-
-        // مزوّد OCR للعدد — المركّب الافتراضيّ: يفضّل النصّ المضمَّن (بلا تكلفة)،
-        // ويصعّد إلى Google Document AI إن فُعِّل. المضيف حرّ بإعادة ربطه.
-        $this->app->bind(EpaperOcrProvider::class, DefaultEpaperOcrProvider::class);
 
         // ناقل دفع البثّ — نقطة التبديل الوحيدة لتفعيل FCM لاحقاً (إعداد فقط،
         // بلا تعديل كود): broadcast.notifications.push_driver. اسم غير معروف
@@ -231,9 +223,6 @@ class AppServiceProvider extends ServiceProvider
             BroadcastSourceHealthCheck::new(),
             // حالة دفع إشعارات البثّ (مُعطَّل/مُقلَّد/حقيقيّ) — Task B، مراجعة الإنتاج
             BroadcastPushHealthCheck::new(),
-            // الجريدة (Enterprise): صحّة فهرس البحث + تراكم/تعليق استخراج OCR
-            EpaperSearchHealthCheck::new(),
-            EpaperOcrHealthCheck::new(),
             // صحّة فهارس Meilisearch القياسيّة (انحراف العدّ فهرس/قاعدة) — Task 14 finding
             ArticleSearchHealthCheck::new(),
             VideoSearchHealthCheck::new(),
@@ -431,15 +420,6 @@ class AppServiceProvider extends ServiceProvider
             $actor = $request->header('X-Client-Id') ?: $request->ip();
 
             return Limit::perMinute($max)->by('pubread:'.$actor);
-        });
-
-        // ─── Epaper archive search — حارس أضيق (استعلام محرّك أثقل من قراءةٍ عاديّة) ─
-        // يُكدَّس فوق public.read على مسار بحث الأرشيف فقط؛ المفتاح: العميل ثم IP.
-        RateLimiter::for('epaper.search', function (Request $request): Limit {
-            $max = (int) config('epaper.search.rate_limit', 30);
-            $actor = $request->header('X-Client-Id') ?: $request->ip();
-
-            return Limit::perMinute($max)->by('epsearch:'.$actor);
         });
 
         // ─── Presence (B5) — حارس تضخيم/إساءة على الحضور ──────────────────

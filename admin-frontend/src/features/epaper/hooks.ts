@@ -123,20 +123,6 @@ export function useDuplicateEpaper() {
   });
 }
 
-/** إعادة تشغيل OCR لعدد (Phase 6) — يُظهر رسالة النجاح ويُبطل القوائم لتحديث الحالة. */
-export function useReprocessOcr() {
-  const invalidate = useEpInvalidate();
-  const { success, error } = useToast();
-  return useMutation({
-    mutationFn: (id: number) => epapersService.reprocessOcr(id),
-    onSuccess: (m) => {
-      success(m);
-      invalidate();
-    },
-    onError: (e: NormalizedError) => error(e.message),
-  });
-}
-
 export function useDeleteEpaper() {
   const invalidate = useEpInvalidate();
   const { success, error } = useToast();

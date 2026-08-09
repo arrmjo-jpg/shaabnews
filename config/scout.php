@@ -174,17 +174,6 @@ return [
                 'sortableAttributes' => ['started_at', 'scheduled_at'],
                 'rankingRules' => ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
             ],
-            // فهرس صفحات الجريدة (بحث الأرشيف العابر — Enterprise). وثيقة لكل صفحة
-            // مع نصّ OCR + ميتاداتا العدد المُغناة. الترتيب: العنوان ثمّ المتن (أولوية
-            // الصلة). distinctAttribute=epaper_id ⇒ نتيجة واحدة لكل عدد (لا إغراق).
-            // الترشيح بـ access_level/locale يفرض الوصول **داخل المحرّك** (صفر تسريب).
-            'epaper_pages_index' => [
-                'searchableAttributes' => ['issue_title', 'issue_subtitle', 'text'],
-                'filterableAttributes' => ['locale', 'access_level', 'epaper_id', 'issue_number', 'publication_date'],
-                'sortableAttributes' => ['publication_date', 'issue_number', 'page_number'],
-                'distinctAttribute' => 'epaper_id',
-                'rankingRules' => ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
-            ],
         ],
     ],
 

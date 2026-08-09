@@ -46,7 +46,6 @@ class ShowEpaperAnalyticsAction
                 'title' => $epaper->title,
                 'issue_number' => $epaper->issue_number,
                 'page_count' => $epaper->page_count,
-                'ocr_status' => $epaper->ocr_status?->value,
             ],
             'totals' => [
                 'opens' => (int) ($stat?->opens ?? 0),

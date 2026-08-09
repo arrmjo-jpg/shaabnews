@@ -3,9 +3,8 @@
 declare(strict_types=1);
 
 use App\Actions\Admin\Epaper\PublishDueEpapersAction;
-use App\Enums\EpaperOcrStatus;
 use App\Enums\EpaperStatus;
-use App\Jobs\ExtractEpaperTextJob;
+use App\Jobs\GenerateEpaperCoverJob;
 use App\Models\Epaper;
 use App\Models\EpaperUrlHistory;
 use App\Models\EpaperVersion;
@@ -237,18 +236,15 @@ it('requires epapers.edit to update an issue', function (): void {
 
 // ─── Replace PDF: version bump, metadata reset, NO url history ────────────────
 
-it('replaces the PDF, bumps the version, requeues OCR and writes no url history', function (): void {
+it('replaces the PDF, bumps the version, regenerates the cover and writes no url history', function (): void {
     epcFakeStorage();
-    Queue::fake(); // لا نُشغّل استخراج OCR ضمنياً — نتحقّق من إعادة الجدولة فقط
+    Queue::fake();
     $token = epcSuper();
 
     $original = epcAsset();
     $epaper = epcIssue([
         'media_asset_id' => $original->id,
         'current_version' => 1,
-        'page_count' => 12,
-        'text_layer' => 'present',
-        'ocr_status' => 'done',
     ]);
     EpaperVersion::create(['epaper_id' => $epaper->id, 'version' => 1, 'media_asset_id' => $original->id]);
     $oldPath = $epaper->canonicalPath();
@@ -263,12 +259,9 @@ it('replaces the PDF, bumps the version, requeues OCR and writes no url history'
     $fresh = $epaper->fresh();
     expect($fresh->current_version)->toBe(2);
     expect($fresh->media_asset_id)->not->toBe($original->id);     // أصل جديد
-    expect($fresh->page_count)->toBeNull();                        // ميتاداتا الوثيقة صُفِّرت
-    expect($fresh->text_layer)->toBeNull();
-    expect($fresh->ocr_status)->toBe(EpaperOcrStatus::Pending);    // أُعيد جدولة OCR للملفّ الجديد
     expect(EpaperVersion::where('epaper_id', $epaper->id)->where('version', 2)->exists())->toBeTrue();
     expect(EpaperUrlHistory::where('old_path', $oldPath)->count())->toBe(0);   // الرابط لم يتغيّر ⇒ لا تحويل
-    Queue::assertPushed(ExtractEpaperTextJob::class);
+    Queue::assertPushed(GenerateEpaperCoverJob::class);            // الصفحة الأولى تغيّرت ⇒ إعادة توليد الغلاف
 });
 
 it('requires epapers.edit to replace the PDF', function (): void {

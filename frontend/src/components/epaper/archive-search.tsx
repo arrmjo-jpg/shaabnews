@@ -7,9 +7,8 @@ import type { EpaperIssue } from '@/lib/epaper';
 
 import { MagazineWall } from './magazine-wall';
 
-// بحث الأرشيف — ترشيح خفيف فوريّ على الأعداد المُحمَّلة (عنوان/رقم/تاريخ)، صفر باك إند جديد.
-// TODO(backend reuse): البحث النصّيّ العابر للصفحات (Meilisearch) متاح في قارئ/أرشيف Laravel
-// عبر /{locale}/epaper/search — يُدمج لاحقاً عند الحاجة لبحث داخل نصّ الأعداد.
+// بحث الأرشيف — ترشيح خفيف فوريّ على الأعداد المُحمَّلة (عنوان/رقم/تاريخ)، صفر باك إند.
+// هذا هو نطاق البحث الوحيد المدعوم عمداً — لا بحث داخل نصّ الأعداد (أُزيل مع OCR).
 export function ArchiveSearch({ issues }: { issues: EpaperIssue[] }) {
   const [q, setQ] = useState('');
   const t = q.trim();

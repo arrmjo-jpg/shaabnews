@@ -7,7 +7,6 @@ namespace App\Actions\Admin\Epaper;
 use App\Http\Resources\Admin\Epaper\EpaperResource;
 use App\Models\Epaper;
 use App\Models\EpaperUrlHistory;
-use App\Support\Epaper\EpaperSearchIndexer;
 use App\Support\Frontend\FrontendCacheTags;
 use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
@@ -37,12 +36,6 @@ class UpdateEpaperAction
                 ['locale' => $epaper->locale, 'old_path' => $oldPath],
                 ['epaper_id' => $epaper->id, 'reason' => 'slug_change'],
             );
-        }
-
-        // الميتاداتا (العنوان/الوصول/اللغة/التاريخ/الرقم) مُغناة في وثائق الصفحات — أعِد
-        // الفهرسة كي تبقى الحقول المنسوخة (وفرض الوصول داخل المحرّك) متّسقةً مع المصدر.
-        if ($epaper->wasChanged(['title', 'subtitle', 'slug', 'access_level', 'locale', 'publication_date', 'issue_number'])) {
-            EpaperSearchIndexer::queueSync($epaper->id);
         }
 
         return ApiResponse::success(

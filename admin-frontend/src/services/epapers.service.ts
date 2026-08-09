@@ -94,12 +94,6 @@ export const epapersService = {
     return data.data;
   },
 
-  /** إعادة تشغيل استخراج النصّ (OCR) — يضبط pending ويعيد جدولة الوظيفة (Phase 4a/6). */
-  async reprocessOcr(id: number): Promise<string> {
-    const { data } = await http.post<ApiSuccess<EpaperData>>(`/admin/epapers/${id}/ocr/rerun`);
-    return data.message;
-  },
-
   async remove(id: number): Promise<string> {
     const { data } = await http.delete<ApiSuccess<unknown>>(`/admin/epapers/${id}`);
     return data.message;

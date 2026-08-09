@@ -22,20 +22,7 @@
     "version": "Version",
     "pdf": "File",
     "pdfOpen": "Open PDF",
-    "ocr": "OCR",
     "publicationDate": "Publication date"
-  },
-  "ocr": {
-    "rerun": "Re-run OCR",
-    "rerunTitle": "Re-run text extraction?",
-    "rerunText": "Text extraction for “{{title}}” will be re-queued. Existing text is replaced when it completes.",
-    "status": {
-      "pending": "Pending",
-      "processing": "Processing",
-      "done": "Done",
-      "partial": "Partial",
-      "failed": "Failed"
-    }
   },
   "filter": {
     "search": "Search by title…",
@@ -193,16 +180,10 @@
     "topPages": { "title": "Most viewed pages", "subtitle": "Reading depth by page number (all-time)." },
     "ops": {
       "title": "Operations",
-      "subtitle": "Live operational status — OCR, search engine, queues.",
-      "ocr": "OCR status",
-      "backlog": "Backlog",
-      "stuck": "Stuck",
-      "search": "Search engine",
-      "engine": "Engine",
-      "indexed": "Indexed pages",
+      "subtitle": "Live operational status — queues.",
+      "queuesTitle": "Queues",
       "queues": "Pending queues",
-      "failed": "Failed jobs",
-      "state": { "healthy": "Healthy", "empty": "Empty (reindex)", "unreachable": "Unreachable", "disabled": "DB mode" }
+      "failed": "Failed jobs"
     },
     "deferred": {
       "title": "Not collected",

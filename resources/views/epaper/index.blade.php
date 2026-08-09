@@ -19,36 +19,6 @@
         <p class="mt-2 max-w-2xl text-zinc-500">{{ __('epaper.public.tagline') }}</p>
     </header>
 
-    {{-- بحث الأرشيف العابر للأعداد (Phase 6) — تحسين تدريجيّ: بلا JS تبقى شبكة الأعداد
-         كاملةً تحته؛ يُركَّب الودجت من epaper.js عبر [data-epaper-archive]. --}}
-    @php
-        $archiveLabels = [
-            'label' => __('epaper.public.search.label'),
-            'placeholder' => __('epaper.public.search.placeholder'),
-            'filters' => __('epaper.public.search.filters'),
-            'issue_number' => __('epaper.public.search.issue_number'),
-            'date_from' => __('epaper.public.search.date_from'),
-            'date_to' => __('epaper.public.search.date_to'),
-            'clear' => __('epaper.public.search.clear'),
-            'loading' => __('epaper.public.search.loading'),
-            'hint' => __('epaper.public.search.hint'),
-            'empty' => __('epaper.public.search.empty'),
-            'error' => __('epaper.public.search.error'),
-            'count' => __('epaper.public.search.count'),
-            'result_page' => __('epaper.public.search.result_page'),
-            'pages_matched' => __('epaper.public.search.pages_matched'),
-            'more' => __('epaper.public.search.more'),
-        ];
-    @endphp
-    <div
-        data-epaper-archive
-        data-endpoint="{{ route('epaper.search.archive', ['locale' => $locale]) }}"
-        data-locale="{{ $locale }}"
-        class="mb-8"
-    >
-        <script type="application/json" data-epaper-archive-i18n>{!! json_encode($archiveLabels, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
-    </div>
-
     <div data-epaper-grid>
         @if ($issues->isEmpty())
             <div class="flex flex-col items-center justify-center border border-dashed border-zinc-300 bg-zinc-50 px-6 py-20 text-center">

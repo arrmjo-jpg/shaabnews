@@ -33,8 +33,6 @@ class EpaperResource extends JsonResource
             'publication_date' => $this->publication_date?->toDateString(),
             'current_version' => $this->current_version,
             'page_count' => $this->page_count,
-            'text_layer' => $this->text_layer?->value,
-            'ocr_status' => $this->ocr_status?->value,
             'media' => [
                 'asset_id' => $this->media_asset_id,
                 'pdf_url' => $this->whenLoaded('mediaAsset', fn () => $this->mediaAsset?->url()),

@@ -1071,11 +1071,6 @@ Route::prefix('epapers')->group(function (): void {
             ->middleware('permission:epapers.edit')
             ->whereNumber('epaper');
 
-        // إعادة تشغيل استخراج النصّ (OCR) — Phase 4a.
-        Route::post('/{epaper}/ocr/rerun', [EpaperController::class, 'reprocessOcr'])
-            ->middleware('permission:epapers.edit')
-            ->whereNumber('epaper');
-
         // تحليلات القارئ (Phase 5) — تقرير أساسيّ لكل عدد.
         Route::get('/{epaper}/analytics', [EpaperController::class, 'analytics'])
             ->middleware('permission:epapers.view')

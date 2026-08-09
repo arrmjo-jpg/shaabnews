@@ -2,11 +2,9 @@
 
 use App\Http\Controllers\Api\V1\Public\Auth\SocialAuthController;
 use App\Http\Controllers\Public\BroadcastPageController;
-use App\Http\Controllers\Public\EpaperArchiveSearchController;
 use App\Http\Controllers\Public\EpaperDocumentController;
 use App\Http\Controllers\Public\EpaperReaderController;
 use App\Http\Controllers\Public\EpaperReaderStateController;
-use App\Http\Controllers\Public\EpaperSearchController;
 use App\Http\Controllers\Public\EpaperTrackController;
 use App\Http\Controllers\Public\RobotsController;
 use App\Http\Controllers\Public\RssController;
@@ -47,14 +45,6 @@ Route::middleware(['throttle:public.read', 'newspaper.enabled'])->group(function
         ->where('locale', 'ar|en')
         ->name('epaper.index');
 
-    // بحث الأرشيف العابر للأعداد (Phase 6) — مسبوق باللغة؛ مُسجَّل قبل {issue} لوضوحٍ
-    // (وإنْ لم يطابق «search» قيد {issue}=[0-9]+-[^/]+ أصلاً). يحترم EpaperAccessPolicy.
-    // خنق أضيق مُكدَّس (epaper.search) — استعلام محرّك أثقل من قراءةٍ عاديّة.
-    Route::get('/{locale}/epaper/search', [EpaperArchiveSearchController::class, 'search'])
-        ->where('locale', 'ar|en')
-        ->middleware('throttle:epaper.search')
-        ->name('epaper.search.archive');
-
     Route::get('/{locale}/epaper/{issue}', [EpaperReaderController::class, 'show'])
         ->where('locale', 'ar|en')
         ->where('issue', '[0-9]+-[^/]+')
@@ -77,12 +67,6 @@ Route::middleware(['throttle:public.read', 'newspaper.enabled'])->group(function
         ->where('locale', 'ar|en')
         ->where('issue', '[0-9]+-[^/]+')
         ->name('epaper.download');
-
-    // بحث داخل العدد (Phase 4b) — JSON من نصّ OCR؛ يحترم canView (كتسليم الوثيقة).
-    Route::get('/{locale}/epaper/{issue}/search', [EpaperSearchController::class, 'search'])
-        ->where('locale', 'ar|en')
-        ->where('issue', '[0-9]+-[^/]+')
-        ->name('epaper.search');
 
     // ─── احتفاظ القارئ + التحليلات (Phase 5) ──────────────────────────────
     // حالة القارئ (مُصادَق فقط؛ الزوّار يستخدمون localStorage): متابعة + إشارات.

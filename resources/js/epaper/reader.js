@@ -7,7 +7,6 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { PagedView } from './paged-view.js';
 import { ContinuousView } from './continuous-view.js';
 import { Thumbnails } from './thumbnails.js';
-import { EpaperSearch } from './search.js';
 import { ReaderState } from './reader-state.js';
 import { ReaderAnalytics } from './reader-analytics.js';
 import { Highlighter } from './highlight.js';
@@ -38,7 +37,6 @@ const ICON = {
   continuous: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="3" width="12" height="7"/><rect x="6" y="14" width="12" height="7"/></svg>',
   fullscreen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
   thumbs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
-  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
   bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>',
   bookmarks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3h11a1 1 0 0 1 1 1v15l-4-2.5L12 19V4a1 1 0 0 0-1-1z"/><path d="M8 3H5a1 1 0 0 0-1 1v15l4-2.5"/></svg>',
   download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
@@ -53,10 +51,6 @@ export class PdfReader {
     this.downloadEndpoint = root.getAttribute('data-download-endpoint');
     this.canDownload = root.getAttribute('data-can-download') === '1';
     this.subscribeUrl = root.getAttribute('data-subscribe-url') || '';
-    // بحث داخل العدد (Phase 4c) — نقطة 4b؛ searchable من طبقة النصّ (OCR).
-    this.searchEndpoint = root.getAttribute('data-search-endpoint') || '';
-    this.searchable = root.getAttribute('data-searchable') === '1';
-    this.search = null;
 
     // احتفاظ القارئ + التحليلات (Phase 5). الكتابة على مسارات الويب (كوكي + X-CSRF-TOKEN).
     this.csrf = root.getAttribute('data-csrf') || '';
@@ -236,7 +230,6 @@ export class PdfReader {
     bar.className = 'ep-toolbar';
 
     this.thumbsBtn = this._btn(ICON.thumbs, this.t.thumbnails, () => this.toggleThumbs());
-    this.searchBtn = this.searchEndpoint ? this._btn(ICON.search, this.t.search, () => this.toggleSearch()) : null;
     this.bookmarksBtn = this._btn(ICON.bookmarks, this.t.bookmarks, () => this.toggleBookmarks());
     this.bookmarkBtn = this._btn(ICON.bookmark, this.t.bookmarkAdd, () => void this._toggleCurrentBookmark());
     this.prevBtn = this._btn(ICON.prev, this.t.prev, () => this.prev());
@@ -276,10 +269,8 @@ export class PdfReader {
       return s;
     };
 
-    // مجموعة فتح الأدراج (مصغّرات/بحث/إشارات) في الصدر — البحث فقط عند توفّر نقطته.
-    const drawerBtns = [this.thumbsBtn];
-    if (this.searchBtn) drawerBtns.push(this.searchBtn);
-    drawerBtns.push(this.bookmarksBtn);
+    // مجموعة فتح الأدراج (مصغّرات/إشارات) في الصدر.
+    const drawerBtns = [this.thumbsBtn, this.bookmarksBtn];
 
     bar.append(
       ...drawerBtns, this.prevBtn, form, this.nextBtn,
@@ -302,8 +293,6 @@ export class PdfReader {
     this.body = body;
     this.thumbPanel = document.createElement('div');
     this.thumbPanel.className = 'ep-thumbs';
-    this.searchPanel = document.createElement('div');
-    this.searchPanel.className = 'ep-search';
     this.bookmarkPanel = document.createElement('div');
     this.bookmarkPanel.className = 'ep-bookmarks';
     this.backdrop = document.createElement('div');
@@ -311,7 +300,7 @@ export class PdfReader {
     this.backdrop.addEventListener('click', () => this._closeDrawers());
     this.stage = document.createElement('div');
     this.stage.className = 'ep-stage';
-    body.append(this.thumbPanel, this.searchPanel, this.bookmarkPanel, this.backdrop, this.stage);
+    body.append(this.thumbPanel, this.bookmarkPanel, this.backdrop, this.stage);
 
     // منطقة إعلان للقارئات الشاشية (استئناف القراءة) — مخفيّة بصرياً.
     this.live = document.createElement('div');
@@ -328,20 +317,6 @@ export class PdfReader {
     ui.append(bar, this.progressBar, body, this.live);
     this.ui = ui;
     this.root.append(ui);
-
-    if (this.searchEndpoint) {
-      this.search = new EpaperSearch(this.searchPanel, {
-        endpoint: this.searchEndpoint,
-        labels: this.t,
-        searchable: this.searchable,
-        onJump: (page) => {
-          this.goTo(page);
-          if (isNarrow()) this.toggleSearch(false);
-        },
-        onClose: () => this.toggleSearch(false),
-        onQuery: (q) => this.analytics.recordSearch(q),
-      });
-    }
 
     this._syncBookmarkButton();
   }
@@ -455,10 +430,6 @@ export class PdfReader {
     this._toggleDrawer('thumbs', force);
   }
 
-  toggleSearch(force) {
-    if (this.search) this._toggleDrawer('search', force);
-  }
-
   toggleBookmarks(force) {
     this._toggleDrawer('bookmarks', force);
   }
@@ -468,19 +439,15 @@ export class PdfReader {
     this._drawer = open ? name : (this._drawer === name ? null : this._drawer);
 
     this.thumbPanel.classList.toggle('is-open', this._drawer === 'thumbs');
-    if (this.searchPanel) this.searchPanel.classList.toggle('is-open', this._drawer === 'search');
     if (this.bookmarkPanel) this.bookmarkPanel.classList.toggle('is-open', this._drawer === 'bookmarks');
 
     this.thumbsBtn.setAttribute('aria-pressed', this._drawer === 'thumbs' ? 'true' : 'false');
-    if (this.searchBtn) this.searchBtn.setAttribute('aria-pressed', this._drawer === 'search' ? 'true' : 'false');
     if (this.bookmarksBtn) this.bookmarksBtn.setAttribute('aria-pressed', this._drawer === 'bookmarks' ? 'true' : 'false');
 
     this.backdrop.classList.toggle('is-open', this._drawer !== null && isNarrow());
     if (!isNarrow() && this.fitMode !== 'custom') this._relayout(); // stage width changed
 
     if (this._drawer === 'thumbs' && this.thumbs) this.thumbs.refresh();
-    if (this._drawer === 'search' && this.search) this.search.focus();
-    else if (this.search) this.search.abort(); // ألغِ بحثاً جارياً متى لم يكن البحث نشطاً
   }
 
   _closeDrawers() {

@@ -13,11 +13,10 @@ use Throwable;
 /**
  * توليد غلاف العدد من الصفحة الأولى — يعيد استخدام نظام مشتقّات الوسائط القائم
  * (MediaAsset.conversions['cover'])؛ لا نظام Media جديد. يُصيّر الصفحة 1 عبر poppler
- * pdftoppm (شقيق pdftotext المستعمَل في OCR) ويخزّن الصورة على قرص الأصل نفسه، ثمّ
- * يكتب مسارها في conversions['cover'] (يقرأها MediaAsset::conversionUrl('cover')).
+ * pdftoppm ويخزّن الصورة على قرص الأصل نفسه، ثمّ يكتب مسارها في conversions['cover']
+ * (يقرأها MediaAsset::conversionUrl('cover')).
  *
  * لا يكسر الأعداد القديمة: لا غلاف ⇒ conversions['cover'] غائب ⇒ المورد يُرجع null.
- * نفس نمط الوصول للملفّ في ExtractEpaperTextAction (قرص محلّي/بعيد عبر ملفّ مؤقّت).
  */
 final class EpaperCoverGenerator
 {

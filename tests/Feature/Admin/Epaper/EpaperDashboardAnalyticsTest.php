@@ -45,7 +45,6 @@ function epdaIssue(array $attrs = []): Epaper
         'publication_date' => now()->subDay()->toDateString(),
         'status' => 'published',
         'published_at' => now()->subDay(),
-        'ocr_status' => 'done',
     ], $attrs));
 }
 
@@ -141,20 +140,11 @@ it('404s the dashboard when the module is disabled', function (): void {
 
 // ─── Operations panel (item C) ───────────────────────────────────────────────
 
-it('returns operational visibility: OCR breakdown + search state + queues', function (): void {
-    epdaIssue(['ocr_status' => 'done']);
-    epdaIssue(['ocr_status' => 'failed']);
-    epdaIssue(['ocr_status' => 'failed']);
-
+it('returns operational visibility: queues + delivery', function (): void {
     $res = $this->actingAs(epdaAdmin())->getJson('/api/v1/admin/epapers/operations')->assertOk();
 
-    expect($res->json('data.ocr.by_status.failed'))->toBe(2);
-    expect($res->json('data.ocr.by_status.done'))->toBe(1);
-    expect($res->json('data.ocr.failed'))->toBe(2);
-    // محرّك البحث غير مفعّل في الاختبار (SCOUT_DRIVER ليس meilisearch).
-    expect($res->json('data.search.enabled'))->toBeFalse();
-    expect($res->json('data.search.state'))->toBe('disabled');
-    expect($res->json('data.queues'))->toHaveKeys(['pending', 'failed', 'search', 'media', 'analytics']);
+    expect($res->json('data.queues'))->toHaveKeys(['pending', 'failed', 'media', 'analytics']);
+    expect($res->json('data.delivery'))->toHaveKey('remote_enabled');
 });
 
 it('requires epapers.view for operations', function (): void {

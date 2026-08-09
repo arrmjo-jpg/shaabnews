@@ -45,8 +45,6 @@ export interface EpaperData {
   publication_date: string | null;
   current_version: number;
   page_count: number | null;
-  text_layer: string | null;
-  ocr_status: string | null;
   media: EpaperMediaRef;
   author?: { id: number; name: string } | null;
   canonical_path: string;
@@ -112,7 +110,6 @@ export interface EpaperAnalyticsData {
     title: string;
     issue_number: number;
     page_count: number | null;
-    ocr_status: string | null;
   };
   totals: {
     opens: number;
@@ -185,20 +182,7 @@ export interface EpaperDashboardData {
 
 /** الرؤية التشغيليّة للجريدة (Final completion — البند C) — تطابق EpaperOperationsAction. */
 export interface EpaperOperationsData {
-  search: {
-    enabled: boolean;
-    reachable: boolean | null;
-    indexed_documents: number | null;
-    is_indexing: boolean;
-    state: 'healthy' | 'empty' | 'unreachable' | 'disabled';
-  };
-  ocr: {
-    by_status: Record<string, number>;
-    failed: number;
-    stuck: number;
-    backlog: number;
-  };
-  queues: { pending: number; failed: number; search: number; media: number; analytics: number };
+  queues: { pending: number; failed: number; media: number; analytics: number };
   delivery: { remote_enabled: boolean };
   checked_at: string;
 }

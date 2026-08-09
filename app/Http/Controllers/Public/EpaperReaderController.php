@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Public;
 
 use App\Enums\EpaperAccessLevel;
-use App\Enums\EpaperTextLayer;
 use App\Http\Controllers\Controller;
 use App\Models\Epaper;
 use App\Settings\NewspaperSettings;
@@ -86,9 +85,6 @@ class EpaperReaderController extends Controller
             // لا روابط PDF خام: القارئ يصكّ رابطاً موقَّتاً من نقطة التسليم بعد فحص الوصول.
             'docEndpoint' => route('epaper.document', ['locale' => $locale, 'issue' => $issueParam]),
             'downloadEndpoint' => route('epaper.download', ['locale' => $locale, 'issue' => $issueParam]),
-            // بحث داخل العدد (Phase 4c): النقطة + تلميح القابلية (طبقة نصّ OCR حاضرة/جزئية).
-            'searchEndpoint' => route('epaper.search', ['locale' => $locale, 'issue' => $issueParam]),
-            'searchable' => in_array($epaper->text_layer, [EpaperTextLayer::Present, EpaperTextLayer::Partial], true),
             // احتفاظ القارئ + التحليلات (Phase 5): نقاط الحالة/التتبّع + علم المصادقة.
             'stateEndpoint' => route('epaper.state', ['locale' => $locale, 'issue' => $issueParam]),
             'progressEndpoint' => route('epaper.progress', ['locale' => $locale, 'issue' => $issueParam]),

@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EpaperAccessLevel;
-use App\Enums\EpaperOcrStatus;
 use App\Enums\EpaperStatus;
-use App\Enums\EpaperTextLayer;
 use App\Support\Audit\AuditsChanges;
 use App\Support\Content\SlugGenerator;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -67,8 +65,6 @@ class Epaper extends Model
         'access_level',
         'media_asset_id',
         'page_count',
-        'text_layer',
-        'ocr_status',
         'current_version',
         'author_id',
         'published_by_id',
@@ -82,8 +78,6 @@ class Epaper extends Model
             'access_level' => EpaperAccessLevel::class,
             'issue_number' => 'integer',
             'page_count' => 'integer',
-            'ocr_status' => EpaperOcrStatus::class,
-            'text_layer' => EpaperTextLayer::class,
             'current_version' => 'integer',
             'publication_date' => 'date',
             'published_at' => 'datetime',
@@ -162,12 +156,6 @@ class Epaper extends Model
     public function urlHistory(): HasMany
     {
         return $this->hasMany(EpaperUrlHistory::class);
-    }
-
-    /** @return HasMany<EpaperPage> */
-    public function pages(): HasMany
-    {
-        return $this->hasMany(EpaperPage::class)->orderBy('page_number');
     }
 
     // ─── Scopes ─────────────────────────────────────────────────────

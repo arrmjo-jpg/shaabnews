@@ -11,7 +11,6 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
-  ScanText,
   Send,
   Trash2,
   Undo2,
@@ -40,7 +39,6 @@ import {
   useDuplicateEpaper,
   useEpapers,
   useForceDeleteEpaper,
-  useReprocessOcr,
   useRestoreEpaper,
   useTransitionEpaper,
 } from '../hooks';
@@ -55,15 +53,6 @@ const STATUS_TONE: Record<EpaperStatus, 'success' | 'muted'> = {
   scheduled: 'muted',
   draft: 'muted',
   archived: 'muted',
-};
-
-/** نبرة شارة حالة OCR — done أخضر، failed أحمر، partial كهرماني (تحذيريّ)، الباقي محايد. */
-const OCR_TONE: Record<string, 'success' | 'muted' | 'destructive' | 'default'> = {
-  done: 'success',
-  failed: 'destructive',
-  processing: 'default',
-  partial: 'muted',
-  pending: 'muted',
 };
 
 export default function EpapersPage() {
@@ -99,7 +88,6 @@ export default function EpapersPage() {
   const forceDel = useForceDeleteEpaper();
   const transition = useTransitionEpaper();
   const duplicate = useDuplicateEpaper();
-  const reprocess = useReprocessOcr();
 
   const inTrash = params.trashed === 'only';
   const rows = q.data?.data ?? [];
@@ -167,17 +155,6 @@ export default function EpapersPage() {
     success(t('duplicated'));
     navigate(paths.epaperIssuesEdit.replace(':id', String(created.id)));
   };
-  const onReprocessOcr = async (e: EpaperData) => {
-    if (
-      await confirm({
-        title: t('ocr.rerunTitle'),
-        text: t('ocr.rerunText', { title: e.title }),
-        confirmText: t('ocr.rerun'),
-        cancelText: cancel(),
-      })
-    )
-      reprocess.mutate(e.id);
-  };
   const submitSchedule = () => {
     if (!scheduling || !scheduleAt) return;
     transition.mutate(
@@ -229,25 +206,6 @@ export default function EpapersPage() {
       header: t('col.version'),
       align: 'center',
       render: (e) => <span className="text-xs tabular-nums text-muted-foreground">v{e.current_version}</span>,
-    },
-    {
-      key: 'ocr',
-      header: t('col.ocr'),
-      render: (e) =>
-        e.ocr_status ? (
-          <Badge
-            variant={OCR_TONE[e.ocr_status] ?? 'muted'}
-            className={cn(
-              e.ocr_status === 'partial' &&
-                'border-transparent bg-amber-500/12 text-amber-600 dark:text-amber-400',
-            )}
-          >
-            {e.ocr_status === 'failed' ? <AlertTriangle className="h-3 w-3" /> : null}
-            {t(`ocr.status.${e.ocr_status}`)}
-          </Badge>
-        ) : (
-          <span className="text-xs text-muted-foreground">—</span>
-        ),
     },
     {
       key: 'pdf',
@@ -346,12 +304,6 @@ export default function EpapersPage() {
                   <DropdownMenuItem onClick={() => void onDuplicate(e)}>
                     <Copy className="h-4 w-4" />
                     {t('action.duplicate')}
-                  </DropdownMenuItem>
-                ) : null}
-                {canEdit && e.media.asset_id !== null ? (
-                  <DropdownMenuItem onClick={() => void onReprocessOcr(e)}>
-                    <ScanText className="h-4 w-4" />
-                    {t('ocr.rerun')}
                   </DropdownMenuItem>
                 ) : null}
                 {canDelete ? (

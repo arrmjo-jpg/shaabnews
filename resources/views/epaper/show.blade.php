@@ -33,8 +33,6 @@
         data-doc-endpoint="{{ $docEndpoint }}"
         @if ($canDownload) data-download-endpoint="{{ $downloadEndpoint }}" data-can-download="1" @endif
         @if ($newspaperCfg->subscribe_url !== '') data-subscribe-url="{{ $newspaperCfg->subscribe_url }}" @endif
-        data-search-endpoint="{{ $searchEndpoint }}"
-        @if ($searchable) data-searchable="1" @endif
         data-state-endpoint="{{ $stateEndpoint }}"
         data-progress-endpoint="{{ $progressEndpoint }}"
         data-bookmarks-endpoint="{{ $bookmarksEndpoint }}"
@@ -68,14 +66,6 @@
                     'deliveryError' => __('epaper.reader.delivery_error'),
                     'retry' => __('epaper.reader.retry'),
                     'subscribe' => __('epaper.reader.subscribe'),
-                    'search' => __('epaper.reader.search'),
-                    'searchPlaceholder' => __('epaper.reader.search_placeholder'),
-                    'searchLoading' => __('epaper.reader.search_loading'),
-                    'searchEmpty' => __('epaper.reader.search_empty'),
-                    'searchCount' => __('epaper.reader.search_count'),
-                    'searchHint' => __('epaper.reader.search_hint'),
-                    'searchUnavailable' => __('epaper.reader.search_unavailable'),
-                    'searchError' => __('epaper.reader.search_error'),
                     'searchPageLabel' => __('epaper.reader.search_page'),
                     'bookmarkAdd' => __('epaper.reader.bookmark_add'),
                     'bookmarkRemove' => __('epaper.reader.bookmark_remove'),

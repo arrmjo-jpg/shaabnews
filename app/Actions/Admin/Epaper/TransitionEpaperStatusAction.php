@@ -8,7 +8,6 @@ use App\Enums\EpaperStatus;
 use App\Http\Resources\Admin\Epaper\EpaperResource;
 use App\Models\Epaper;
 use App\Models\User;
-use App\Support\Epaper\EpaperSearchIndexer;
 use App\Support\Frontend\FrontendCacheTags;
 use App\Support\Frontend\FrontendRevalidate;
 use App\Support\Responses\ApiResponse;
@@ -62,9 +61,6 @@ class TransitionEpaperStatusAction
             EpaperStatus::Archived => $epaper, // يحتفظ بـ published_at
         };
         $epaper->save();
-
-        // الحالة تحكم الظهور في الأرشيف ⇒ زامِن فهرس البحث (نشر=فهرسة، إلغاء/أرشفة=تطهير).
-        EpaperSearchIndexer::queueSync($epaper->id);
 
         // الحالة تحكم الظهور في الواجهة العامة (Draft/Archived لا يظهران، Published يظهر) ⇒ أبطل كاش الواجهة.
         FrontendRevalidate::tags(FrontendCacheTags::epaper($epaper));

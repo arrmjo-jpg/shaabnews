@@ -12,7 +12,6 @@ use App\Actions\Admin\Epaper\EpaperOperationsAction;
 use App\Actions\Admin\Epaper\ForceDeleteEpaperAction;
 use App\Actions\Admin\Epaper\ListEpapersAction;
 use App\Actions\Admin\Epaper\ReplacePdfAction;
-use App\Actions\Admin\Epaper\ReprocessEpaperOcrAction;
 use App\Actions\Admin\Epaper\RestoreEpaperAction;
 use App\Actions\Admin\Epaper\SetEpaperCoverAction;
 use App\Actions\Admin\Epaper\ShowEpaperAnalyticsAction;
@@ -60,12 +59,6 @@ class EpaperController extends Controller
         return (new ReplacePdfAction)->handle($epaper, $request->file('file'), $request->input('note'), $request->user());
     }
 
-    /** إعادة تشغيل استخراج نصّ العدد (OCR) يدوياً. */
-    public function reprocessOcr(Epaper $epaper): JsonResponse
-    {
-        return (new ReprocessEpaperOcrAction)->handle($epaper);
-    }
-
     /** رفع/تعيين غلاف العدد يدوياً (صورة) — يُخزَّن في conversions['cover']. */
     public function setCover(SetEpaperCoverRequest $request, Epaper $epaper): JsonResponse
     {
@@ -88,7 +81,7 @@ class EpaperController extends Controller
         );
     }
 
-    /** رؤية تشغيليّة للجريدة (Final completion — البند C): OCR + بحث + فهرس + طوابير. */
+    /** رؤية تشغيليّة للجريدة (Final completion — البند C): طوابير + تسليم بعيد. */
     public function operations(): JsonResponse
     {
         return (new EpaperOperationsAction)->handle();

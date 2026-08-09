@@ -36,15 +36,6 @@ import { useEpaperDashboard, useEpaperOperations } from '../hooks';
 /** نطاق عُدّة التحليلات (24h/7d/30d/custom) → فترة الواجهة الخلفية (today/7d/30d/custom). */
 const PERIOD: Record<AnalyticsRangeKey, string> = { '24h': 'today', '7d': '7d', '30d': '30d', custom: 'custom' };
 
-const OCR_TONE: Record<string, string> = {
-  done: 'text-emerald-600 dark:text-emerald-400',
-  partial: 'text-amber-600 dark:text-amber-400',
-  failed: 'text-destructive',
-  processing: 'text-sky-600 dark:text-sky-400',
-  pending: 'text-muted-foreground',
-};
-const OCR_KEYS = ['done', 'partial', 'processing', 'pending', 'failed'] as const;
-
 export default function EpaperAnalyticsDashboardPage() {
   const { t } = useTranslation('epaper');
   const [range, setRange] = useState<RangeValue>({ range: '30d' });
@@ -236,43 +227,13 @@ export default function EpaperAnalyticsDashboardPage() {
         {ops.isLoading || !ops.data ? (
           <Skeleton className="h-24 w-full" />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* OCR */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground">{t('analyticsDash.ops.ocr')}</p>
-              <div className="flex flex-wrap gap-2">
-                {OCR_KEYS.map((k) => (
-                  <span key={k} className={cn('inline-flex items-center gap-1 border border-border bg-background px-2 py-1 text-xs', OCR_TONE[k])}>
-                    {t(`ocr.status.${k}`)}: <span className="font-semibold tabular-nums">{fmtNum(ops.data!.ocr.by_status[k] ?? 0)}</span>
-                  </span>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('analyticsDash.ops.backlog')}: <span className="tabular-nums">{fmtNum(ops.data.ocr.backlog)}</span>
-                {' · '}
-                {t('analyticsDash.ops.stuck')}: <span className={cn('tabular-nums', ops.data.ocr.stuck > 0 && 'text-destructive')}>{fmtNum(ops.data.ocr.stuck)}</span>
-              </p>
-            </div>
-
-            {/* Search engine + index + queues */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground">{t('analyticsDash.ops.search')}</p>
-              <p className="text-xs">
-                {t('analyticsDash.ops.engine')}:{' '}
-                <span className={cn('font-medium', ops.data.search.state === 'healthy' ? 'text-emerald-600 dark:text-emerald-400' : ops.data.search.state === 'disabled' ? 'text-muted-foreground' : 'text-destructive')}>
-                  {t(`analyticsDash.ops.state.${ops.data.search.state}`)}
-                </span>
-                {ops.data.search.indexed_documents !== null ? (
-                  <> · {t('analyticsDash.ops.indexed')}: <span className="tabular-nums">{fmtNum(ops.data.search.indexed_documents)}</span></>
-                ) : null}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t('analyticsDash.ops.queues')}: search <span className="tabular-nums">{fmtNum(ops.data.queues.search)}</span>
-                {' · '}media <span className="tabular-nums">{fmtNum(ops.data.queues.media)}</span>
-                {' · '}analytics <span className="tabular-nums">{fmtNum(ops.data.queues.analytics)}</span>
-                {' · '}{t('analyticsDash.ops.failed')} <span className={cn('tabular-nums', ops.data.queues.failed > 0 && 'text-destructive')}>{fmtNum(ops.data.queues.failed)}</span>
-              </p>
-            </div>
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground">{t('analyticsDash.ops.queuesTitle')}</p>
+            <p className="text-xs text-muted-foreground">
+              {t('analyticsDash.ops.queues')}: media <span className="tabular-nums">{fmtNum(ops.data.queues.media)}</span>
+              {' · '}analytics <span className="tabular-nums">{fmtNum(ops.data.queues.analytics)}</span>
+              {' · '}{t('analyticsDash.ops.failed')} <span className={cn('tabular-nums', ops.data.queues.failed > 0 && 'text-destructive')}>{fmtNum(ops.data.queues.failed)}</span>
+            </p>
           </div>
         )}
       </Panel>

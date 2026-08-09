@@ -6,7 +6,6 @@ namespace App\Actions\Admin\Epaper;
 
 use App\Enums\EpaperStatus;
 use App\Models\Epaper;
-use App\Support\Epaper\EpaperSearchIndexer;
 use App\Support\Frontend\FrontendCacheTags;
 use App\Support\Frontend\FrontendRevalidate;
 use Illuminate\Support\Facades\Cache;
@@ -61,7 +60,6 @@ final class PublishDueEpapersAction
                         if ($fresh !== null) {
                             $published++;
                             $purgeQueue[] = $fresh;
-                            EpaperSearchIndexer::queueSync($fresh->id); // نُشِر آلياً ⇒ فهرسة
                         }
                     }
                 });
