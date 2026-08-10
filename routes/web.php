@@ -84,7 +84,10 @@ Route::middleware(['throttle:public.read', 'newspaper.enabled'])->group(function
 });
 
 // بثّ احتياطيّ موقَّع (Range) — يُستخدَم فقط حين يتعذّر التخزين البعيد؛ التوقيع هو الحارس.
-Route::middleware(['signed', 'newspaper.enabled'])
+// 'media.root-url' *قبل* 'signed' إلزاميّ — يفرض نفس جذر URL المستخدَم وقت التوقيع
+// (EpaperDocumentDelivery::mint) قبل أن يتحقّق 'signed' من التوقيع، وإلا يفشل دائمًا
+// بـ"Invalid signature" (مؤكَّد حيّاً 2026-08-10) — انظر App\Http\Middleware\ForceMediaRootUrl.
+Route::middleware(['media.root-url', 'signed', 'newspaper.enabled'])
     ->get('/epaper/stream/{epaper}', [EpaperDocumentController::class, 'stream'])
     ->whereNumber('epaper')
     ->name('epaper.document.stream');

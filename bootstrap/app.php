@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureNewspaperEnabled;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureWriter;
+use App\Http\Middleware\ForceMediaRootUrl;
 use App\Http\Middleware\PublicCacheHeaders;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyRecaptcha;
@@ -72,6 +73,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // بوابة وحدة الجريدة الرقمية (معطَّل = 404)
             'newspaper.enabled' => EnsureNewspaperEnabled::class,
+
+            // يفرض نفس جذر URL المستخدَم وقت توقيع رابط بثّ PDF (EpaperDocumentDelivery::mint)
+            // قبل تحقّق 'signed' المدمج — انظر App\Http\Middleware\ForceMediaRootUrl للتفصيل الكامل.
+            'media.root-url' => ForceMediaRootUrl::class,
 
             // حماية reCAPTCHA (gated بـ recaptcha_enabled)
             'recaptcha' => VerifyRecaptcha::class,
