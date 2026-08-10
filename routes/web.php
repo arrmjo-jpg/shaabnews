@@ -41,20 +41,28 @@ Route::middleware('throttle:public.read')->group(function (): void {
 // locale محصور بـ ar|en (لا يصطدم بـ /{kind} للبثّ). newspaper.enabled: الوحدة المعطَّلة = 404
 // (دلالة "معطَّل = غير موجود"، عموماً كما إدارياً). throttle:public.read — حارس القراءة العامّ.
 Route::middleware(['throttle:public.read', 'newspaper.enabled'])->group(function (): void {
-    Route::get('/{locale}/epaper', [EpaperReaderController::class, 'index'])
-        ->where('locale', 'ar|en')
-        ->name('epaper.index');
+    // صفحات القارئ (Blade/SSR) فقط — 'epaper.reader-root' يفرض جذر الروابط المطلقة التي تُبنى
+    // أثناء عرض هذه الصفحات (@vite، وroute() المُستدعاة داخل EpaperReaderController::show() لبناء
+    // data-doc-endpoint وبقيّة نقاط الجلب) على مضيف الطلب الوارد الموثوق بدل APP_URL الثابت. انظر
+    // App\Http\Middleware\ForceReaderPublicRootUrl للتفصيل الكامل. لا يشمل نقاط التسليم/الحالة
+    // أدناه عمداً — تلك تُستدعى كطلبات JS منفصلة لاحقًا، لا تُنتج هي نفسها روابط @vite/route()
+    // إضافية يلزم تصحيح جذرها.
+    Route::middleware('epaper.reader-root')->group(function (): void {
+        Route::get('/{locale}/epaper', [EpaperReaderController::class, 'index'])
+            ->where('locale', 'ar|en')
+            ->name('epaper.index');
 
-    Route::get('/{locale}/epaper/{issue}', [EpaperReaderController::class, 'show'])
-        ->where('locale', 'ar|en')
-        ->where('issue', '[0-9]+-[^/]+')
-        ->name('epaper.show');
+        Route::get('/{locale}/epaper/{issue}', [EpaperReaderController::class, 'show'])
+            ->where('locale', 'ar|en')
+            ->where('issue', '[0-9]+-[^/]+')
+            ->name('epaper.show');
 
-    Route::get('/{locale}/epaper/{issue}/p/{page}', [EpaperReaderController::class, 'show'])
-        ->where('locale', 'ar|en')
-        ->where('issue', '[0-9]+-[^/]+')
-        ->where('page', '[0-9]+')
-        ->name('epaper.page');
+        Route::get('/{locale}/epaper/{issue}/p/{page}', [EpaperReaderController::class, 'show'])
+            ->where('locale', 'ar|en')
+            ->where('issue', '[0-9]+-[^/]+')
+            ->where('page', '[0-9]+')
+            ->name('epaper.page');
+    });
 
     // تسليم الوثيقة — يصكّ رابطاً موقَّتاً بعد فحص canView (لا روابط PDF خام في الصفحة).
     Route::get('/{locale}/epaper/{issue}/document', [EpaperDocumentController::class, 'document'])

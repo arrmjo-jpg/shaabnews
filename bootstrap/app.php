@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureNewspaperEnabled;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureWriter;
 use App\Http\Middleware\ForceMediaRootUrl;
+use App\Http\Middleware\ForceReaderPublicRootUrl;
 use App\Http\Middleware\PublicCacheHeaders;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyRecaptcha;
@@ -78,6 +79,11 @@ return Application::configure(basePath: dirname(__DIR__))
             // التوقيع بنفس جذر URL المستخدَم وقت التوقيع (EpaperDocumentDelivery::mint) لا بمضيف
             // الطلب الوارد فعليّاً. انظر App\Http\Middleware\ForceMediaRootUrl للتفصيل الكامل.
             'media.root-url' => ForceMediaRootUrl::class,
+
+            // صفحات قارئ الجريدة الرقمية (Blade/SSR) فقط — يفرض جذر الروابط المطلقة (@vite،
+            // route()) على مضيف الطلب الوارد الموثوق بدل APP_URL الثابت. انظر
+            // App\Http\Middleware\ForceReaderPublicRootUrl للتفصيل الكامل.
+            'epaper.reader-root' => ForceReaderPublicRootUrl::class,
 
             // حماية reCAPTCHA (gated بـ recaptcha_enabled)
             'recaptcha' => VerifyRecaptcha::class,

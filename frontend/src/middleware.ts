@@ -17,7 +17,32 @@ import type { NextRequest } from 'next/server';
 const COOKIE_NAME = 'acm_site_view';
 const DESKTOP_PREFIX = '/desktop-view';
 
+// ROOT CAUSE FIX (قارئ الجريدة الرقمية على new.harer.store يفشل بحظر CORS، مؤكَّد حيًّا
+// 2026-08-10): next.config.ts يمرِّر (rewrite) هذه المسارات إلى أصل الـAPI مباشرةً — طلب HTTP
+// جديد كليًا من Next نفسه، فيضيع فيه Host الأصلي الذي رآه المتصفّح (new.harer.store). الباك-إند
+// يبني كل الروابط المطلقة في صفحات القارئ (@vite، route()) بجذر ذلك الطلب الوارد؛ بلا حقن صريح
+// هنا كانت تُبنى بجذر أصل الـAPI نفسه، فتفشل حزمة JS بحظر CORS. نفس أنماط المسارات المُعرَّفة في
+// rewrites() بالضبط — لا نغيّر تلك، فقط نحقن الترويسة على الطلب *قبل* أن يصل إليها.
+//
+// ترويسة مخصَّصة X-Epaper-Frontend-Origin لا X-Forwarded-Host: تحقَّقتُ من إعدادات Traefik
+// الفعليّة (قراءة فقط) أن forwardedHeaders في وضعها الافتراضي — يُعيد توليد X-Forwarded-Host
+// بنفسه في كل قفزة يُنهيها (يستبدله بدومين تلك القفزة، api-new.harer.store هنا)، فلو استُخدم اسمها
+// القياسي لضاعت قيمتنا في قفزة Traefik الثانية أمام الباك-إند. ترويسة عامّة لا يديرها Traefik تمر
+// دون تعديل. القيمة نفسها Host/Proto الفعليان لهذا الطلب — كلاهما مؤكَّدان صحيحان عند وصولهما لهذا
+// الـmiddleware (Traefik الأولى تحافظ على Host الأصليّ عند التمرير لخدمة frontend، وX-Forwarded-
+// Proto مؤكَّد يعمل صح عبر هذه القفزة نفسها من إصلاح PDF السابق). الباك-إند لا يثق بالقيمة كما هي
+// أبداً — يقارنها فقط بـFRONTEND_URL المُعدَّة لديه (انظر App\Http\Middleware\ForceReaderPublicRootUrl).
+const EPAPER_PROXY_PATTERN = /^\/(ar|en)\/epaper(\/.*)?$|^\/epaper\/stream\/|^\/build\//;
+
 export function middleware(request: NextRequest) {
+  if (EPAPER_PROXY_PATTERN.test(request.nextUrl.pathname)) {
+    const proto = request.headers.get('x-forwarded-proto') ?? 'https';
+    const host = request.headers.get('host') ?? request.nextUrl.host;
+    const headers = new Headers(request.headers);
+    headers.set('x-epaper-frontend-origin', `${proto}://${host}`);
+    return NextResponse.next({ request: { headers } });
+  }
+
   if (request.cookies.get(COOKIE_NAME)?.value !== 'desktop') {
     return NextResponse.next();
   }
