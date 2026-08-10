@@ -81,6 +81,12 @@ class Article extends Model
             'is_squares' => 'boolean',
             'comments_enabled' => 'boolean',
             'published_at' => 'datetime',
+            // صريحان هنا (لا الاعتماد على timestamps الافتراضي) لأنّ استيراد ووردبريس
+            // يُعطِّل $timestamps مؤقتاً للحفاظ على تواريخ المصدر (انظر
+            // ImportWpPostAction::persist) — وهذا يُسقط أيضاً تحويل هذين العمودين
+            // التلقائي عبر getDates()، فيبقيان كنص خام يكسر Article::toSearchableArray().
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
             'views_count' => 'integer',
         ];
     }
