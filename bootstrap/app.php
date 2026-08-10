@@ -74,8 +74,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // بوابة وحدة الجريدة الرقمية (معطَّل = 404)
             'newspaper.enabled' => EnsureNewspaperEnabled::class,
 
-            // يفرض نفس جذر URL المستخدَم وقت توقيع رابط بثّ PDF (EpaperDocumentDelivery::mint)
-            // قبل تحقّق 'signed' المدمج — انظر App\Http\Middleware\ForceMediaRootUrl للتفصيل الكامل.
+            // يستبدل middleware الـ'signed' المدمَج بالكامل لمسار بثّ PDF الاحتياطي — يتحقّق من
+            // التوقيع بنفس جذر URL المستخدَم وقت التوقيع (EpaperDocumentDelivery::mint) لا بمضيف
+            // الطلب الوارد فعليّاً. انظر App\Http\Middleware\ForceMediaRootUrl للتفصيل الكامل.
             'media.root-url' => ForceMediaRootUrl::class,
 
             // حماية reCAPTCHA (gated بـ recaptcha_enabled)
