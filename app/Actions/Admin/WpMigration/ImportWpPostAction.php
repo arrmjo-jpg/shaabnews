@@ -12,7 +12,9 @@ use App\Models\Article;
 use App\Models\ArticleUrlHistory;
 use App\Models\MigrationItem;
 use App\Models\MigrationRun;
+use App\Support\Cache\ArticleCacheTags;
 use App\Support\Content\ArticleCategoryGuard;
+use App\Support\Content\ArticleCdnPurge;
 use App\Support\Content\HtmlToTipTap;
 use App\Support\Content\TipTapRenderer;
 use App\Support\Content\TipTapSanitizer;
@@ -25,6 +27,7 @@ use App\Support\WpMigration\WpMediaImporter;
 use App\Support\WpMigration\WpMediaResolver;
 use App\Support\WpMigration\WpPostReader;
 use App\Support\WpMigration\WpPostRecord;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Throwable;
@@ -184,6 +187,14 @@ class ImportWpPostAction
 
                 return $article;
             });
+
+            // إبطال كاش تفاصيل/قوائم المقال العام — بلا هذا، صفحة تفاصيل المقال (المُخزَّنة
+            // بمعرّفه عند أول زيارة) تبقى عالقة على اللقطة القديمة (بلا صورة مثلاً) حتى
+            // تنتهي صلاحية TTL طبيعياً، رغم أنّ البيانات صارت صحيحة فوراً (نفس الثغرة التي
+            // كانت تُبطِلها كل أفعال الإدارة العادية عبر ArticleCacheTags::writeTags — هذا
+            // المسار وحده كان يفتقدها لأنه لا يمرّ عبر تلك الأفعال).
+            Cache::tags(ArticleCacheTags::writeTags($article->fresh()))->flush();
+            ArticleCdnPurge::purge($article);
 
             // ── تحويل المسار (ملحق): فشله ⇒ جزئي لا فشل كارثيّ (#4)، بلا تكرار (#9) ──
             $redirectOk = $this->redirect($article, $record);
