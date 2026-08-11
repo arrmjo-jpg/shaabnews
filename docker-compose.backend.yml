@@ -58,6 +58,17 @@ services:
       # Services" في سجلات coolify-proxy قبل إضافة هذا السطر.
       - traefik.http.routers.backend.service=backend
       - traefik.http.services.backend.loadbalancer.server.port=80
+      # تحويل HTTP→HTTPS يدويّ صريح — سجلات coolify-proxy تُظهر أن زوج http-0/https-0 التلقائي
+      # التوليد من Coolify لهذه الحاوية معطَّل منذ 2026-08-09 لنفس سبب الراوترات أعلاه بالضبط
+      # ("cannot be linked automatically with multiple Services")، دون أن يخضع لتصحيح `service=`
+      # اليدوي لأنه خارج هذا الملف كليًّا — فحص http://api.shaabjo.com كان يرجع 404 بدل تحويل.
+      # `service=` هنا إلزاميّ لنفس السبب الموثَّق أعلاه لراوتر `backend` (خدمتان في هذه الحاوية).
+      # `redirect-to-https` middleware مُعرَّف عالميًّا في إعدادات Coolify (مؤكَّد حيًّا، انظر
+      # نفس الملاحظة في docker-compose.frontend.yml) — لا حاجة لإعادة تعريفه.
+      - traefik.http.routers.backend-http.rule=Host(`api.shaabjo.com`)
+      - traefik.http.routers.backend-http.entrypoints=http
+      - traefik.http.routers.backend-http.middlewares=redirect-to-https
+      - traefik.http.routers.backend-http.service=backend
       # نفس راوتر public-storage الموجود سابقًا في docker-compose.yml الموحَّد — يخدم /storage من
       # nginx الخاص بـbackend مباشرة على دومين الـFRONTEND العام (لا دومين الـbackend نفسه) — قيد
       # قائم من قبل الانقسام، لا شيء جديد أضافه هذا الملف. القيمة هنا يجب أن تطابق frontend's

@@ -57,6 +57,15 @@ services:
       - traefik.http.routers.frontend.tls=true
       - traefik.http.routers.frontend.tls.certresolver=letsencrypt
       - traefik.http.services.frontend.loadbalancer.server.port=3000
+      # تحويل HTTP→HTTPS يدويّ صريح — مؤكَّد حيًّا (2026-08-11) أن هذا التطبيق كان يعتمد كليًّا
+      # على router تلقائي التوليد من Coolify (خارج ملف الـcompose هذا)، وأنه إمّا غاب أو كان تالفًا
+      # (`Host()`` && PathPrefix(`shaabjo.com`)`‎ بدل Host صحيح) — فحص http://shaabjo.com كان يرجع
+      # 404 بدل تحويل. `redirect-to-https` middleware مُعرَّف مسبقًا وعالميًّا في إعدادات Traefik
+      # الخاصة بـCoolify نفسها (تحقَّق حيًّا: يعمل فعلاً لـadmin بلا أي تعريف محلي له) — لا حاجة
+      # لإعادة تعريفه هنا، فقط الإشارة إليه بالاسم.
+      - traefik.http.routers.frontend-http.rule=Host(`shaabjo.com`)
+      - traefik.http.routers.frontend-http.entrypoints=http
+      - traefik.http.routers.frontend-http.middlewares=redirect-to-https
 
 volumes:
   frontend-cache:
