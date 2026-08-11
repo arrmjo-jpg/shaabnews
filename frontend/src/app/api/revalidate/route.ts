@@ -23,7 +23,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const tags = Array.isArray(raw) ? raw.filter((t): t is string => typeof t === 'string' && t.length > 0) : [];
   if (tags.length === 0) return NextResponse.json({ error: 'no_tags' }, { status: 422 });
 
-  for (const tag of tags) revalidateTag(tag);
+  console.log('[revalidate:start]', { tags, at: new Date().toISOString() });
+
+  for (const tag of tags) {
+    console.log('[revalidate:tag]', tag);
+    revalidateTag(tag);
+  }
+
+  console.log('[revalidate:done]', { count: tags.length, at: new Date().toISOString() });
 
   return NextResponse.json({ revalidated: true, count: tags.length, tags });
 }
