@@ -71,9 +71,16 @@ for (const ep of PREFLIGHT_ENDPOINTS) {
       failures.push(`${ep.label}: expected array at "${ep.arrayPath}" — ${url}`);
       console.error(`  body:\n${JSON.stringify(body, null, 2)}`);
     } else if (arr.length === 0) {
-      // 200 بقائمة فارغة هو بالضبط السيناريو الذي يُنتج صفحة موسومة لكن بلا محتوى.
-      failures.push(`${ep.label}: HTTP 200 but "${ep.arrayPath}" is empty — ${url}`);
-      console.error(`  body:\n${JSON.stringify(body, null, 2)}`);
+      // 200 بقائمة فارغة هو بالضبط السيناريو الذي يُنتج صفحة موسومة لكن بلا محتوى — عدا فيديوهات:
+      // فارغة شرعًا حين لا يوجد فيديو منشور بعد، فتُسقط البناء ظلمًا. تحذير فقط لهذه الحالة تحديدًا؛
+      // الفشل يبقى قائمًا لها في كل الحالات الأخرى (لا استجابة، 500، JSON غير صالح).
+      const emptyMsg = `${ep.label}: HTTP 200 but "${ep.arrayPath}" is empty — ${url}`;
+      if (ep.label === 'videos feed') {
+        console.warn(`[build-gate:preflight] WARNING — ${emptyMsg}`);
+      } else {
+        failures.push(emptyMsg);
+        console.error(`  body:\n${JSON.stringify(body, null, 2)}`);
+      }
     } else {
       console.log(`[build-gate:preflight] OK — ${ep.label} (${arr.length} item(s))`);
     }
