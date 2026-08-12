@@ -379,7 +379,13 @@ export const getCategoryFeed = cache(
       qs.set('filter[category]', slug);
       const res = await fetch(
         `${env.apiBaseUrl}/api/v1/${encodeURIComponent(locale)}/articles?${qs.toString()}`,
-        { headers: env.internalHeaders, next: { revalidate: 36000, tags: ['articles', `category:${slug}`] } }, // ISR — سقف أمان فقط.
+        {
+          headers: env.internalHeaders,
+          // 'homepage-sections' تشخيصي/علاجي مؤقت (2026-08-12): إبطال احتياطي إضافي لأقسام
+          // الرئيسية (9 مستهلكين لهذه الدالة) — لا يستبدل category:{slug}، يُزال إن ثبت
+          // أن category:{slug} وحده كافٍ بعد التحقيق.
+          next: { revalidate: 36000, tags: ['articles', `category:${slug}`, 'homepage-sections'] }, // ISR — سقف أمان فقط.
+        },
       );
       if (!res.ok) return [];
       const parsed = EnvelopeSchema.safeParse(await res.json());

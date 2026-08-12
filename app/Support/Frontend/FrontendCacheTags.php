@@ -50,6 +50,10 @@ final class FrontendCacheTags
             // P0 (Cache Invalidation Audit): searchArticles() تستخدم هذا الوسم لكنه لم يكن
             // يُبطَل إطلاقًا — نتيجة بحث لمقال جديد/محذوف كانت تنتظر سقف revalidate=60 فقط.
             'search',
+            // إبطال احتياطي مؤقت (2026-08-12): يطابق getCategoryFeed('homepage-sections')
+            // في frontend/src/lib/feed.ts — غير مشروط لأن أيّ تصنيف قد يكون أحد أقسام
+            // الرئيسية. يُزال إن ثبت أن category:{slug} وحده كافٍ بعد التحقيق.
+            'homepage-sections',
         ];
 
         // 1. Editors Pick, Hero, Header transitions
