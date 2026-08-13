@@ -42,7 +42,36 @@ const EPAPER_PROXY_PATTERN = /^\/(ar|en)\/epaper(\/.*)?$|^\/epaper\/stream\/|^\/
 // تسجيل بحت: لا حظر، لا تحويل، لا تعديل على الطلب — يسقط للمنطق القائم أدناه كما هو.
 const UA_PROBE_PATTERN = /^\/sport\/player\/|^\/news\//;
 
+// إنفاذ robots.txt على مسار صفحات اللاعبين. قِيس حيًّا (2026-08-13): 518 طلبًا خلال ١٠ دقائق على
+// /sport/player من ٥١٤ معرّفًا فريدًا (99.2% تفرّد ⇒ تعداد آليّ لا تصفّح)، **١٠٠٪ بوتات وصفر
+// متصفّح بشريّ**. منها ٣٦٩ طلبًا تنتحل Googlebot من خارج نطاقات جوجل (مزرعة وكلاء، ٤٤٥ عنوانًا
+// فريدًا خلال ١٠ دقائق ⇒ أي تحديد معدّل لكل IP بلا أثر).
+//
+// المسار مُستثنى في robots.txt (app/robots.ts)، فأيّ عميل يصل هنا مُعرِّفًا نفسه كزاحف هو —
+// بحكم التعريف — لا يحترم robots.txt. لذلك الفحص على الـUA وحده: لا تحقّق من نطاقات IP الخاصة
+// بجوجل (قائمة متغيّرة، وخطأ فيها يحجب Googlebot الحقيقيّ ويضرّ الأرشفة). Googlebot الأصيل
+// سيتوقّف عن زيارة المسار بنفسه عبر robots.txt، فلا يصله هذا الحظر أصلًا.
+//
+// جالبات معاينة الروابط الاجتماعية مستثناة: تحمل أسماء تطابق نمط الزواحف لكنها تُستدعى بفعل
+// مستخدم حقيقيّ يُشارك رابطًا، وحظرها يكسر بطاقة المعاينة بلا أي مكسب.
+const SPORT_PLAYER_PATTERN = /^\/sport\/player\//;
+const CRAWLER_UA = /(bot|crawler|spider|scraper|crawl|slurp|preview)/i;
+const SOCIAL_PREVIEW_UA = /(facebookexternalhit|Twitterbot|WhatsApp|Slackbot|LinkedInBot|Discordbot|TelegramBot)/i;
+
 export function middleware(request: NextRequest) {
+  if (SPORT_PLAYER_PATTERN.test(request.nextUrl.pathname)) {
+    const ua = request.headers.get('user-agent') ?? '';
+    // 429 لا 403: الرسالة المقصودة "لا نعالج هذا النمط الآليّ" لا "ممنوع عليك". أغلب ما يصل هنا
+    // زواحف مشروعة لا عدائيّة (ClaudeBot/Amazonbot/ExaSearchBot)، و429 + Retry-After صيغة
+    // تفهمها وتتراجع بها بأدب، بينما 403 قد تُفسَّر كحجب دائم.
+    if (CRAWLER_UA.test(ua) && !SOCIAL_PREVIEW_UA.test(ua)) {
+      return new NextResponse(null, {
+        status: 429,
+        headers: { 'Retry-After': '3600' },
+      });
+    }
+  }
+
   if (UA_PROBE_PATTERN.test(request.nextUrl.pathname)) {
     console.log(
       '[ua-probe]',
