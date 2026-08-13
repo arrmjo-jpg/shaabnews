@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { NewspaperReader } from '@/components/epaper/reader/newspaper-reader';
+import { env } from '@/lib/env';
 import { getEpapers, type EpaperIssue } from '@/lib/epaper';
 import { buildMetadata } from '@/lib/seo';
 import { getSiteSettings, resolveNewspaperGate } from '@/lib/site-settings';
@@ -60,7 +61,7 @@ export default async function NewspaperReaderPage({
 
   return (
     <NewspaperReader
-      src={`/api/epaper/${issue.id}`}
+      src={`${env.apiBaseUrl}/ar/epaper/${issue.id}-doc/document`}
       storageId={String(issue.id)}
       title={issue.title}
       backHref="/epaper"

@@ -10,10 +10,17 @@ import Link from 'next/link';
 // كانت سليمة ومُقدَّمة محليًّا بنجاح). عارض PDF الأصلي بالمتصفح (الذي يستخدمه Admin عبر رابط
 // خام) يعرض نفس الملف بعربية سليمة تمامًا — مؤكَّد أيضًا بمُصيِّر PDF مستقل (PyMuPDF).
 //
-// الإصلاح: استبدال Canvas/pdf.js بـ<iframe> يعرض نفس مصدر البايتات القديم
-// (frontend/src/app/api/epaper/[idslug]/route.ts، بلا تعديل) عبر عارض المتصفح الأصلي.
-// هذا المسار كان أصلاً وكيلاً خادميًّا آمنًا (canView يُفرض في الباك-إند، الرابط الموقَّت
-// يُتَّبع داخليًا ولا يصل للمتصفح إطلاقًا) — لا تغيير أمنيّ هنا.
+// الإصلاح: استبدال Canvas/pdf.js بـ<iframe> عبر عارض المتصفح الأصلي.
+//
+// تحديث 2026-08-13 (إصلاح أداء): src يشير الآن مباشرة إلى Laravel
+// (EpaperDocumentController::document)، لا عبر وكيل Next.js. اكتُشِف أن ذلك الوكيل
+// كان يمرّر ReadableStream خامًا من fetch() مباشرة كجسم Response — نمط تسبّب بخطأ
+// متكرّر ("controller[kState].transformAlgorithm is not a function") استهلك 150-260%
+// CPU باستمرار على حاوية frontend وأدّى لانقطاع فعلي (503). تبيّن أن الوكيل لم يكن
+// ضروريًا أصلًا: EpaperDocumentController::document() لا يبثّ PDF بنفسه — يفحص canView
+// ثم يُعيد 302 لرابط R2/S3 موقَّت (أصل مختلف). التحويل عبر <iframe> (تنقّل متصفّح) لا
+// يخضع لقيد CORS إطلاقًا (خلافًا لـfetch()/XHR) — فلا حاجة لأي وكيل خادميّ من الأساس.
+// الحماية (canView/newspaper.enabled/throttle) تبقى مفروضة بالكامل من Laravel كما هي.
 //
 // ملفات pdf.js القديمة (reader-canvas-page.tsx، use-pdf-document.ts، reader-thumbnails.tsx،
 // reader-toolbar.tsx، reader-mobile-bar.tsx، use-reading-memory.ts، lib/pdf/pdfjs.ts) أُبقيت
@@ -21,7 +28,7 @@ import Link from 'next/link';
 // دوران، مصغّرات، ملء شاشة مخصَّص، استئناف محليّ) غير متاحة في هذا الإصلاح المرحلي —
 // الأولوية: عربية سليمة + فتح PDF + حماية سليمة، لا تكافؤ ميزات كامل.
 interface NewspaperReaderProps {
-  src: string; // وكيل الـ PDF الأصليّ نفس‑الأصل: /api/epaper/{idslug}
+  src: string; // رابط Laravel المباشر: {apiBaseUrl}/ar/epaper/{id}-doc/document
   storageId: string;
   title: string;
   backHref: string;
