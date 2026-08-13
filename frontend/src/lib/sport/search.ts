@@ -76,7 +76,8 @@ export async function searchSport(query: string, sportId = 1): Promise<SportSear
   try {
     const res = await fetch(`${BASE}/search/?${COMMON}&query=${encodeURIComponent(q)}`, {
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 300, tags: ['sport-search'] },
+      // Unbounded cardinality (arbitrary query string). Avoid persistent Next disk fetch-cache.
+      cache: 'no-store',
     });
     if (!res.ok) return EMPTY;
     const parsed = SearchResponse.safeParse(await res.json());

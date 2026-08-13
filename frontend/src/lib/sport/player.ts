@@ -80,7 +80,9 @@ export async function getPlayer(id: number): Promise<PlayerProfile | null> {
   try {
     const res = await fetch(`${BASE}/athletes/?${COMMON}&athletes=${id}`, {
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 3600, tags: ['sport-stats'] },
+      // High-cardinality 365Scores entity (athleteId × competition/season).
+      // Avoid persistent Next disk fetch-cache. (getTeamSquad below stays cached — teams are bounded.)
+      cache: 'no-store',
     });
     if (!res.ok) return null;
     const parsed = AthletesResponse.safeParse(await res.json());
@@ -148,7 +150,7 @@ export async function getPlayerStats(id: number, competitionId: number): Promise
   try {
     const res = await fetch(`${BASE}/stats/?${COMMON}&athletes=${id}&competitions=${competitionId}`, {
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 600, tags: ['sport-stats'] },
+      cache: 'no-store',
     });
     if (!res.ok) return [];
     const parsed = StatsResponse.safeParse(await res.json());
@@ -237,7 +239,7 @@ export async function getPlayerLastMatches(athleteId: number, limit = 10): Promi
   try {
     const res = await fetch(`${BASE}/athletes/games/?${COMMON}&athleteId=${athleteId}&lastMatchLimit=${limit}`, {
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 300, tags: ['sport-stats'] },
+      cache: 'no-store',
     });
     if (!res.ok) return [];
     const parsed = PlayerGamesResponse.safeParse(await res.json());
@@ -315,7 +317,7 @@ interface CareerFetch {
 async function fetchCareer(athleteId: number, seasonKey: number): Promise<CareerFetch | null> {
   const res = await fetch(`${BASE}/athletes/career?${COMMON}&athleteId=${athleteId}&seasonKey=${seasonKey}`, {
     signal: AbortSignal.timeout(6000),
-    next: { revalidate: 3600, tags: ['sport-stats'] },
+    cache: 'no-store',
   });
   if (res.status === 204 || !res.ok) return null;
   const parsed = CareerResponse.safeParse(await res.json());
@@ -405,7 +407,7 @@ export async function getPlayerTrophies(
       try {
         const res = await fetch(`${BASE}/athletes/trophies/stats?${COMMON}&athleteId=${athleteId}&competitionId=${cid}`, {
           signal: AbortSignal.timeout(6000),
-          next: { revalidate: 3600, tags: ['sport-stats'] },
+          cache: 'no-store',
         });
         if (res.status === 204 || !res.ok) return null;
         const parsed = TrophyResponse.safeParse(await res.json());

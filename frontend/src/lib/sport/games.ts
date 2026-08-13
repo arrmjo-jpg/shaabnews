@@ -439,7 +439,9 @@ export async function getGameTrends(gameId: number): Promise<TrendLine[]> {
   try {
     const res = await fetch(`${BASE}/trends/?${COMMON}&games=${gameId}`, {
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 300, tags: [`sport-game-${gameId}`] },
+      // High-cardinality 365Scores entity (gameId). Avoid persistent Next disk fetch-cache.
+      // Competition/team-keyed fetches in this file stay cached — those are bounded.
+      cache: 'no-store',
     });
     if (!res.ok) return [];
     const parsed = TrendsResponse.safeParse(await res.json());
@@ -479,7 +481,7 @@ async function fetchVenue(gameId: number): Promise<string | null> {
   try {
     const res = await fetch(
       `${BASE}/game/?appTypeId=5&langId=27&timezoneName=Asia/Amman&userCountryId=6&gameId=${gameId}`,
-      { signal: AbortSignal.timeout(6000), next: { revalidate: 300, tags: [`sport-game-${gameId}`] } },
+      { signal: AbortSignal.timeout(6000), cache: 'no-store' },
     );
     if (!res.ok) return null;
     const j = (await res.json()) as { game?: { venue?: { name?: string | null } | null } | null };
@@ -833,7 +835,7 @@ export async function getGameDetail(gameId: number): Promise<GameDetail | null> 
   try {
     const res = await fetch(
       `${BASE}/game/?appTypeId=5&langId=27&timezoneName=Asia/Amman&userCountryId=6&gameId=${gameId}`,
-      { signal: AbortSignal.timeout(6000), next: { revalidate: 30, tags: [`sport-game-${gameId}`] } },
+      { signal: AbortSignal.timeout(6000), cache: 'no-store' },
     );
     if (!res.ok) return null;
     const parsed = GameResponse.safeParse(await res.json());
@@ -1027,7 +1029,7 @@ export async function getGameStats(gameId: number): Promise<MatchStat[]> {
   try {
     const res = await fetch(
       `${BASE}/game/stats/?appTypeId=5&langId=27&timezoneName=Asia/Amman&userCountryId=6&games=${gameId}`,
-      { signal: AbortSignal.timeout(6000), next: { revalidate: 30, tags: [`sport-game-${gameId}`] } },
+      { signal: AbortSignal.timeout(6000), cache: 'no-store' },
     );
     if (!res.ok) return [];
     const parsed = StatsResponse.safeParse(await res.json());
@@ -1120,7 +1122,7 @@ export async function getPreGameStats(gameId: number): Promise<PreGameStats | nu
   try {
     const res = await fetch(`${BASE}/stats/preGame?${COMMON}&game=${gameId}`, {
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 300, tags: [`sport-game-${gameId}`] },
+      cache: 'no-store',
     });
     if (!res.ok) return null;
     const parsed = PreGameResponse.safeParse(await res.json());
@@ -1197,7 +1199,7 @@ export async function getMatchTrends(gameId: number): Promise<MatchTrends | null
   try {
     const res = await fetch(`${BASE}/trends/?${COMMON}&games=${gameId}`, {
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 300, tags: [`sport-game-${gameId}`] },
+      cache: 'no-store',
     });
     if (!res.ok) return null;
     const parsed = MatchTrendsResponse.safeParse(await res.json());
@@ -1312,7 +1314,7 @@ export async function getH2H(gameId: number): Promise<H2H | null> {
   try {
     const res = await fetch(`${BASE}/games/h2h/?${COMMON}&gameId=${gameId}`, {
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 600, tags: [`sport-game-${gameId}`] },
+      cache: 'no-store',
     });
     if (!res.ok) return null;
     const parsed = H2HResponse.safeParse(await res.json());
@@ -1442,7 +1444,7 @@ export async function getShotMap(gameId: number): Promise<ShotMap | null> {
     // في memoization الـfetch بهذا الفورك (نفس الرابط حرفيّاً ⇒ قد يُعيد جسماً مُستهلَكاً فيفشل `.json()`).
     const res = await fetch(`${BASE}/game/?${COMMON}&gameId=${gameId}`, {
       signal: AbortSignal.timeout(6000),
-      next: { revalidate: 30, tags: [`sport-game-${gameId}`] },
+      cache: 'no-store',
     });
     if (!res.ok) return null;
     const parsed = SMResponse.safeParse(await res.json());
