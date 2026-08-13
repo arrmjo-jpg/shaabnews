@@ -5,6 +5,7 @@ import { env } from '@/lib/env';
 // التسليم المضمّن داخليّاً (canView يُفرض في الباك إند) ويعيد البايتات نفسها لنفس الأصل.
 // عامّ فقط (الأعداد public)؛ لا تلفيق — أيّ فشل أعلى ⇒ رمز الحالة المناسب.
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(
   _req: Request,
@@ -35,7 +36,7 @@ export async function GET(
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'inline',
-      'Cache-Control': 'private, max-age=300',
+      'Cache-Control': 'public, max-age=300, s-maxage=3600',
     },
   });
 }
