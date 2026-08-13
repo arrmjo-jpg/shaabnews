@@ -340,16 +340,42 @@ export interface PlayerCareerData {
   sections: CareerSection[];
   competitions: { id: number; name: string }[];
 }
-// career يلزمه seasonKey ويعطي بطولات ذلك الموسم فقط ⇒ نمسح ١٠ مواسم بالتوازي: العرض من أحدث موسم فيه بيانات،
-// وقائمة البطولات (للألقاب) = اتّحاد كلّ المواسم (تكشف بطولات قديمة فاز بها اللاعب خارج موسمه الحاليّ، مثبَت لإليجاه).
+// career يلزمه seasonKey ويعطي بطولات ذلك الموسم فقط. العرض يستخدم **أحدث موسم فيه بيانات فقط**،
+// وقائمة البطولات (تُغذّي الألقاب) = اتّحاد المواسم المفحوصة.
+//
+// كان مسحاً متوازياً لـ١٠ مواسم دائماً — ٩ من ١٠ نتائج `sections` تُرمى، والتكلفة ثابتة ١٠ نداءات
+// خارجية لكل زيارة. قِيس حيًّا (2026-08-13) أن زحفاً تعداديّاً على /sport/player (518 طلباً/١٠د من
+// ٥١٤ معرّفاً فريداً، ١٠٠٪ بوتات) كان يدفع هذه التكلفة كاملةً لكل لاعب. صار المسح تسلسليّاً بخروج
+// مبكر: نتوقّف بعد أوّل موسم فيه بيانات + SEASONS_AFTER_HIT مواسم إضافيّة ⇒ ١-٣ نداءات نمطيّاً.
+//
+// **مقايضة موثَّقة**: المواسم الإضافيّة بعد أوّل إصابة موجودة لالتقاط بطولات أقدم للألقاب (كان
+// الاتّحاد يشمل ١٠ مواسم). لاعب معتزل له ألقاب قبل أكثر من ٣ مواسم من آخر موسم نشط قد تظهر ألقابه
+// ناقصة. قُبِلت مقابل خفض ~٧٠٪ من نداءات المسيرة؛ ارفع SEASONS_AFTER_HIT إن لزمت تغطية أوسع.
+const MAX_CAREER_SEASONS = 10;
+
+// Keep a small historical window after the first populated season.
+// The previous implementation fetched 10 seasons to build both:
+// - displayed career sections
+// - competition candidates for trophies.
+// We preserve some historical coverage while avoiding unnecessary
+// high-cardinality 365Scores requests.
+const SEASONS_AFTER_HIT = 2;
+
 export async function getPlayerCareerData(athleteId: number): Promise<PlayerCareerData> {
   if (!Number.isInteger(athleteId) || athleteId <= 0) return { sections: [], competitions: [] };
   const y = new Date().getFullYear();
-  const seasons = Array.from({ length: 10 }, (_, i) => y - i);
-  const all = await Promise.all(seasons.map((s) => fetchCareer(athleteId, s).catch(() => null)));
-  const sections = all.find((r) => r && r.sections.length)?.sections ?? [];
   const map = new Map<number, string>();
-  for (const r of all) for (const c of r?.comps ?? []) if (!map.has(c.id)) map.set(c.id, c.name);
+  let sections: CareerSection[] = [];
+  let seasonsSinceHit = 0;
+
+  for (let i = 0; i < MAX_CAREER_SEASONS; i++) {
+    const r = await fetchCareer(athleteId, y - i).catch(() => null);
+    for (const c of r?.comps ?? []) if (!map.has(c.id)) map.set(c.id, c.name);
+    if (sections.length === 0 && r?.sections.length) sections = r.sections;
+    // لا موسم فيه بيانات بعد ⇒ نُكمل حتى السقف (لاعب معتزل/بيانات متأخّرة).
+    if (sections.length > 0 && seasonsSinceHit++ >= SEASONS_AFTER_HIT) break;
+  }
+
   return { sections, competitions: [...map].map(([id, name]) => ({ id, name })) };
 }
 
