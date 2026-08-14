@@ -27,6 +27,13 @@ export async function EconomySection() {
   // لا مقالات اقتصاد ولا ذهب ⇒ أخفِ القسم كاملاً (عزل فشل، لا حشو).
   if (articles.length === 0 && !gold) return null;
 
+  // رابط القسم من شجرة الأقسام الحقيقيّة لا مسارًا مثبَّتًا. كان /economy — وهي صفحة الهبوط
+  // الاقتصاديّة، لا قسم «اقتصاد» (ID 2، slug 'اقتصاد-واعمال') الذي تُجلب منه مقالات هذه الشبكة
+  // فعلًا في السطر أعلاه؛ فكان العنوان يقود إلى مكان غير القسم الذي يعنونه. category.href يبنيه
+  // categoryHref من سلسلة الأسلاف (feed.ts:247) ⇒ /news/category/اقتصاد-واعمال، وهو نفس ما تعرضه
+  // الإدارة. مطابق لنمط moreHref في بقيّة أقسام الرئيسية. قسم محذوف (null) ⇒ /economy بدل رابط مكسور.
+  const moreHref = category?.href ?? '/economy';
+
   const market = aseMarketStatus();
 
   return (
@@ -46,7 +53,7 @@ export async function EconomySection() {
             <div className="flex items-center gap-3">
               <span className="h-8 w-1.5 shrink-0 bg-white" style={{ borderRadius: '9999px' }} aria-hidden />
               <h2 id="economy-heading" className="font-heading text-3xl font-extrabold sm:text-4xl">
-                <Link href="/economy" className="transition-opacity hover:opacity-80">
+                <Link href={moreHref} className="transition-opacity hover:opacity-80">
                   اقتصاد
                 </Link>
               </h2>
@@ -68,7 +75,7 @@ export async function EconomySection() {
           </div>
 
           <Link
-            href="/economy"
+            href={moreHref}
             className="flex w-fit items-center gap-1 border border-white/40 px-4 py-2 text-sm font-bold transition hover:bg-white/10"
             style={{ borderRadius: '9999px' }}
           >
