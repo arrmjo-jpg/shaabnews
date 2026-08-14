@@ -6,8 +6,7 @@ import { MOBILE_SECTION_NAV, SECTIONS_NAV } from '@/components/layout/nav-data';
 import { SectionsBar } from '@/components/layout/sections-bar';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
-import { LeagueMatchesTicker } from '@/components/sport/league-matches-ticker';
-import { getMatchBar } from '@/lib/match-bar';
+import { LeagueMatchesTickerLive } from '@/components/sport/league-matches-ticker-live';
 import { getNavCategories, getSiteSettings, resolveNewspaperGate } from '@/lib/site-settings';
 
 // سقف ISR على مستوى الـlayout — لا الصفحة — لأنّ SiteHeader/SiteFooter (يعتمدان
@@ -25,11 +24,7 @@ export const revalidate = 36000;
 // Public news-site chrome. شريط أسفل الهيدر متجاوب: الموبايل = أقسام الموقع التحريريّة، سطح المكتب = روابط الوسائط.
 // (الوسائط على الموبايل في القائمة الجانبيّة + الشريط السفليّ.) لوحة /account خارج هذه المجموعة بقالب خاصّ.
 export default async function SiteLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [settings, matchBarMatches, navCategories] = await Promise.all([
-    getSiteSettings(),
-    getMatchBar(),
-    getNavCategories(),
-  ]);
+  const [settings, navCategories] = await Promise.all([getSiteSettings(), getNavCategories()]);
   // ظهور الرابط سياسة "معروفة ومفعّلة فقط" — غير معروف/معطّل كلاهما يُخفيان الرابط (سلوك
   // قائم لم يتغيّر)؛ خلافاً لبوّابة notFound() في epaper/newspaper، التي تفرّق الآن بين
   // 'unknown' و'disabled' (راجع resolveNewspaperGate).
@@ -59,7 +54,10 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
       {/* شريط المباريات — من Laravel حصريًّا (GET /api/v1/match-bar)، تحت شريط الريلز/الفيديو،
           آخر عنصر في كتلة الهيدر (طلب المستخدم). القرار (معطَّل/بطولات مميَّزة/دوريّات) بالكامل
           تحريريّ عبر لوحة الإدارة — لا معرّف بطولة مُثبَّت هنا. */}
-      <LeagueMatchesTicker matches={matchBarMatches} />
+      {/* يُجلب من العميل عمدًا لا من هنا: جلبته الخادميّة (revalidate: 60) كانت تستبدل revalidate
+          هذا المسار (patch-fetch.js:775) فتصير سقفًا لكاش كلّ صفحات (site) — وهي مجرّد chrome لا
+          محتوى SEO. البيانات والتصميم بلا تغيير. راجع api/match-bar/route.ts. */}
+      <LeagueMatchesTickerLive />
       {/* إعلانان أسفل الهيدر مباشرة — صفّ واحد على الشاشات العادية (نصف/نصف بفاصل صغير)،
           متراكبان عموديًّا على الجوّال. AdZone القائم 100%؛ بلا إعلان ⇒ null (الغلاف بلا
           حشوة/هوامش ⇒ ارتفاعه صفر حين تفرغ المساحتان — لا فراغ ولا placeholder). RTL:
