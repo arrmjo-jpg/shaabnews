@@ -278,7 +278,13 @@
   0%, 80%, 100% { opacity: 0.3; transform: scale(0.75); }
   40% { opacity: 1; transform: scale(1.15); }
 }
-.route-loading-dot { animation: route-loading-pulse 1.2s ease-in-out infinite; }
+/* الاستدارة هنا لا عبر rounded-full: القاعدة العامّة [class*='rounded'] (سطر ~93) تفرض
+   border-radius:0 !important، فوجود الاسم في قائمة الأصناف كان يحوّل النقاط إلى مربّعات.
+   اسم هذا الصنف خالٍ من "rounded" فينجو منها — نفس نمط .carousel-pill أدناه. */
+.route-loading-dot {
+  animation: route-loading-pulse 1.2s ease-in-out infinite;
+  border-radius: 999px;
+}
 
 /* ══ كاروسيل الهيرو للموبايل (mobile-hero-carousel.tsx) ══
    أسماء بلا "rounded" فيها عمدًا — نفس نمط .hero-corner-lead/.sport-card أعلاه — لتفادي قاعدة
