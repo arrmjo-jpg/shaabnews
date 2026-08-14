@@ -1,4 +1,4 @@
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // نقطة إبطال كاش الواجهة عند الطلب — يستدعيها الباك إند (RevalidateFrontendCacheJob) بعد كتابة محتوى.
@@ -23,20 +23,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const tags = Array.isArray(raw) ? raw.filter((t): t is string => typeof t === 'string' && t.length > 0) : [];
   if (tags.length === 0) return NextResponse.json({ error: 'no_tags' }, { status: 422 });
 
-  console.log('[revalidate:start]', { tags, at: new Date().toISOString() });
-
-  for (const tag of tags) {
-    console.log('[revalidate:tag]', tag);
-    revalidateTag(tag);
-  }
-
-  // [تشخيص مؤقت] عزل: هل tag invalidation غير كافٍ لمسار Homepage تحديدًا، أم أن العطل
-  // داخل Data Cache نفسه بصرف النظر عن آلية الإبطال؟ revalidatePath يستهدف Route Cache
-  // مباشرة (آلية مختلفة عن الوسوم) — يُزال بعد الاختبار.
-  console.log('[revalidate:path]', '/');
-  revalidatePath('/');
-
-  console.log('[revalidate:done]', { count: tags.length, at: new Date().toISOString() });
+  for (const tag of tags) revalidateTag(tag);
 
   return NextResponse.json({ revalidated: true, count: tags.length, tags });
 }

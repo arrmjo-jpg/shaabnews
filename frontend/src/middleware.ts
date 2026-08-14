@@ -34,14 +34,6 @@ const DESKTOP_PREFIX = '/desktop-view';
 // أبداً — يقارنها فقط بـFRONTEND_URL المُعدَّة لديه (انظر App\Http\Middleware\ForceReaderPublicRootUrl).
 const EPAPER_PROXY_PATTERN = /^\/(ar|en)\/epaper(\/.*)?$|^\/epaper\/stream\/|^\/build\//;
 
-// [تشخيص مؤقت — 2026-08-13، يُزال بعد تحديد المصدر] مسارا التعدّد العالي اللذان يُغرقان
-// fetch-cache على القرص (405 ألف ملف / 12GB خلال 4 أيام، 91% منها بيانات لاعبي 365scores).
-// ثبت إحصائيًّا زحفٌ منهجيّ على الأرشيف (81% من جلبات المقالات لمعرّفات فريدة)، لكن هوية
-// العميل غير معروفة: Traefik access log معطَّل، وسجلّ الباك-إند لا يرى إلا نداءات SSR
-// الداخلية (UA: "node"). هذا هو الموضع الوحيد الذي يرى ترويسات العميل الحقيقيّة.
-// تسجيل بحت: لا حظر، لا تحويل، لا تعديل على الطلب — يسقط للمنطق القائم أدناه كما هو.
-const UA_PROBE_PATTERN = /^\/sport\/player\/|^\/news\//;
-
 // إنفاذ robots.txt على مسار صفحات اللاعبين. قِيس حيًّا (2026-08-13): 518 طلبًا خلال ١٠ دقائق على
 // /sport/player من ٥١٤ معرّفًا فريدًا (99.2% تفرّد ⇒ تعداد آليّ لا تصفّح)، **١٠٠٪ بوتات وصفر
 // متصفّح بشريّ**. منها ٣٦٩ طلبًا تنتحل Googlebot من خارج نطاقات جوجل (مزرعة وكلاء، ٤٤٥ عنوانًا
@@ -70,18 +62,6 @@ export function middleware(request: NextRequest) {
         headers: { 'Retry-After': '3600' },
       });
     }
-  }
-
-  if (UA_PROBE_PATTERN.test(request.nextUrl.pathname)) {
-    console.log(
-      '[ua-probe]',
-      JSON.stringify({
-        path: request.nextUrl.pathname,
-        ua: request.headers.get('user-agent') ?? '-',
-        ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '-',
-        at: new Date().toISOString(),
-      }),
-    );
   }
 
   if (EPAPER_PROXY_PATTERN.test(request.nextUrl.pathname)) {
