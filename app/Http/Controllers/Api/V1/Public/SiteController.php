@@ -119,9 +119,9 @@ class SiteController extends Controller
             // (تبويب "التتبع والتحليلات") وتُستهلَك أصلاً بمكوّن <Analytics/> على الواجهة —
             // كانتا غير متصلتين فقط (هذا الـendpoint لم يكن يُصدرهما إطلاقاً). الأسماء هنا
             // مطابقة حرفياً لعقد frontend/src/lib/site-settings.ts (SiteSettingsSchema.analytics/
-            // verification). لا نُصدر instagram_pixel/facebook_page_id/other_meta: لا مستهلك لها
-            // بالواجهة بعد (ولا gtm_id/snapchat_pixel_id/verification.bing: لا حقل لها بلوحة
-            // التحكم بعد) — تُضاف لاحقاً فقط إذا استُحدثت فعلاً.
+            // verification). لا نُصدر instagram_pixel/facebook_page_id: لا مستهلك لها بالواجهة
+            // بعد (ولا gtm_id/snapchat_pixel_id/verification.bing: لا حقل لها بلوحة التحكم بعد)
+            // — تُضاف لاحقاً فقط إذا استُحدثت فعلاً.
             'analytics' => (object) array_filter([
                 'google_analytics_id' => $settings->analytics_google_analytics ?: null,
                 'meta_pixel_id' => $settings->analytics_facebook_pixel ?: null,
@@ -129,7 +129,39 @@ class SiteController extends Controller
             ]),
             'verification' => (object) array_filter([
                 'google' => $settings->analytics_google_meta_tag ?: null,
+                // "وسوم meta إضافية" — حقل نصّ حرّ يلصق فيه المُشغِّل وسوم <meta> خامًا
+                // (مثال شائع: تحقّق AdSense `google-adsense-account`، لا نظير له بحقل
+                // مخصَّص). نستخرج أزواج name/content منه ونمرّرها كما هي لآلية
+                // verification.other الموجودة أصلاً بالواجهة (frontend/src/lib/seo.ts
+                // otherVerification()) — بلا حاجة لأي تعديل على الواجهة.
+                ...(($extra = self::parseExtraMetaTags((string) $settings->analytics_other_meta)) !== []
+                    ? ['other' => (object) $extra]
+                    : []),
             ]),
         ]);
+    }
+
+    /**
+     * يستخرج أزواج name/content من نصّ خام قد يحوي وسم <meta> واحداً أو أكثر —
+     * لا يفترض ترتيب السمتين ولا نوع علامة التنصيص.
+     *
+     * @return array<string,string>
+     */
+    private static function parseExtraMetaTags(string $raw): array
+    {
+        if (trim($raw) === '') {
+            return [];
+        }
+
+        $pairs = [];
+        preg_match_all('/<meta\s+[^>]*>/i', $raw, $tags);
+        foreach ($tags[0] as $tag) {
+            if (preg_match('/name=["\']([^"\']+)["\']/i', $tag, $name)
+                && preg_match('/content=["\']([^"\']*)["\']/i', $tag, $content)) {
+                $pairs[$name[1]] = $content[1];
+            }
+        }
+
+        return $pairs;
     }
 }
