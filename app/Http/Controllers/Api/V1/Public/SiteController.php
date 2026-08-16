@@ -115,6 +115,21 @@ class SiteController extends Controller
                 'logo_light' => $logoUrl($settings->logo_light_sports),
                 'logo_dark' => $logoUrl($settings->logo_dark_sports),
             ],
+            // ربط تتبّع الموقع (لوحة التحكم → الواجهة): الحقول محفوظة أصلاً بـGeneralSettings
+            // (تبويب "التتبع والتحليلات") وتُستهلَك أصلاً بمكوّن <Analytics/> على الواجهة —
+            // كانتا غير متصلتين فقط (هذا الـendpoint لم يكن يُصدرهما إطلاقاً). الأسماء هنا
+            // مطابقة حرفياً لعقد frontend/src/lib/site-settings.ts (SiteSettingsSchema.analytics/
+            // verification). لا نُصدر instagram_pixel/facebook_page_id/other_meta: لا مستهلك لها
+            // بالواجهة بعد (ولا gtm_id/snapchat_pixel_id/verification.bing: لا حقل لها بلوحة
+            // التحكم بعد) — تُضاف لاحقاً فقط إذا استُحدثت فعلاً.
+            'analytics' => (object) array_filter([
+                'google_analytics_id' => $settings->analytics_google_analytics ?: null,
+                'meta_pixel_id' => $settings->analytics_facebook_pixel ?: null,
+                'tiktok_pixel_id' => $settings->analytics_tiktok_pixel ?: null,
+            ]),
+            'verification' => (object) array_filter([
+                'google' => $settings->analytics_google_meta_tag ?: null,
+            ]),
         ]);
     }
 }
