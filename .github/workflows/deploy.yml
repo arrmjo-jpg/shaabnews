@@ -79,7 +79,7 @@ jobs:
       - name: Confirm backend responds healthy post-deploy
         run: |
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' https://api.harer.store/up)
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://api.shaabjo.com/up)
             [ "$code" = "200" ] && exit 0
             sleep 10
           done
@@ -108,7 +108,7 @@ jobs:
 
       - name: Verify backend healthy before starting frontend build
         run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' https://api.harer.store/up)
+          code=$(curl -s -o /dev/null -w '%{http_code}' https://api.shaabjo.com/up)
           [ "$code" = "200" ] || { echo "Backend not healthy — refusing frontend deploy" >&2; exit 1; }
 
       - name: Deploy frontend, wait for actual deployment success
