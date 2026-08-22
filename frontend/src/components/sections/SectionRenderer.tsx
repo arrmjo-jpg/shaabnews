@@ -61,7 +61,7 @@ export function SectionRenderer({
           ) : (
             <HeroRenderer items={featured} category={category} />
           )}
-          <AdZone zone="aalan_fasl_alaqsam_b" className="mb-6" />
+          <AdZone zone="fasl_aryd_bad_alakhbar_almmyza_bsfhat_alaqsam" className="mb-6" />
         </>
       )}
       {children({ feedItems, layout })}

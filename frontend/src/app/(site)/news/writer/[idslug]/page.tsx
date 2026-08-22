@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 
-import { AdZone } from '@/components/ads/ad-zone';
 import { WriterArticlesFeed } from '@/components/articles/writer-articles-feed';
 import { WriterProfileHeader } from '@/components/articles/writer-profile-header';
 import { Container } from '@/components/layout/container';
@@ -105,7 +104,6 @@ export default async function WriterProfilePage({ params }: { params: Promise<{ 
           </main>
           <aside className="hidden lg:col-span-4 lg:block space-y-6">
             <ReadingSidebar />
-            <AdZone zone="aalan_ala_shmal_alaqsam" />
             <SubscribeBox variant="card" />
           </aside>
         </div>

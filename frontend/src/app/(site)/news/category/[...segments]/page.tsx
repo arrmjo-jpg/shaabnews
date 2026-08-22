@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 
-import { AdZone } from '@/components/ads/ad-zone';
 import { CategoryLoadMoreFeed } from '@/components/category/category-load-more-feed';
 import { Container } from '@/components/layout/container';
 import { CategoryBreadcrumb } from '@/components/navigation/category-breadcrumb';
@@ -177,7 +176,6 @@ export default async function CategoryPage({
               </main>
               <aside className="hidden lg:col-span-4 lg:block space-y-6">
                 <ReadingSidebar />
-                <AdZone zone="aalan_ala_shmal_alaqsam" />
                 <SubscribeBox variant="card" />
               </aside>
             </div>

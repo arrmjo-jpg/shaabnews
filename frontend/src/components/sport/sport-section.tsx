@@ -1,4 +1,4 @@
-import { AdSlot } from '@/components/ads/ad-slot';
+import { AdZone } from '@/components/ads/ad-zone';
 import { Container } from '@/components/layout/container';
 import { CountryAccordion } from '@/components/sport/country-accordion';
 import { DayFilter } from '@/components/sport/day-filter';
@@ -57,6 +57,10 @@ export async function SportSection({
     <div className="bg-surface-2">
       <Container className="py-6">
         <LiveScoresStrip sportId={sid} date={date} priorityCompetitionIds={featuredPriority} />
+        {/* إعلان عريض داخل صفحة «جدول الرياضة» — أسفل شريط النتائج المباشرة وفوق شبكة المحتوى،
+            بعرض الحاوية كاملًا (1200px مطابق لعرض المساحة) لأن العمود الجانبيّ 340px لا يتّسع له.
+            بلا إعلان ⇒ null بصفر مساحة (لا mt- على الغلاف، الهامش على العنصر نفسه). */}
+        <AdZone zone="aalan_dakhl_qsm_jdwl_alryadaa" className="mt-6 flex justify-center" />
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
           <aside className="flex flex-col gap-6">
             <div className="flex flex-col gap-3">
@@ -73,11 +77,19 @@ export async function SportSection({
           </aside>
           <main className="flex min-w-0 flex-col gap-6">
             <FeaturedSlider matches={featured} />
-            {/* تحت الهيرو — نمط 365: ويدجت «الأهداف» عريض (يمين RTL، ⅔) + مكان إعلان أصغر (يسار، ⅓) ⇒ التبويبات تتّسع بلا سكرول */}
+            {/* تحت الهيرو — نمط 365: ويدجت «الأهداف» عريض (يمين RTL) + إعلان أضيق (يسار، 240px
+                مطابق لعرض المساحة) ⇒ التبويبات تتّسع بلا سكرول. flex لا grid عمدًا: بلا إعلان
+                يعيد AdZone قيمة null فيمتدّ الويدجت للعرض كامل تلقائيًّا، بدل ترك عمود فارغ
+                كما كان يفعل الـgrid ذو العمودين الثابتين. */}
             {scorers.length > 0 && (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-                <TopScorers comps={scorers} />
-                <AdSlot zone="sport_scorers" />
+              <div className="flex flex-col gap-6 lg:flex-row">
+                <div className="min-w-0 lg:flex-1">
+                  <TopScorers comps={scorers} />
+                </div>
+                <AdZone
+                  zone="aalan_fy_alryada_mrba_kbyr"
+                  className="flex justify-center lg:w-[240px] lg:shrink-0"
+                />
               </div>
             )}
             <SportNews />

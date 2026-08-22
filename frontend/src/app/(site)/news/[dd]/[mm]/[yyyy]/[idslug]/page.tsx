@@ -140,8 +140,8 @@ export default async function CanonicalArticlePage({ params }: { params: Promise
             headings={headings}
           />
 
-          <AdZone zone="aalan_asfl_alkhbr_rym_1" className="mt-8" />
-          <AdZone zone="aalan_asfl_alkhbr_rym_2" className="mt-6" />
+          <AdZone zone="aalan_asfl_ns_almqal_fy_alkhbr_rqm_1" className="mt-8" />
+          <AdZone zone="aalan_asfl_ns_almqal_fy_alkhbr_rqm_2" className="mt-6" />
 
           <CommentSection slug={idForFetch} enabled={article.commentsEnabled} />
 
