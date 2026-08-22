@@ -64,8 +64,8 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
           الأوّل = يمين، الثاني = شمال. */}
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-2 px-4 sm:flex-row sm:px-6 lg:px-8">
         {/* mt-3 على كلّ إعلان (لا الغلاف): يفصل عن الهيدر فقط حين يوجد إعلان فعلًا. */}
-        <AdZone zone="aalan_asfl_alhydr_mbashra_ymyn" className="mt-3 flex justify-center sm:flex-1" />
-        <AdZone zone="aalan_asfl_alhydr_mbashra_shmal" className="mt-3 flex justify-center sm:flex-1" />
+        <AdZone zone="aalan_fwq_alslaydr_mbashra_ymyn" className="mt-3 flex justify-center sm:flex-1" />
+        <AdZone zone="aalan_fwq_alslaydr_mbashra_shmal" className="mt-3 flex justify-center sm:flex-1" />
       </div>
       {/* إعلان كبير أسفل الزوج — آخر عنصر قبل <main> ⇒ فوق السلايدر (FeaturedHero) مباشرةً.
           صفّ كامل بنفس عرض الحاوية (1200px، مطابق لعرض المساحة)، يحمل توسيطه وهامشه بنفسه
