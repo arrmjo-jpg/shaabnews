@@ -45,7 +45,7 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
       <MobileTopToggleBanner />
       {/* إعلان فوق الهيدر — أوّل عنصر في الصفحة (AdZone القائم: client، no-store، تتبّع كامل).
           الإبداع يتوسّط أفقيًّا؛ بلا إعلان ⇒ null (صفر DOM/مساحة فوق الهيدر). */}
-      <AdZone zone="aalan_fwq_alhydr" className="flex justify-center px-4 py-2" />
+      <AdZone zone="topheaderad" className="flex justify-center px-4 py-2" />
       <SiteHeader />
       {/* الموبايل: أقسام الموقع التحريريّة الحقيقية من الـCMS (سكرول) */}
       <SectionsBar items={mobileCategorySections} className="lg:hidden" />
