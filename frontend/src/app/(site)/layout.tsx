@@ -67,10 +67,11 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
         <AdZone zone="aalan_asfl_alhydr_mbashra_ymyn" className="mt-3 flex justify-center sm:flex-1" />
         <AdZone zone="aalan_asfl_alhydr_mbashra_shmal" className="mt-3 flex justify-center sm:flex-1" />
       </div>
-      {/* إعلان كبير أسفل الزوج — صفّ كامل بنفس عرض الحاوية، يحمل توسيطه وهامشه بنفسه
+      {/* إعلان كبير أسفل الزوج — آخر عنصر قبل <main> ⇒ فوق السلايدر (FeaturedHero) مباشرةً.
+          صفّ كامل بنفس عرض الحاوية (1200px، مطابق لعرض المساحة)، يحمل توسيطه وهامشه بنفسه
           (بلا غلاف ⇒ بلا إعلان = صفر DOM/مساحة). */}
       <AdZone
-        zone="aalan_kbyr_asfl_alhydr_mbashra"
+        zone="aalan_fwq_alslaydr_mbashra_kbyr"
         className="mx-auto mt-3 flex w-full max-w-[1200px] justify-center px-4 sm:px-6 lg:px-8"
       />
       <main className="flex-1">{children}</main>
